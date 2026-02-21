@@ -1,10 +1,24 @@
+Thesis/*.docx# Visual Studio
 .vs/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# Build folders
 Debug/
 Release/
 x64/
 *.exe
 *.obj
 *.pdb
-*.ilk
+*.ipdb
+*.iobj
+*.log
 *.lib
 *.dll
+Thesis/*.docx
+
+# CMake (optional)
+CMakeFiles/
+CMakeCache.txt

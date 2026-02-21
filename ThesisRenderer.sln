@@ -1,0 +1,36 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.11.35327.3
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ThesisRenderer", "ThesisRenderer\ThesisRenderer.vcxproj", "{CF1FC50B-B05B-458F-A340-6C092EC83AFE}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{21CA2A3E-3979-4A85-8EDC-8823502DE10E}"
+	ProjectSection(SolutionItems) = preProject
+		..\..\..\..\sdl\glad (1)\src\glad.c = ..\..\..\..\sdl\glad (1)\src\glad.c
+	EndProjectSection
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|x64 = Debug|x64
+		Debug|x86 = Debug|x86
+		Release|x64 = Release|x64
+		Release|x86 = Release|x86
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{CF1FC50B-B05B-458F-A340-6C092EC83AFE}.Debug|x64.ActiveCfg = Debug|x64
+		{CF1FC50B-B05B-458F-A340-6C092EC83AFE}.Debug|x64.Build.0 = Debug|x64
+		{CF1FC50B-B05B-458F-A340-6C092EC83AFE}.Debug|x86.ActiveCfg = Debug|Win32
+		{CF1FC50B-B05B-458F-A340-6C092EC83AFE}.Debug|x86.Build.0 = Debug|Win32
+		{CF1FC50B-B05B-458F-A340-6C092EC83AFE}.Release|x64.ActiveCfg = Release|x64
+		{CF1FC50B-B05B-458F-A340-6C092EC83AFE}.Release|x64.Build.0 = Release|x64
+		{CF1FC50B-B05B-458F-A340-6C092EC83AFE}.Release|x86.ActiveCfg = Release|Win32
+		{CF1FC50B-B05B-458F-A340-6C092EC83AFE}.Release|x86.Build.0 = Release|Win32
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {7A4E7E4B-A21D-4C7B-AC10-0F5109AA0E16}
+	EndGlobalSection
+EndGlobal

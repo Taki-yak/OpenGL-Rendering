@@ -1,0 +1,14 @@
+﻿main.obj : error LNK2001: unresolved external symbol _glfwSwapBuffers
+main.obj : error LNK2001: unresolved external symbol _glad_glGetString
+main.obj : error LNK2001: unresolved external symbol _glfwTerminate
+main.obj : error LNK2001: unresolved external symbol _glfwPollEvents
+main.obj : error LNK2001: unresolved external symbol _glfwInit
+main.obj : error LNK2001: unresolved external symbol _glfwCreateWindow
+main.obj : error LNK2001: unresolved external symbol _glad_glClearColor
+main.obj : error LNK2001: unresolved external symbol _glad_glClear
+main.obj : error LNK2001: unresolved external symbol _glfwWindowHint
+main.obj : error LNK2001: unresolved external symbol _glfwMakeContextCurrent
+main.obj : error LNK2001: unresolved external symbol _gladLoadGLLoader
+main.obj : error LNK2001: unresolved external symbol _glfwGetProcAddress
+main.obj : error LNK2001: unresolved external symbol _glfwWindowShouldClose
+D:\taki\POLAND\POLAND\ThesisRenderer\ThesisRenderer\Release\ThesisRenderer.exe : fatal error LNK1120: 13 unresolved externals

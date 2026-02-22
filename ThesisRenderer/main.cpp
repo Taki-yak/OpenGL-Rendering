@@ -6,28 +6,37 @@
 const char* vertexShaderSource = R"(
 #version 330 core
 layout (location = 0) in vec3 aPos;
+layout (location = 1) in vec3 aColor;
+
+out vec3 vertexColor;
+
 void main()
 {
     gl_Position = vec4(aPos, 1.0);
+    vertexColor = aColor;
 }
 )";
 
 // Fragment Shader source code
 const char* fragmentShaderSource = R"(
 #version 330 core
+in vec3 vertexColor;
 out vec4 FragColor;
+
 void main()
 {
-    FragColor = vec4(1.0, 0.5, 0.2, 1.0);
+    FragColor = vec4(vertexColor, 1.0);
 }
 )";
 
 int main() {
+    // Initialize GLFW
     glfwInit();
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
+    // Create window
     GLFWwindow* window = glfwCreateWindow(800, 600, "ThesisRenderer", NULL, NULL);
     if (window == NULL) {
         std::cout << "Failed to create GLFW window\n";
@@ -36,40 +45,46 @@ int main() {
     }
     glfwMakeContextCurrent(window);
 
+    // Load OpenGL function pointers with GLAD
     if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) {
         std::cout << "Failed to initialize GLAD\n";
         return -1;
     }
 
-    // Vertex data
+    // Vertex data for 2 triangles
     float vertices[] = {
-         0.0f,  0.5f, 0.0f,  // top
-        -0.5f, -0.5f, 0.0f,  // left
-         0.5f, -0.5f, 0.0f   // right
+        // positions        // colors
+         0.0f,  0.5f, 0.0f,  1.0f, 0.0f, 0.0f,  // Top (Red)
+        -0.5f, -0.5f, 0.0f,  0.0f, 1.0f, 0.0f,  // Left (Green)
+         0.5f, -0.5f, 0.0f,  0.0f, 0.0f, 1.0f   // Right (Blue)
     };
 
     unsigned int VBO, VAO;
-
-    // Generate VAO
     glGenVertexArrays(1, &VAO);
     glGenBuffers(1, &VBO);
 
     // Bind VAO
     glBindVertexArray(VAO);
 
-    // Bind VBO, send data
+    // Bind VBO and send vertex data
     glBindBuffer(GL_ARRAY_BUFFER, VBO);
     glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
 
-    // Configure vertex attributes
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+    // Configure vertex attribute pointers
+// Position
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
     glEnableVertexAttribArray(0);
 
-    // Unbind VBO and VAO
+    // Color
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float)));
+    glEnableVertexAttribArray(1);
+   
+
+    // Unbind
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     glBindVertexArray(0);
 
-    // Build and compile shaders
+    // Compile shaders
     unsigned int vertexShader = glCreateShader(GL_VERTEX_SHADER);
     glShaderSource(vertexShader, 1, &vertexShaderSource, NULL);
     glCompileShader(vertexShader);
@@ -93,7 +108,7 @@ int main() {
 
         glUseProgram(shaderProgram);
         glBindVertexArray(VAO);
-        glDrawArrays(GL_TRIANGLES, 0, 3);
+        glDrawArrays(GL_TRIANGLES, 0, 6); // 6 vertices = 2 triangles
 
         glfwSwapBuffers(window);
         glfwPollEvents();

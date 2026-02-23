@@ -1,6 +1,9 @@
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 #include <iostream>
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/type_ptr.hpp>
 
 // Vertex Shader source code
 const char* vertexShaderSource = R"(
@@ -10,9 +13,11 @@ layout (location = 1) in vec3 aColor;
 
 out vec3 vertexColor;
 
+uniform mat4 model;
+
 void main()
 {
-    gl_Position = vec4(aPos, 1.0);
+    gl_Position = model * vec4(aPos, 1.0);
     vertexColor = aColor;
 }
 )";
@@ -116,15 +121,23 @@ int main() {
 
     // Render loop
     while (!glfwWindowShouldClose(window)) {
+        // for rotating 
+        glfwSwapBuffers(window);
+        glfwPollEvents();
+        glm::mat4 model = glm::mat4(1.0f);
+        model = glm::rotate(model,
+            (float)glfwGetTime(),
+            glm::vec3(0.0f, 0.0f, 1.0f));
         glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT);
 
         glUseProgram(shaderProgram);
+        unsigned int modelLoc = glGetUniformLocation(shaderProgram, "model");
+        glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
         glBindVertexArray(VAO);
         glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 
-        glfwSwapBuffers(window);
-        glfwPollEvents();
+       
     }
 
     // Cleanup

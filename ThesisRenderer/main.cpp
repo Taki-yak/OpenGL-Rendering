@@ -59,12 +59,50 @@ int main() {
     glEnable(GL_DEPTH_TEST);//
     // Vertex data for 2 triangles
     float vertices[] = {
-        // positions        // colors
-         0.5f,  0.5f, 0.0f,  1.0f, 0.0f, 0.0f, // top right
-         0.5f, -0.5f, 0.0f,  0.0f, 1.0f, 0.0f, // bottom right
-        -0.5f, -0.5f, 0.0f,  0.0f, 0.0f, 1.0f, // bottom left
-        -0.5f,  0.5f, 0.0f,  1.0f, 1.0f, 0.0f  // top left
+        // positions          // colors
+        -0.5f,-0.5f,-0.5f,    1.0f,0.0f,0.0f,
+         0.5f,-0.5f,-0.5f,    0.0f,1.0f,0.0f,
+         0.5f, 0.5f,-0.5f,    0.0f,0.0f,1.0f,
+         0.5f, 0.5f,-0.5f,    0.0f,0.0f,1.0f,
+        -0.5f, 0.5f,-0.5f,    1.0f,1.0f,0.0f,
+        -0.5f,-0.5f,-0.5f,    1.0f,0.0f,0.0f,
+
+        -0.5f,-0.5f, 0.5f,    1.0f,0.0f,1.0f,
+         0.5f,-0.5f, 0.5f,    0.0f,1.0f,1.0f,
+         0.5f, 0.5f, 0.5f,    1.0f,1.0f,1.0f,
+         0.5f, 0.5f, 0.5f,    1.0f,1.0f,1.0f,
+        -0.5f, 0.5f, 0.5f,    0.3f,0.3f,0.3f,
+        -0.5f,-0.5f, 0.5f,    1.0f,0.0f,1.0f,
+
+        -0.5f, 0.5f, 0.5f,    1.0f,0.5f,0.2f,
+        -0.5f, 0.5f,-0.5f,    0.2f,0.8f,0.3f,
+        -0.5f,-0.5f,-0.5f,    0.7f,0.2f,0.9f,
+        -0.5f,-0.5f,-0.5f,    0.7f,0.2f,0.9f,
+        -0.5f,-0.5f, 0.5f,    0.4f,0.4f,0.4f,
+        -0.5f, 0.5f, 0.5f,    1.0f,0.5f,0.2f,
+
+         0.5f, 0.5f, 0.5f,    0.2f,0.3f,0.7f,
+         0.5f, 0.5f,-0.5f,    0.6f,0.1f,0.1f,
+         0.5f,-0.5f,-0.5f,    0.1f,0.6f,0.2f,
+         0.5f,-0.5f,-0.5f,    0.1f,0.6f,0.2f,
+         0.5f,-0.5f, 0.5f,    0.9f,0.9f,0.2f,
+         0.5f, 0.5f, 0.5f,    0.2f,0.3f,0.7f,
+
+        -0.5f,-0.5f,-0.5f,    0.8f,0.2f,0.2f,
+         0.5f,-0.5f,-0.5f,    0.2f,0.8f,0.2f,
+         0.5f,-0.5f, 0.5f,    0.2f,0.2f,0.8f,
+         0.5f,-0.5f, 0.5f,    0.2f,0.2f,0.8f,
+        -0.5f,-0.5f, 0.5f,    0.9f,0.1f,0.4f,
+        -0.5f,-0.5f,-0.5f,    0.8f,0.2f,0.2f,
+
+        -0.5f, 0.5f,-0.5f,    0.3f,0.3f,1.0f,
+         0.5f, 0.5f,-0.5f,    0.5f,0.9f,0.2f,
+         0.5f, 0.5f, 0.5f,    0.9f,0.4f,0.3f,
+         0.5f, 0.5f, 0.5f,    0.9f,0.4f,0.3f,
+        -0.5f, 0.5f, 0.5f,    0.2f,0.7f,0.7f,
+        -0.5f, 0.5f,-0.5f,    0.3f,0.3f,1.0f
     };
+   
     unsigned int indices[] = {
     0, 1, 3,  // first triangle
     1, 2, 3   // second triangle
@@ -137,6 +175,7 @@ int main() {
             0.1f,                  // near plane
             100.0f                 // far plane
         );
+        model = glm::rotate(model, (float)glfwGetTime(), glm::vec3(0.5f, 1.0f, 0.0f));
         glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
@@ -145,7 +184,8 @@ int main() {
         unsigned int modelLoc = glGetUniformLocation(shaderProgram, "model");
         glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
         glBindVertexArray(VAO);
-        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+       // glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0); for EBO
+        glDrawArrays(GL_TRIANGLES, 0, 36);
         unsigned int viewLoc = glGetUniformLocation(shaderProgram, "view");
         glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(view));
 

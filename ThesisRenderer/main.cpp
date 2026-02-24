@@ -14,10 +14,12 @@ layout (location = 1) in vec3 aColor;
 out vec3 vertexColor;
 
 uniform mat4 model;
+uniform mat4 view;
+uniform mat4 projection;
 
 void main()
 {
-    gl_Position = model * vec4(aPos, 1.0);
+    gl_Position = projection * view * model * vec4(aPos, 1.0);
     vertexColor = aColor;
 }
 )";
@@ -49,13 +51,12 @@ int main() {
         return -1;
     }
     glfwMakeContextCurrent(window);
-
     // Load OpenGL function pointers with GLAD
     if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) {
         std::cout << "Failed to initialize GLAD\n";
         return -1;
     }
-
+    glEnable(GL_DEPTH_TEST);//
     // Vertex data for 2 triangles
     float vertices[] = {
         // positions        // colors
@@ -125,18 +126,31 @@ int main() {
         glfwSwapBuffers(window);
         glfwPollEvents();
         glm::mat4 model = glm::mat4(1.0f);
+        glm::mat4 view = glm::mat4(1.0f);
+        view = glm::translate(view, glm::vec3(0.0f, 0.0f, -3.0f));
         model = glm::rotate(model,
             (float)glfwGetTime(),
             glm::vec3(0.0f, 0.0f, 1.0f));
+        glm::mat4 projection = glm::perspective(
+            glm::radians(45.0f),   // field of view
+            800.0f / 600.0f,       // aspect ratio
+            0.1f,                  // near plane
+            100.0f                 // far plane
+        );
         glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
-        glClear(GL_COLOR_BUFFER_BIT);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
 
         glUseProgram(shaderProgram);
         unsigned int modelLoc = glGetUniformLocation(shaderProgram, "model");
         glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
         glBindVertexArray(VAO);
         glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+        unsigned int viewLoc = glGetUniformLocation(shaderProgram, "view");
+        glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(view));
 
+        unsigned int projLoc = glGetUniformLocation(shaderProgram, "projection");
+        glUniformMatrix4fv(projLoc, 1, GL_FALSE, glm::value_ptr(projection));
        
     }
 

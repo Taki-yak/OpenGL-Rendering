@@ -1,14 +1,18 @@
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 #include <iostream>
+
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
-// CAMERA VARIABLES
+
+
+// ================= CAMERA VARIABLES =================
+
 glm::vec3 cameraPos = glm::vec3(0.0f, 0.0f, 3.0f);
 glm::vec3 cameraFront = glm::vec3(0.0f, 0.0f, -1.0f);
 glm::vec3 cameraUp = glm::vec3(0.0f, 1.0f, 0.0f);
-// MOUSE VARIABLES
+
 float yaw = -90.0f;
 float pitch = 0.0f;
 
@@ -16,23 +20,29 @@ float lastX = 400;
 float lastY = 300;
 
 bool firstMouse = true;
-float cameraSpeed = 0.05f;
+
+float deltaTime = 0.0f;
+float lastFrame = 0.0f;
+
+
+// ================= MOUSE CALLBACK =================
+
 void mouse_callback(GLFWwindow* window, double xpos, double ypos)
 {
     if (firstMouse)
     {
-        lastX = xpos;
-        lastY = ypos;
+        lastX = (float)xpos;
+        lastY = (float)ypos;
         firstMouse = false;
     }
 
     float sensitivity = 0.1f;
 
-    float xoffset = xpos - lastX;
-    float yoffset = lastY - ypos;
+    float xoffset = (float)xpos - lastX;
+    float yoffset = lastY - (float)ypos;
 
-    lastX = xpos;
-    lastY = ypos;
+    lastX = (float)xpos;
+    lastY = (float)ypos;
 
     xoffset *= sensitivity;
     yoffset *= sensitivity;
@@ -54,9 +64,14 @@ void mouse_callback(GLFWwindow* window, double xpos, double ypos)
 
     cameraFront = glm::normalize(direction);
 }
-// Vertex Shader source code
+
+
+
+// ================= SHADERS =================
+
 const char* vertexShaderSource = R"(
 #version 330 core
+
 layout (location = 0) in vec3 aPos;
 layout (location = 1) in vec3 aColor;
 
@@ -73,9 +88,10 @@ void main()
 }
 )";
 
-// Fragment Shader source code
+
 const char* fragmentShaderSource = R"(
 #version 330 core
+
 in vec3 vertexColor;
 out vec4 FragColor;
 
@@ -85,11 +101,16 @@ void main()
 }
 )";
 
-int main() {
- 
+
+
+// ================= MAIN =================
+
+int main()
+{
 
     // Initialize GLFW
     glfwInit();
+
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
@@ -97,154 +118,152 @@ int main() {
 
     // Create window
     GLFWwindow* window = glfwCreateWindow(800, 600, "ThesisRenderer", NULL, NULL);
-    if (window == NULL) {
-        std::cout << "Failed to create GLFW window\n";
+
+    if (window == NULL)
+    {
+        std::cout << "Failed to create window\n";
         glfwTerminate();
         return -1;
     }
+
     glfwMakeContextCurrent(window);
+
+
+    // Mouse settings
     glfwSetCursorPosCallback(window, mouse_callback);
-    // Load OpenGL function pointers with GLAD
-    if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) {
+    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+
+
+    // Load GLAD
+    if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
+    {
         std::cout << "Failed to initialize GLAD\n";
         return -1;
     }
-    glEnable(GL_DEPTH_TEST);//
-    // Vertex data for 2 triangles
-   
-    float vertices[] = {
+
+
+    glEnable(GL_DEPTH_TEST);
+
+
+
+    // ================= CUBE DATA =================
+
+    float vertices[] =
+    {
         // positions          // colors
-        -0.5f,-0.5f,-0.5f,    1.0f,0.0f,0.0f,
-         0.5f,-0.5f,-0.5f,    0.0f,1.0f,0.0f,
-         0.5f, 0.5f,-0.5f,    0.0f,0.0f,1.0f,
-         0.5f, 0.5f,-0.5f,    0.0f,0.0f,1.0f,
-        -0.5f, 0.5f,-0.5f,    1.0f,1.0f,0.0f,
-        -0.5f,-0.5f,-0.5f,    1.0f,0.0f,0.0f,
 
-        -0.5f,-0.5f, 0.5f,    1.0f,0.0f,1.0f,
-         0.5f,-0.5f, 0.5f,    0.0f,1.0f,1.0f,
-         0.5f, 0.5f, 0.5f,    1.0f,1.0f,1.0f,
-         0.5f, 0.5f, 0.5f,    1.0f,1.0f,1.0f,
-        -0.5f, 0.5f, 0.5f,    0.3f,0.3f,0.3f,
-        -0.5f,-0.5f, 0.5f,    1.0f,0.0f,1.0f,
+        -0.5f,-0.5f,-0.5f,  1,0,0,
+         0.5f,-0.5f,-0.5f,  0,1,0,
+         0.5f, 0.5f,-0.5f,  0,0,1,
+         0.5f, 0.5f,-0.5f,  0,0,1,
+        -0.5f, 0.5f,-0.5f,  1,1,0,
+        -0.5f,-0.5f,-0.5f,  1,0,0,
 
-        -0.5f, 0.5f, 0.5f,    1.0f,0.5f,0.2f,
-        -0.5f, 0.5f,-0.5f,    0.2f,0.8f,0.3f,
-        -0.5f,-0.5f,-0.5f,    0.7f,0.2f,0.9f,
-        -0.5f,-0.5f,-0.5f,    0.7f,0.2f,0.9f,
-        -0.5f,-0.5f, 0.5f,    0.4f,0.4f,0.4f,
-        -0.5f, 0.5f, 0.5f,    1.0f,0.5f,0.2f,
+        -0.5f,-0.5f,0.5f,   1,0,1,
+         0.5f,-0.5f,0.5f,   0,1,1,
+         0.5f,0.5f,0.5f,    1,1,1,
+         0.5f,0.5f,0.5f,    1,1,1,
+        -0.5f,0.5f,0.5f,    0.5,0.5,0.5,
+        -0.5f,-0.5f,0.5f,   1,0,1,
 
-         0.5f, 0.5f, 0.5f,    0.2f,0.3f,0.7f,
-         0.5f, 0.5f,-0.5f,    0.6f,0.1f,0.1f,
-         0.5f,-0.5f,-0.5f,    0.1f,0.6f,0.2f,
-         0.5f,-0.5f,-0.5f,    0.1f,0.6f,0.2f,
-         0.5f,-0.5f, 0.5f,    0.9f,0.9f,0.2f,
-         0.5f, 0.5f, 0.5f,    0.2f,0.3f,0.7f,
+        -0.5f,0.5f,0.5f,    1,0,0,
+        -0.5f,0.5f,-0.5f,   0,1,0,
+        -0.5f,-0.5f,-0.5f,  0,0,1,
+        -0.5f,-0.5f,-0.5f,  0,0,1,
+        -0.5f,-0.5f,0.5f,   1,1,0,
+        -0.5f,0.5f,0.5f,    1,0,0,
 
-        -0.5f,-0.5f,-0.5f,    0.8f,0.2f,0.2f,
-         0.5f,-0.5f,-0.5f,    0.2f,0.8f,0.2f,
-         0.5f,-0.5f, 0.5f,    0.2f,0.2f,0.8f,
-         0.5f,-0.5f, 0.5f,    0.2f,0.2f,0.8f,
-        -0.5f,-0.5f, 0.5f,    0.9f,0.1f,0.4f,
-        -0.5f,-0.5f,-0.5f,    0.8f,0.2f,0.2f,
+         0.5f,0.5f,0.5f,    1,0,1,
+         0.5f,0.5f,-0.5f,   0,1,1,
+         0.5f,-0.5f,-0.5f,  1,1,1,
+         0.5f,-0.5f,-0.5f,  1,1,1,
+         0.5f,-0.5f,0.5f,   0.5,0.5,0.5,
+         0.5f,0.5f,0.5f,    1,0,1,
 
-        -0.5f, 0.5f,-0.5f,    0.3f,0.3f,1.0f,
-         0.5f, 0.5f,-0.5f,    0.5f,0.9f,0.2f,
-         0.5f, 0.5f, 0.5f,    0.9f,0.4f,0.3f,
-         0.5f, 0.5f, 0.5f,    0.9f,0.4f,0.3f,
-        -0.5f, 0.5f, 0.5f,    0.2f,0.7f,0.7f,
-        -0.5f, 0.5f,-0.5f,    0.3f,0.3f,1.0f
+        -0.5f,-0.5f,-0.5f,  1,0,0,
+         0.5f,-0.5f,-0.5f,  0,1,0,
+         0.5f,-0.5f,0.5f,   0,0,1,
+         0.5f,-0.5f,0.5f,   0,0,1,
+        -0.5f,-0.5f,0.5f,   1,1,0,
+        -0.5f,-0.5f,-0.5f,  1,0,0,
+
+        -0.5f,0.5f,-0.5f,   1,0,1,
+         0.5f,0.5f,-0.5f,   0,1,1,
+         0.5f,0.5f,0.5f,    1,1,1,
+         0.5f,0.5f,0.5f,    1,1,1,
+        -0.5f,0.5f,0.5f,    0.5,0.5,0.5,
+        -0.5f,0.5f,-0.5f,   1,0,1
     };
-   
-    unsigned int indices[] = {
-    0, 1, 3,  // first triangle
-    1, 2, 3   // second triangle
-    };
-    unsigned int VBO, VAO;
+
+
+
+    // ================= VAO VBO =================
+
+    unsigned int VAO, VBO;
+
     glGenVertexArrays(1, &VAO);
     glGenBuffers(1, &VBO);
 
-    // Bind VAO
     glBindVertexArray(VAO);
 
-    // Bind VBO and send vertex data
     glBindBuffer(GL_ARRAY_BUFFER, VBO);
     glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
 
-    // Configure vertex attribute pointers
-// Position
+
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
     glEnableVertexAttribArray(0);
 
-    // Color
+
     glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float)));
     glEnableVertexAttribArray(1);
-   
 
-    // Unbind
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
-    glBindVertexArray(0);
-    unsigned int EBO;
-    glGenBuffers(1, &EBO);
 
-    glBindVertexArray(VAO);
 
-    glBindBuffer(GL_ARRAY_BUFFER, VBO);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+    // ================= SHADER =================
 
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
-    // Compile shaders
     unsigned int vertexShader = glCreateShader(GL_VERTEX_SHADER);
+
     glShaderSource(vertexShader, 1, &vertexShaderSource, NULL);
     glCompileShader(vertexShader);
 
+
     unsigned int fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
+
     glShaderSource(fragmentShader, 1, &fragmentShaderSource, NULL);
     glCompileShader(fragmentShader);
 
+
     unsigned int shaderProgram = glCreateProgram();
+
     glAttachShader(shaderProgram, vertexShader);
     glAttachShader(shaderProgram, fragmentShader);
+
     glLinkProgram(shaderProgram);
+
 
     glDeleteShader(vertexShader);
     glDeleteShader(fragmentShader);
 
-    // Render loop
-    while (!glfwWindowShouldClose(window)) {
-        // for rotating 
-        glfwSwapBuffers(window);
+
+
+    // ================= LOOP =================
+
+    while (!glfwWindowShouldClose(window))
+    {
+
+        float currentFrame = glfwGetTime();
+
+        deltaTime = currentFrame - lastFrame;
+        lastFrame = currentFrame;
+
+        float cameraSpeed = 2.5f * deltaTime;
+
+
         glfwPollEvents();
-        glm::mat4 model = glm::mat4(1.0f);
-        glm::mat4 view = glm::lookAt(cameraPos, cameraPos + cameraFront, cameraUp);
-        view = glm::translate(view, glm::vec3(0.0f, 0.0f, -3.0f));
-        model = glm::rotate(model,
-            (float)glfwGetTime(),
-            glm::vec3(0.0f, 0.0f, 1.0f));
-        glm::mat4 projection = glm::perspective(
-            glm::radians(45.0f),   // field of view
-            800.0f / 600.0f,       // aspect ratio
-            0.1f,                  // near plane
-            100.0f                 // far plane
-        );
-        model = glm::rotate(model, (float)glfwGetTime(), glm::vec3(0.5f, 1.0f, 0.0f));
-        glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 
-        glUseProgram(shaderProgram);
-        unsigned int modelLoc = glGetUniformLocation(shaderProgram, "model");
-        glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
-        glBindVertexArray(VAO);
-       // glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0); for EBO
-        glDrawArrays(GL_TRIANGLES, 0, 36);
-        unsigned int viewLoc = glGetUniformLocation(shaderProgram, "view");
-        glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(view));
+        // Keyboard movement
 
-        unsigned int projLoc = glGetUniformLocation(shaderProgram, "projection");
-        glUniformMatrix4fv(projLoc, 1, GL_FALSE, glm::value_ptr(projection));
         if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
             cameraPos += cameraSpeed * cameraFront;
 
@@ -256,14 +275,59 @@ int main() {
 
         if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
             cameraPos += glm::normalize(glm::cross(cameraFront, cameraUp)) * cameraSpeed;
-       
+
+
+
+        glClearColor(0.1f, 0.1f, 0.1f, 1);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+
+
+        glm::mat4 model = glm::mat4(1);
+
+        model = glm::rotate(model, (float)glfwGetTime(), glm::vec3(0.5f, 1.0f, 0.0f));
+
+
+        glm::mat4 view =
+            glm::lookAt(cameraPos, cameraPos + cameraFront, cameraUp);
+
+
+        glm::mat4 projection =
+            glm::perspective(glm::radians(45.0f),
+                800.0f / 600.0f,
+                0.1f,
+                100.0f);
+
+
+
+        glUseProgram(shaderProgram);
+
+
+        glUniformMatrix4fv(glGetUniformLocation(shaderProgram, "model"),
+            1, GL_FALSE, glm::value_ptr(model));
+
+        glUniformMatrix4fv(glGetUniformLocation(shaderProgram, "view"),
+            1, GL_FALSE, glm::value_ptr(view));
+
+        glUniformMatrix4fv(glGetUniformLocation(shaderProgram, "projection"),
+            1, GL_FALSE, glm::value_ptr(projection));
+
+
+        glBindVertexArray(VAO);
+
+        glDrawArrays(GL_TRIANGLES, 0, 36);
+
+
+        glfwSwapBuffers(window);
+
     }
 
-    // Cleanup
+
+
     glDeleteVertexArrays(1, &VAO);
     glDeleteBuffers(1, &VBO);
-    glDeleteProgram(shaderProgram);
 
     glfwTerminate();
+
     return 0;
 }

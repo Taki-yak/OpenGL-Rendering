@@ -1,7 +1,7 @@
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 #include <iostream>
-
+#include "stb_image.h"
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
@@ -73,9 +73,9 @@ const char* vertexShaderSource = R"(
 #version 330 core
 
 layout (location = 0) in vec3 aPos;
-layout (location = 1) in vec3 aColor;
+layout (location = 1) in vec2 aTexCoord;
 
-out vec3 vertexColor;
+out vec2 TexCoord;
 
 uniform mat4 model;
 uniform mat4 view;
@@ -84,20 +84,22 @@ uniform mat4 projection;
 void main()
 {
     gl_Position = projection * view * model * vec4(aPos, 1.0);
-    vertexColor = aColor;
+    TexCoord = aTexCoord;
 }
 )";
-
 
 const char* fragmentShaderSource = R"(
 #version 330 core
 
-in vec3 vertexColor;
 out vec4 FragColor;
+
+in vec2 TexCoord;
+
+uniform sampler2D texture1;
 
 void main()
 {
-    FragColor = vec4(vertexColor, 1.0);
+    FragColor = texture(texture1, TexCoord);
 }
 )";
 
@@ -148,51 +150,49 @@ int main()
 
     // ================= CUBE DATA =================
 
-    float vertices[] =
-    {
-        // positions          // colors
+    float vertices[] = {
+        // Positions          // Texture Coords
+        -0.5f, -0.5f, -0.5f,  0.0f, 0.0f,
+         0.5f, -0.5f, -0.5f,  1.0f, 0.0f,
+         0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+         0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+        -0.5f,  0.5f, -0.5f,  0.0f, 1.0f,
+        -0.5f, -0.5f, -0.5f,  0.0f, 0.0f,
 
-        -0.5f,-0.5f,-0.5f,  1,0,0,
-         0.5f,-0.5f,-0.5f,  0,1,0,
-         0.5f, 0.5f,-0.5f,  0,0,1,
-         0.5f, 0.5f,-0.5f,  0,0,1,
-        -0.5f, 0.5f,-0.5f,  1,1,0,
-        -0.5f,-0.5f,-0.5f,  1,0,0,
+        -0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+         0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
+         0.5f,  0.5f,  0.5f,  1.0f, 1.0f,
+         0.5f,  0.5f,  0.5f,  1.0f, 1.0f,
+        -0.5f,  0.5f,  0.5f,  0.0f, 1.0f,
+        -0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
 
-        -0.5f,-0.5f,0.5f,   1,0,1,
-         0.5f,-0.5f,0.5f,   0,1,1,
-         0.5f,0.5f,0.5f,    1,1,1,
-         0.5f,0.5f,0.5f,    1,1,1,
-        -0.5f,0.5f,0.5f,    0.5,0.5,0.5,
-        -0.5f,-0.5f,0.5f,   1,0,1,
+        -0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+        -0.5f,  0.5f, -0.5f,  0.0f, 1.0f,
+        -0.5f, -0.5f, -0.5f,  0.0f, 0.0f,
+        -0.5f, -0.5f, -0.5f,  0.0f, 0.0f,
+        -0.5f, -0.5f,  0.5f,  1.0f, 1.0f,
+        -0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
 
-        -0.5f,0.5f,0.5f,    1,0,0,
-        -0.5f,0.5f,-0.5f,   0,1,0,
-        -0.5f,-0.5f,-0.5f,  0,0,1,
-        -0.5f,-0.5f,-0.5f,  0,0,1,
-        -0.5f,-0.5f,0.5f,   1,1,0,
-        -0.5f,0.5f,0.5f,    1,0,0,
+         0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+         0.5f,  0.5f, -0.5f,  0.0f, 1.0f,
+         0.5f, -0.5f, -0.5f,  1.0f, 1.0f,
+         0.5f, -0.5f, -0.5f,  1.0f, 1.0f,
+         0.5f, -0.5f,  0.5f,  0.0f, 1.0f,
+         0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
 
-         0.5f,0.5f,0.5f,    1,0,1,
-         0.5f,0.5f,-0.5f,   0,1,1,
-         0.5f,-0.5f,-0.5f,  1,1,1,
-         0.5f,-0.5f,-0.5f,  1,1,1,
-         0.5f,-0.5f,0.5f,   0.5,0.5,0.5,
-         0.5f,0.5f,0.5f,    1,0,1,
+        -0.5f, -0.5f, -0.5f,  0.0f, 0.0f,
+         0.5f, -0.5f, -0.5f,  1.0f, 0.0f,
+         0.5f, -0.5f,  0.5f,  1.0f, 1.0f,
+         0.5f, -0.5f,  0.5f,  1.0f, 1.0f,
+        -0.5f, -0.5f,  0.5f,  0.0f, 1.0f,
+        -0.5f, -0.5f, -0.5f,  0.0f, 0.0f,
 
-        -0.5f,-0.5f,-0.5f,  1,0,0,
-         0.5f,-0.5f,-0.5f,  0,1,0,
-         0.5f,-0.5f,0.5f,   0,0,1,
-         0.5f,-0.5f,0.5f,   0,0,1,
-        -0.5f,-0.5f,0.5f,   1,1,0,
-        -0.5f,-0.5f,-0.5f,  1,0,0,
-
-        -0.5f,0.5f,-0.5f,   1,0,1,
-         0.5f,0.5f,-0.5f,   0,1,1,
-         0.5f,0.5f,0.5f,    1,1,1,
-         0.5f,0.5f,0.5f,    1,1,1,
-        -0.5f,0.5f,0.5f,    0.5,0.5,0.5,
-        -0.5f,0.5f,-0.5f,   1,0,1
+        -0.5f,  0.5f, -0.5f,  0.0f, 0.0f,
+         0.5f,  0.5f, -0.5f,  1.0f, 0.0f,
+         0.5f,  0.5f,  0.5f,  1.0f, 1.0f,
+         0.5f,  0.5f,  0.5f,  1.0f, 1.0f,
+        -0.5f,  0.5f,  0.5f,  0.0f, 1.0f,
+        -0.5f,  0.5f, -0.5f,  0.0f, 0.0f,
     };
 
 
@@ -209,8 +209,11 @@ int main()
     glBindBuffer(GL_ARRAY_BUFFER, VBO);
     glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
 
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
+    glEnableVertexAttribArray(0);
 
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
+    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
+    glEnableVertexAttribArray(1);
     glEnableVertexAttribArray(0);
 
 
@@ -245,12 +248,51 @@ int main()
     glDeleteShader(fragmentShader);
 
 
+    unsigned int texture;
 
-    // ================= LOOP =================
+    glGenTextures(1, &texture);
+    glBindTexture(GL_TEXTURE_2D, texture);
+
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+    int width, height, nrChannels;
+
+    unsigned char* data = stbi_load("D:\\taki\\POLAND\\POLAND\\ThesisRenderer\\ThesisRenderer\\container.jpg", &width, &height, &nrChannels, 0);
+    if (data)
+    {
+        std::cout << "Texture loaded successfully\n";
+    }
+    else
+    {
+        std::cout << "Failed to load texture\n";
+    }
+    if (data)
+    {
+        glTexImage2D(
+            GL_TEXTURE_2D,
+            0,
+            GL_RGB,
+            width,
+            height,
+            0,
+            GL_RGB,
+            GL_UNSIGNED_BYTE,
+            data
+        );
+
+        glGenerateMipmap(GL_TEXTURE_2D);
+    }
+
+    stbi_image_free(data);
+    // ================= render  LOOP =================
 
     while (!glfwWindowShouldClose(window))
     {
-
+        glBindTexture(GL_TEXTURE_2D, texture);
         float currentFrame = glfwGetTime();
 
         deltaTime = currentFrame - lastFrame;

@@ -63,12 +63,15 @@ void mouse_callback(GLFWwindow* window, double xpos, double ypos)
 
 
 // ================= SHADERS =================
-
 const char* vertexShaderSource = R"(
 #version 330 core
-layout (location = 0) in vec3 aPos;
-layout (location = 1) in vec2 aTexCoord;
 
+layout (location = 0) in vec3 aPos;
+layout (location = 1) in vec3 aNormal;
+layout (location = 2) in vec2 aTexCoord;
+
+out vec3 FragPos;
+out vec3 Normal;
 out vec2 TexCoord;
 
 uniform mat4 model;
@@ -77,22 +80,46 @@ uniform mat4 projection;
 
 void main()
 {
-    gl_Position = projection * view * model * vec4(aPos, 1.0);
+    FragPos = vec3(model * vec4(aPos, 1.0));
+    Normal = mat3(transpose(inverse(model))) * aNormal;
     TexCoord = aTexCoord;
-}
-)";
 
-const char* fragmentShaderSource = R"(
+    gl_Position = projection * view * vec4(FragPos, 1.0);
+}
+)"; const char* fragmentShaderSource = R"(
 #version 330 core
+
 out vec4 FragColor;
 
-in vec2 TexCoord;
+in vec3 FragPos;
+in vec3 Normal;
 
-uniform sampler2D texture1;
+uniform vec3 lightPos;
+uniform vec3 viewPos;
+uniform vec3 lightColor;
+uniform vec3 objectColor;
 
 void main()
 {
-    FragColor = texture(texture1, TexCoord);
+    // Ambient
+    float ambientStrength = 0.2;
+    vec3 ambient = ambientStrength * lightColor;
+
+    // Diffuse
+    vec3 norm = normalize(Normal);
+    vec3 lightDir = normalize(lightPos - FragPos);
+    float diff = max(dot(norm, lightDir), 0.0);
+    vec3 diffuse = diff * lightColor;
+
+    // Specular
+    float specularStrength = 0.5;
+    vec3 viewDir = normalize(viewPos - FragPos);
+    vec3 reflectDir = reflect(-lightDir, norm);
+    float spec = pow(max(dot(viewDir, reflectDir), 0.0), 32);
+    vec3 specular = specularStrength * spec * lightColor;
+
+    vec3 result = (ambient + diffuse + specular) * objectColor;
+    FragColor = vec4(result, 1.0);
 }
 )";
 
@@ -134,56 +161,56 @@ int main()
     // ================= CUBE DATA =================
 
     float vertices[] = {
-        // positions          // texture coords
+        // positions          // normals           // texcoords
+
         // Front face
-        -0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
-         0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
-         0.5f,  0.5f,  0.5f,  1.0f, 1.0f,
-         0.5f,  0.5f,  0.5f,  1.0f, 1.0f,
-        -0.5f,  0.5f,  0.5f,  0.0f, 1.0f,
-        -0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+        -0.5f,-0.5f, 0.5f,    0.0f,0.0f,1.0f,     0.0f,0.0f,
+         0.5f,-0.5f, 0.5f,    0.0f,0.0f,1.0f,     1.0f,0.0f,
+         0.5f, 0.5f, 0.5f,    0.0f,0.0f,1.0f,     1.0f,1.0f,
+         0.5f, 0.5f, 0.5f,    0.0f,0.0f,1.0f,     1.0f,1.0f,
+        -0.5f, 0.5f, 0.5f,    0.0f,0.0f,1.0f,     0.0f,1.0f,
+        -0.5f,-0.5f, 0.5f,    0.0f,0.0f,1.0f,     0.0f,0.0f,
 
         // Back face
-        -0.5f, -0.5f, -0.5f,  1.0f, 0.0f,
-        -0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
-         0.5f,  0.5f, -0.5f,  0.0f, 1.0f,
-         0.5f,  0.5f, -0.5f,  0.0f, 1.0f,
-         0.5f, -0.5f, -0.5f,  0.0f, 0.0f,
-        -0.5f, -0.5f, -0.5f,  1.0f, 0.0f,
+        -0.5f,-0.5f,-0.5f,    0.0f,0.0f,-1.0f,    1.0f,0.0f,
+        -0.5f, 0.5f,-0.5f,    0.0f,0.0f,-1.0f,    1.0f,1.0f,
+         0.5f, 0.5f,-0.5f,    0.0f,0.0f,-1.0f,    0.0f,1.0f,
+         0.5f, 0.5f,-0.5f,    0.0f,0.0f,-1.0f,    0.0f,1.0f,
+         0.5f,-0.5f,-0.5f,    0.0f,0.0f,-1.0f,    0.0f,0.0f,
+        -0.5f,-0.5f,-0.5f,    0.0f,0.0f,-1.0f,    1.0f,0.0f,
 
         // Left face
-        -0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
-        -0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
-        -0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
-        -0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
-        -0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
-        -0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+        -0.5f, 0.5f, 0.5f,   -1.0f,0.0f,0.0f,     1.0f,0.0f,
+        -0.5f, 0.5f,-0.5f,   -1.0f,0.0f,0.0f,     1.0f,1.0f,
+        -0.5f,-0.5f,-0.5f,   -1.0f,0.0f,0.0f,     0.0f,1.0f,
+        -0.5f,-0.5f,-0.5f,   -1.0f,0.0f,0.0f,     0.0f,1.0f,
+        -0.5f,-0.5f, 0.5f,   -1.0f,0.0f,0.0f,     0.0f,0.0f,
+        -0.5f, 0.5f, 0.5f,   -1.0f,0.0f,0.0f,     1.0f,0.0f,
 
         // Right face
-         0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
-         0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
-         0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
-         0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
-         0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
-         0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+         0.5f, 0.5f, 0.5f,    1.0f,0.0f,0.0f,     1.0f,0.0f,
+         0.5f,-0.5f,-0.5f,    1.0f,0.0f,0.0f,     0.0f,1.0f,
+         0.5f, 0.5f,-0.5f,    1.0f,0.0f,0.0f,     1.0f,1.0f,
+         0.5f,-0.5f,-0.5f,    1.0f,0.0f,0.0f,     0.0f,1.0f,
+         0.5f, 0.5f, 0.5f,    1.0f,0.0f,0.0f,     1.0f,0.0f,
+         0.5f,-0.5f, 0.5f,    1.0f,0.0f,0.0f,     0.0f,0.0f,
 
          // Bottom face
-         -0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
-          0.5f, -0.5f, -0.5f,  1.0f, 1.0f,
-          0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
-          0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
-         -0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
-         -0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+         -0.5f,-0.5f,-0.5f,    0.0f,-1.0f,0.0f,    0.0f,1.0f,
+          0.5f,-0.5f,-0.5f,    0.0f,-1.0f,0.0f,    1.0f,1.0f,
+          0.5f,-0.5f, 0.5f,    0.0f,-1.0f,0.0f,    1.0f,0.0f,
+          0.5f,-0.5f, 0.5f,    0.0f,-1.0f,0.0f,    1.0f,0.0f,
+         -0.5f,-0.5f, 0.5f,    0.0f,-1.0f,0.0f,    0.0f,0.0f,
+         -0.5f,-0.5f,-0.5f,    0.0f,-1.0f,0.0f,    0.0f,1.0f,
 
          // Top face
-         -0.5f,  0.5f, -0.5f,  0.0f, 1.0f,
-         -0.5f,  0.5f,  0.5f,  0.0f, 0.0f,
-          0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
-          0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
-          0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
-         -0.5f,  0.5f, -0.5f,  0.0f, 1.0f
+         -0.5f, 0.5f,-0.5f,    0.0f,1.0f,0.0f,     0.0f,1.0f,
+         -0.5f, 0.5f, 0.5f,    0.0f,1.0f,0.0f,     0.0f,0.0f,
+          0.5f, 0.5f, 0.5f,    0.0f,1.0f,0.0f,     1.0f,0.0f,
+          0.5f, 0.5f, 0.5f,    0.0f,1.0f,0.0f,     1.0f,0.0f,
+          0.5f, 0.5f,-0.5f,    0.0f,1.0f,0.0f,     1.0f,1.0f,
+         -0.5f, 0.5f,-0.5f,    0.0f,1.0f,0.0f,     0.0f,1.0f
     };
-
     unsigned int VAO, VBO;
     glGenVertexArrays(1, &VAO);
     glGenBuffers(1, &VBO);
@@ -192,11 +219,14 @@ int main()
     glBindBuffer(GL_ARRAY_BUFFER, VBO);
     glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
 
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);
     glEnableVertexAttribArray(0);
 
-    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(3 * sizeof(float)));
     glEnableVertexAttribArray(1);
+
+    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(6 * sizeof(float)));
+    glEnableVertexAttribArray(2);
 
     // ================= TEXTURE =================
 
@@ -226,8 +256,12 @@ int main()
     stbi_image_free(data);
 
     shader.use();
-    glUniform1i(glGetUniformLocation(shader.ID, "texture1"), 0);
 
+    glUniform1i(glGetUniformLocation(shader.ID, "texture1"), 0);
+    shader.setVec3("lightPos", glm::vec3(1.2f, 1.0f, 2.0f));
+    shader.setVec3("viewPos", cameraPos);
+    shader.setVec3("lightColor", glm::vec3(1.0f, 1.0f, 1.0f));
+    shader.setVec3("objectColor", glm::vec3(1.0f, 1.0f, 1.0f));
     // ================= RENDER LOOP =================
 
     while (!glfwWindowShouldClose(window))
@@ -262,16 +296,19 @@ int main()
             800.0f / 600.0f,
             0.1f,
             100.0f);
-
         shader.use();
+
         shader.setMat4("model", glm::value_ptr(model));
         shader.setMat4("view", glm::value_ptr(view));
         shader.setMat4("projection", glm::value_ptr(projection));
 
-        glBindVertexArray(VAO);
-        glBindTexture(GL_TEXTURE_2D, texture);
-        glDrawArrays(GL_TRIANGLES, 0, 36);
+        shader.setVec3("lightPos", glm::vec3(2.0f, 2.0f, 2.0f));
+        shader.setVec3("viewPos", cameraPos);
+        shader.setVec3("lightColor", glm::vec3(1.0f, 1.0f, 1.0f));
 
+        glBindVertexArray(VAO);
+        glDrawArrays(GL_TRIANGLES, 0, 36);
+    
         glfwSwapBuffers(window);
     }
 

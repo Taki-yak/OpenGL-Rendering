@@ -85,6 +85,7 @@ void main()
     TexCoord = aTexCoord;
 
     gl_Position = projection * view * vec4(FragPos, 1.0);
+    gl_Position = projection * view * model * vec4(aPos, 1.0);
 }
 )"; const char* fragmentShaderSource = R"(
 #version 330 core
@@ -115,14 +116,36 @@ void main()
     float specularStrength = 0.5;
     vec3 viewDir = normalize(viewPos - FragPos);
     vec3 reflectDir = reflect(-lightDir, norm);
-    float spec = pow(max(dot(viewDir, reflectDir), 0.0), 32);
+    float spec = pow(max(dot(viewDir, reflectDir), 0.0),32);
     vec3 specular = specularStrength * spec * lightColor;
 
     vec3 result = (ambient + diffuse + specular) * objectColor;
-    FragColor = vec4(result, 1.0);
+   FragColor = vec4(result, 1.0);
+}
+)";
+const char* lightVertexSource = R"(
+#version 330 core
+layout (location = 0) in vec3 aPos;
+
+uniform mat4 model;
+uniform mat4 view;
+uniform mat4 projection;
+
+void main()
+{
+    gl_Position = projection * view * model * vec4(aPos, 1.0);
 }
 )";
 
+const char* lightFragmentSource = R"(
+#version 330 core
+out vec4 FragColor;
+
+void main()
+{
+    FragColor = vec4(1.0); 
+}
+)";
 
 // ================= MAIN =================
 
@@ -256,12 +279,13 @@ int main()
     stbi_image_free(data);
 
     shader.use();
-
+    Shader lightShader(lightVertexSource, lightFragmentSource);
     glUniform1i(glGetUniformLocation(shader.ID, "texture1"), 0);
     shader.setVec3("lightPos", glm::vec3(1.2f, 1.0f, 2.0f));
     shader.setVec3("viewPos", cameraPos);
     shader.setVec3("lightColor", glm::vec3(1.0f, 1.0f, 1.0f));
     shader.setVec3("objectColor", glm::vec3(1.0f, 1.0f, 1.0f));
+  
     // ================= RENDER LOOP =================
 
     while (!glfwWindowShouldClose(window))
@@ -296,6 +320,7 @@ int main()
             800.0f / 600.0f,
             0.1f,
             100.0f);
+        // ===== DRAW MAIN CUBE =====
         shader.use();
 
         shader.setMat4("model", glm::value_ptr(model));
@@ -304,7 +329,28 @@ int main()
 
         shader.setVec3("lightPos", glm::vec3(2.0f, 2.0f, 2.0f));
         shader.setVec3("viewPos", cameraPos);
-        shader.setVec3("lightColor", glm::vec3(1.0f, 1.0f, 1.0f));
+        shader.setVec3("lightColor", glm::vec3(1.0f));
+        shader.setVec3("objectColor", glm::vec3(1.0f, 0.5f, 0.3f));
+
+        glBindVertexArray(VAO);
+        glDrawArrays(GL_TRIANGLES, 0, 36);
+
+
+        // ===== DRAW LIGHT CUBE =====
+        lightShader.use();
+
+        glm::mat4 lightModel = glm::mat4(1.0f);
+        lightModel = glm::translate(lightModel, glm::vec3(2.0f, 2.0f, 2.0f));
+        lightModel = glm::scale(lightModel, glm::vec3(0.2f));
+
+        lightShader.setMat4("model", glm::value_ptr(lightModel));
+        lightShader.setMat4("view", glm::value_ptr(view));
+        lightShader.setMat4("projection", glm::value_ptr(projection));
+
+        glDrawArrays(GL_TRIANGLES, 0, 36);
+
+        glBindVertexArray(VAO);
+        glDrawArrays(GL_TRIANGLES, 0, 36);
 
         glBindVertexArray(VAO);
         glDrawArrays(GL_TRIANGLES, 0, 36);

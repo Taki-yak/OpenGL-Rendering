@@ -64,6 +64,7 @@ void mouse_callback(GLFWwindow* window, double xpos, double ypos)
 
 // ================= SHADERS =================
 const char* vertexShaderSource = R"(
+
 #version 330 core
 
 layout (location = 0) in vec3 aPos;
@@ -84,24 +85,30 @@ void main()
     Normal = mat3(transpose(inverse(model))) * aNormal;
     TexCoord = aTexCoord;
 
-    gl_Position = projection * view * vec4(FragPos, 1.0);
     gl_Position = projection * view * model * vec4(aPos, 1.0);
 }
-)"; const char* fragmentShaderSource = R"(
+
+)";
+const char* fragmentShaderSource = R"(
+
 #version 330 core
 
 out vec4 FragColor;
 
 in vec3 FragPos;
 in vec3 Normal;
+in vec2 TexCoord;
 
 uniform vec3 lightPos;
 uniform vec3 viewPos;
 uniform vec3 lightColor;
-uniform vec3 objectColor;
+
+uniform sampler2D texture1;
 
 void main()
 {
+    vec3 objectColor = texture(texture1, TexCoord).rgb;
+
     // Ambient
     float ambientStrength = 0.2;
     vec3 ambient = ambientStrength * lightColor;
@@ -116,12 +123,15 @@ void main()
     float specularStrength = 0.5;
     vec3 viewDir = normalize(viewPos - FragPos);
     vec3 reflectDir = reflect(-lightDir, norm);
-    float spec = pow(max(dot(viewDir, reflectDir), 0.0),32);
+
+    float spec = pow(max(dot(viewDir, reflectDir), 0.0), 32);
     vec3 specular = specularStrength * spec * lightColor;
 
     vec3 result = (ambient + diffuse + specular) * objectColor;
-   FragColor = vec4(result, 1.0);
+
+    FragColor = vec4(result, 1.0);
 }
+
 )";
 const char* lightVertexSource = R"(
 #version 330 core
@@ -186,53 +196,47 @@ int main()
     float vertices[] = {
         // positions          // normals           // texcoords
 
-        // Front face
-        -0.5f,-0.5f, 0.5f,    0.0f,0.0f,1.0f,     0.0f,0.0f,
-         0.5f,-0.5f, 0.5f,    0.0f,0.0f,1.0f,     1.0f,0.0f,
-         0.5f, 0.5f, 0.5f,    0.0f,0.0f,1.0f,     1.0f,1.0f,
-         0.5f, 0.5f, 0.5f,    0.0f,0.0f,1.0f,     1.0f,1.0f,
-        -0.5f, 0.5f, 0.5f,    0.0f,0.0f,1.0f,     0.0f,1.0f,
-        -0.5f,-0.5f, 0.5f,    0.0f,0.0f,1.0f,     0.0f,0.0f,
+        -0.5f,-0.5f,-0.5f, 0,0,-1, 0,0,
+         0.5f,-0.5f,-0.5f, 0,0,-1, 1,0,
+         0.5f, 0.5f,-0.5f, 0,0,-1, 1,1,
+         0.5f, 0.5f,-0.5f, 0,0,-1, 1,1,
+        -0.5f, 0.5f,-0.5f, 0,0,-1, 0,1,
+        -0.5f,-0.5f,-0.5f, 0,0,-1, 0,0,
 
-        // Back face
-        -0.5f,-0.5f,-0.5f,    0.0f,0.0f,-1.0f,    1.0f,0.0f,
-        -0.5f, 0.5f,-0.5f,    0.0f,0.0f,-1.0f,    1.0f,1.0f,
-         0.5f, 0.5f,-0.5f,    0.0f,0.0f,-1.0f,    0.0f,1.0f,
-         0.5f, 0.5f,-0.5f,    0.0f,0.0f,-1.0f,    0.0f,1.0f,
-         0.5f,-0.5f,-0.5f,    0.0f,0.0f,-1.0f,    0.0f,0.0f,
-        -0.5f,-0.5f,-0.5f,    0.0f,0.0f,-1.0f,    1.0f,0.0f,
+        -0.5f,-0.5f, 0.5f, 0,0,1, 0,0,
+         0.5f,-0.5f, 0.5f, 0,0,1, 1,0,
+         0.5f, 0.5f, 0.5f, 0,0,1, 1,1,
+         0.5f, 0.5f, 0.5f, 0,0,1, 1,1,
+        -0.5f, 0.5f, 0.5f, 0,0,1, 0,1,
+        -0.5f,-0.5f, 0.5f, 0,0,1, 0,0,
 
-        // Left face
-        -0.5f, 0.5f, 0.5f,   -1.0f,0.0f,0.0f,     1.0f,0.0f,
-        -0.5f, 0.5f,-0.5f,   -1.0f,0.0f,0.0f,     1.0f,1.0f,
-        -0.5f,-0.5f,-0.5f,   -1.0f,0.0f,0.0f,     0.0f,1.0f,
-        -0.5f,-0.5f,-0.5f,   -1.0f,0.0f,0.0f,     0.0f,1.0f,
-        -0.5f,-0.5f, 0.5f,   -1.0f,0.0f,0.0f,     0.0f,0.0f,
-        -0.5f, 0.5f, 0.5f,   -1.0f,0.0f,0.0f,     1.0f,0.0f,
+        -0.5f, 0.5f, 0.5f, -1,0,0, 1,0,
+        -0.5f, 0.5f,-0.5f, -1,0,0, 1,1,
+        -0.5f,-0.5f,-0.5f, -1,0,0, 0,1,
+        -0.5f,-0.5f,-0.5f, -1,0,0, 0,1,
+        -0.5f,-0.5f, 0.5f, -1,0,0, 0,0,
+        -0.5f, 0.5f, 0.5f, -1,0,0, 1,0,
 
-        // Right face
-         0.5f, 0.5f, 0.5f,    1.0f,0.0f,0.0f,     1.0f,0.0f,
-         0.5f,-0.5f,-0.5f,    1.0f,0.0f,0.0f,     0.0f,1.0f,
-         0.5f, 0.5f,-0.5f,    1.0f,0.0f,0.0f,     1.0f,1.0f,
-         0.5f,-0.5f,-0.5f,    1.0f,0.0f,0.0f,     0.0f,1.0f,
-         0.5f, 0.5f, 0.5f,    1.0f,0.0f,0.0f,     1.0f,0.0f,
-         0.5f,-0.5f, 0.5f,    1.0f,0.0f,0.0f,     0.0f,0.0f,
+         0.5f, 0.5f, 0.5f, 1,0,0, 1,0,
+         0.5f, 0.5f,-0.5f, 1,0,0, 1,1,
+         0.5f,-0.5f,-0.5f, 1,0,0, 0,1,
+         0.5f,-0.5f,-0.5f, 1,0,0, 0,1,
+         0.5f,-0.5f, 0.5f, 1,0,0, 0,0,
+         0.5f, 0.5f, 0.5f, 1,0,0, 1,0,
 
-         // Bottom face
-         -0.5f,-0.5f,-0.5f,    0.0f,-1.0f,0.0f,    0.0f,1.0f,
-          0.5f,-0.5f,-0.5f,    0.0f,-1.0f,0.0f,    1.0f,1.0f,
-          0.5f,-0.5f, 0.5f,    0.0f,-1.0f,0.0f,    1.0f,0.0f,
-          0.5f,-0.5f, 0.5f,    0.0f,-1.0f,0.0f,    1.0f,0.0f,
-         -0.5f,-0.5f, 0.5f,    0.0f,-1.0f,0.0f,    0.0f,0.0f,
-         -0.5f,-0.5f,-0.5f,    0.0f,-1.0f,0.0f,    0.0f,1.0f,
+        -0.5f,-0.5f,-0.5f, 0,-1,0, 0,1,
+         0.5f,-0.5f,-0.5f, 0,-1,0, 1,1,
+         0.5f,-0.5f, 0.5f, 0,-1,0, 1,0,
+         0.5f,-0.5f, 0.5f, 0,-1,0, 1,0,
+        -0.5f,-0.5f, 0.5f, 0,-1,0, 0,0,
+        -0.5f,-0.5f,-0.5f, 0,-1,0, 0,1,
 
-         // Top face
-         -0.5f, 0.5f,-0.5f,    0.0f,1.0f,0.0f,     0.0f,1.0f,
-         -0.5f, 0.5f, 0.5f,    0.0f,1.0f,0.0f,     0.0f,0.0f,
-          0.5f, 0.5f, 0.5f,    0.0f,1.0f,0.0f,     1.0f,0.0f,
-          0.5f, 0.5f, 0.5f,    0.0f,1.0f,0.0f,     1.0f,0.0f,
-          0.5f, 0.5f,-0.5f,    0.0f,1.0f,0.0f,     1.0f,1.0f,
-         -0.5f, 0.5f,-0.5f,    0.0f,1.0f,0.0f,     0.0f,1.0f
+        -0.5f, 0.5f,-0.5f, 0,1,0, 0,1,
+         0.5f, 0.5f,-0.5f, 0,1,0, 1,1,
+         0.5f, 0.5f, 0.5f, 0,1,0, 1,0,
+         0.5f, 0.5f, 0.5f, 0,1,0, 1,0,
+        -0.5f, 0.5f, 0.5f, 0,1,0, 0,0,
+        -0.5f, 0.5f,-0.5f, 0,1,0, 0,1
     };
     unsigned int VAO, VBO;
     glGenVertexArrays(1, &VAO);
@@ -320,9 +324,12 @@ int main()
             800.0f / 600.0f,
             0.1f,
             100.0f);
+        
+       
         // ===== DRAW MAIN CUBE =====
         shader.use();
-
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, texture);
         shader.setMat4("model", glm::value_ptr(model));
         shader.setMat4("view", glm::value_ptr(view));
         shader.setMat4("projection", glm::value_ptr(projection));
@@ -330,7 +337,7 @@ int main()
         shader.setVec3("lightPos", glm::vec3(2.0f, 2.0f, 2.0f));
         shader.setVec3("viewPos", cameraPos);
         shader.setVec3("lightColor", glm::vec3(1.0f));
-        shader.setVec3("objectColor", glm::vec3(1.0f, 0.5f, 0.3f));
+       // shader.setVec3("objectColor", glm::vec3(1.0f, 0.5f, 0.3f));
 
         glBindVertexArray(VAO);
         glDrawArrays(GL_TRIANGLES, 0, 36);

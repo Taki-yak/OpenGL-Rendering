@@ -97,42 +97,43 @@ out vec4 FragColor;
 
 in vec3 FragPos;
 in vec3 Normal;
-in vec2 TexCoord;
 
 uniform vec3 lightPos;
 uniform vec3 viewPos;
 uniform vec3 lightColor;
 
-uniform sampler2D texture1;
+uniform vec3 materialAmbient;
+uniform vec3 materialDiffuse;
+uniform vec3 materialSpecular;
+uniform float materialShininess;
 
 void main()
 {
-    vec3 objectColor = texture(texture1, TexCoord).rgb;
-
     // Ambient
-    float ambientStrength = 0.2;
-    vec3 ambient = ambientStrength * lightColor;
+    vec3 ambient = 0.2 * materialAmbient;
 
     // Diffuse
     vec3 norm = normalize(Normal);
     vec3 lightDir = normalize(lightPos - FragPos);
+
     float diff = max(dot(norm, lightDir), 0.0);
-    vec3 diffuse = diff * lightColor;
+
+    vec3 diffuse = diff * materialDiffuse;
 
     // Specular
-    float specularStrength = 0.5;
     vec3 viewDir = normalize(viewPos - FragPos);
+
     vec3 reflectDir = reflect(-lightDir, norm);
 
-    float spec = pow(max(dot(viewDir, reflectDir), 0.0), 32);
-    vec3 specular = specularStrength * spec * lightColor;
+    float spec = pow(max(dot(viewDir, reflectDir), 0.0), materialShininess);
 
-    vec3 result = (ambient + diffuse + specular) * objectColor;
+    vec3 specular = materialSpecular * spec;
+
+    vec3 result = (ambient + diffuse + specular) * lightColor;
 
     FragColor = vec4(result, 1.0);
 }
-
-)";
+)"; 
 const char* lightVertexSource = R"(
 #version 330 core
 layout (location = 0) in vec3 aPos;
@@ -341,8 +342,10 @@ int main()
        
         // ===== DRAW MAIN CUBE =====
         shader.use();
+
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, texture);
+
         shader.setMat4("model", glm::value_ptr(model));
         shader.setMat4("view", glm::value_ptr(view));
         shader.setMat4("projection", glm::value_ptr(projection));
@@ -350,6 +353,13 @@ int main()
         shader.setVec3("lightPos", glm::vec3(2.0f, 2.0f, 2.0f));
         shader.setVec3("viewPos", cameraPos);
         shader.setVec3("lightColor", glm::vec3(1.0f));
+        shader.setVec3("materialAmbient", glm::vec3(1.0f, 0.5f, 0.31f));
+        shader.setVec3("materialDiffuse", glm::vec3(1.0f, 0.5f, 0.31f));
+        shader.setVec3("materialSpecular", glm::vec3(0.5f, 0.5f, 0.5f));
+
+        shader.setMat4("model", glm::value_ptr(model));
+
+        glUniform1f(glGetUniformLocation(shader.ID, "materialShininess"), 32.0f);
        // shader.setVec3("objectColor", glm::vec3(1.0f, 0.5f, 0.3f));
 
         glBindVertexArray(VAO);

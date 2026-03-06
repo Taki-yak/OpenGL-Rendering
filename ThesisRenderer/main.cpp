@@ -6,6 +6,7 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 #include "Shader.h"
+#include "Mesh.h"
 
 // ================= CAMERA VARIABLES =================
 
@@ -239,11 +240,10 @@ int main()
         -0.5f, 0.5f, 0.5f, 0,1,0, 0,0,
         -0.5f, 0.5f,-0.5f, 0,1,0, 0,1
     };
-    unsigned int VAO, VBO;
-    glGenVertexArrays(1, &VAO);
-    glGenBuffers(1, &VBO);
+    
 
-    glBindVertexArray(VAO);
+    Mesh cube(vertices, sizeof(vertices));
+    /*glBindVertexArray(VAO);
     glBindBuffer(GL_ARRAY_BUFFER, VBO);
     glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
 
@@ -254,7 +254,7 @@ int main()
     glEnableVertexAttribArray(1);
 
     glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(6 * sizeof(float)));
-    glEnableVertexAttribArray(2);
+    glEnableVertexAttribArray(2);*/
 
     // ================= TEXTURE =================
 
@@ -362,7 +362,6 @@ int main()
         glUniform1f(glGetUniformLocation(shader.ID, "materialShininess"), 32.0f);
        // shader.setVec3("objectColor", glm::vec3(1.0f, 0.5f, 0.3f));
 
-        glBindVertexArray(VAO);
         for (unsigned int i = 0; i < 10; i++)
         {
             glm::mat4 model = glm::mat4(1.0f);
@@ -377,7 +376,7 @@ int main()
 
             shader.setMat4("model", glm::value_ptr(model));
 
-            glDrawArrays(GL_TRIANGLES, 0, 36);
+            cube.Draw();
         }
 
 
@@ -392,19 +391,11 @@ int main()
         lightShader.setMat4("view", glm::value_ptr(view));
         lightShader.setMat4("projection", glm::value_ptr(projection));
 
-        glDrawArrays(GL_TRIANGLES, 0, 36);
-
-        glBindVertexArray(VAO);
-        glDrawArrays(GL_TRIANGLES, 0, 36);
-
-        glBindVertexArray(VAO);
-        glDrawArrays(GL_TRIANGLES, 0, 36);
+        cube.Draw();
     
         glfwSwapBuffers(window);
     }
 
-    glDeleteVertexArrays(1, &VAO);
-    glDeleteBuffers(1, &VBO);
     glfwTerminate();
 
     return 0;

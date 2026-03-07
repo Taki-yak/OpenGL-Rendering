@@ -338,7 +338,9 @@ int main()
             0.1f,
             100.0f);
         
-       
+        SceneObject cubeObj(&cube, &shader);
+        cubeObj.position = glm::vec3(0.0f, 0.0f, 0.0f);
+        cubeObj.position = glm::vec3(0.0f, 0.0f, 0.0f);
         // ===== DRAW MAIN CUBE =====
         
 

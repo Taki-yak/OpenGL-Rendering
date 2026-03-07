@@ -7,7 +7,7 @@
 #include <glm/gtc/type_ptr.hpp>
 #include "Shader.h"
 #include "Mesh.h"
-
+#include "Renderer.h"
 // ================= CAMERA VARIABLES =================
 
 glm::vec3 cameraPos = glm::vec3(0.0f, 0.0f, 3.0f);
@@ -192,7 +192,7 @@ int main()
     // ================= SHADER CLASS =================
 
     Shader shader(vertexShaderSource, fragmentShaderSource);
-
+    Renderer renderer;
     // ================= CUBE DATA =================
 
     float vertices[] = {
@@ -283,7 +283,6 @@ int main()
 
     stbi_image_free(data);
 
-    shader.use();
     Shader lightShader(lightVertexSource, lightFragmentSource);
     glUniform1i(glGetUniformLocation(shader.ID, "texture1"), 0);
     shader.setVec3("lightPos", glm::vec3(1.2f, 1.0f, 2.0f));
@@ -341,7 +340,7 @@ int main()
         
        
         // ===== DRAW MAIN CUBE =====
-        shader.use();
+        
 
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, texture);
@@ -361,7 +360,6 @@ int main()
 
         glUniform1f(glGetUniformLocation(shader.ID, "materialShininess"), 32.0f);
        // shader.setVec3("objectColor", glm::vec3(1.0f, 0.5f, 0.3f));
-
         for (unsigned int i = 0; i < 10; i++)
         {
             glm::mat4 model = glm::mat4(1.0f);
@@ -374,24 +372,24 @@ int main()
                 glm::radians(angle) + (float)glfwGetTime(),
                 glm::vec3(1.0f, 0.3f, 0.5f));
 
-            shader.setMat4("model", glm::value_ptr(model));
-
-            cube.Draw();
+            renderer.DrawMesh(cube, shader, model);
         }
 
 
         // ===== DRAW LIGHT CUBE =====
         lightShader.use();
-
         glm::mat4 lightModel = glm::mat4(1.0f);
         lightModel = glm::translate(lightModel, glm::vec3(2.0f, 2.0f, 2.0f));
         lightModel = glm::scale(lightModel, glm::vec3(0.2f));
+
+        renderer.DrawMesh(cube, lightShader, lightModel);
 
         lightShader.setMat4("model", glm::value_ptr(lightModel));
         lightShader.setMat4("view", glm::value_ptr(view));
         lightShader.setMat4("projection", glm::value_ptr(projection));
 
-        cube.Draw();
+
+        renderer.DrawMesh(cube, shader, model);
     
         glfwSwapBuffers(window);
     }

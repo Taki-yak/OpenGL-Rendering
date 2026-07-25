@@ -161,7 +161,75 @@ void EditorUI::DrawHierarchy(
         ),
         ImGuiCond_Once
     );
+
     ImGui::Begin("Hierarchy");
+    int visibleHierarchyCount =
+        0;
+
+    int hiddenGeneratedCount =
+        0;
+
+    int treeCount =
+        0;
+
+    int rockCount =
+        0;
+
+    int grassCount =
+        0;
+
+    int flowerCount =
+        0;
+
+    int propCount =
+        0;
+
+    for (SceneObject* obj : scene.objects)
+    {
+        if (obj == nullptr)
+            continue;
+
+        if (obj->assetType == AssetType::Tree)
+            treeCount++;
+
+        if (obj->assetType == AssetType::Rock)
+            rockCount++;
+
+        if (obj->assetType == AssetType::Grass)
+            grassCount++;
+
+        if (obj->assetType == AssetType::Flower)
+            flowerCount++;
+
+        if (obj->assetType == AssetType::Prop)
+            propCount++;
+
+        if (!obj->showInHierarchy)
+            hiddenGeneratedCount++;
+        else
+            visibleHierarchyCount++;
+    }
+
+    ImGui::Text(
+        "Visible: %d | Hidden: %d",
+        visibleHierarchyCount,
+        hiddenGeneratedCount
+    );
+
+    ImGui::Text(
+        "Trees: %d | Rocks: %d | Grass: %d | Flowers: %d",
+        treeCount,
+        rockCount,
+        grassCount,
+        flowerCount
+    );
+
+    ImGui::Text(
+        "Props: %d",
+        propCount
+    );
+
+    ImGui::Separator();
     static char searchBuffer[128] = "";
     static bool showGeneratedObjects =
         false;

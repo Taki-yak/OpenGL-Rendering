@@ -2540,6 +2540,29 @@ int main()
         &grass2Model,
         &wheatModel
     };
+    int grassClumpCounter =
+        1;
+
+    int flowerClumpCounter =
+        1;
+
+    int generatedTreeCounter =
+        1;
+
+    int generatedRockCounter =
+        1;
+
+    int generatedPlantCounter =
+        1;
+
+    int generatedLogCounter =
+        1;
+
+    int borderTreeCounter =
+        1;
+
+    int rockClusterCounter =
+        1;
     // ================= SIMPLE LOW-POLY GRASS FIELD =================
 
     for (int i = 0; i < 160; i++)
@@ -2569,7 +2592,7 @@ int main()
         SceneObject* grassObject =
             AddEnvironmentModel(
                 &grassClumpModel,
-                "Grass Clump",
+                "Grass Clump " + std::to_string(grassClumpCounter++),
                 glm::vec3(
                     x,
                     y,
@@ -2635,7 +2658,7 @@ int main()
         SceneObject* flowerObject =
             AddEnvironmentModel(
                 &flowerClumpModel,
-                "Flower Clump",
+                "Flower Clump " + std::to_string(flowerClumpCounter++),
                 glm::vec3(
                     x,
                     y,
@@ -2701,7 +2724,7 @@ int main()
         SceneObject* treeObject =
             AddEnvironmentModel(
                 chosenTree,
-                "Generated Tree",
+                "Generated Tree " + std::to_string(generatedTreeCounter++),
                 glm::vec3(
                     x,
                     GetTerrainHeight(x, z) + 0.05f,
@@ -2719,7 +2742,7 @@ int main()
             AssetType::Tree,
             SpawnSource::Procedural,
             false,
-            true
+            false
         );
     }
 
@@ -2752,7 +2775,7 @@ int main()
         SceneObject* rockObject =
             AddEnvironmentModel(
                 chosenRock,
-                "Generated Rock",
+                "Generated Rock " + std::to_string(generatedRockCounter++),
                 glm::vec3(
                     x,
                     GetTerrainHeight(x, z) + 0.05f,
@@ -2803,7 +2826,7 @@ int main()
         SceneObject* plantObject =
             AddEnvironmentModel(
                 chosenPlant,
-                "Generated Plant",
+                "Generated Plant " + std::to_string(generatedPlantCounter++),
                 glm::vec3(
                     x,
                     GetTerrainHeight(x, z) + 0.05f,
@@ -2851,17 +2874,27 @@ int main()
                 1.25f
             );
 
-        AddEnvironmentModel(
-            chosenObject,
-            "Generated Log/Stump",
-            glm::vec3(
-                x,
-                GetTerrainHeight(x, z) + 0.05f,
-                z
-            ),
-            glm::vec3(
-                scale
-            ),
+        SceneObject* logObject =
+            AddEnvironmentModel(
+                chosenObject,
+                "Generated Log/Stump " + std::to_string(generatedLogCounter++),
+                glm::vec3(
+                    x,
+                    GetTerrainHeight(x, z) + 0.05f,
+                    z
+                ),
+                glm::vec3(
+                    scale
+                ),
+                true
+            );
+
+        SetObjectMetadata(
+            logObject,
+            "generated_log_stump",
+            AssetType::Prop,
+            SpawnSource::Procedural,
+            false,
             true
         );
     }
@@ -2880,10 +2913,10 @@ int main()
                     1.1f,
                     1.7f
                 );
-
-            AddEnvironmentModel(
-                chosenTree,
-                "Border Tree",
+            SceneObject* borderTreeObject =
+                AddEnvironmentModel(
+                    chosenTree,
+                    "Border Tree " + std::to_string(borderTreeCounter++),
                 glm::vec3(
                     x,
                     GetTerrainHeight(x, z) + 0.05f,
@@ -2892,6 +2925,14 @@ int main()
                 glm::vec3(
                     scale
                 ),
+                false
+            );
+            SetObjectMetadata(
+                borderTreeObject,
+                "border_tree",
+                AssetType::Tree,
+                SpawnSource::Procedural,
+                false,
                 false
             );
         };
@@ -2954,17 +2995,27 @@ int main()
             float rockZ =
                 centerZ + RandomRange(-3.0f, 3.0f);
 
-            AddEnvironmentModel(
-                chosenRock,
-                "Rock Cluster",
-                glm::vec3(
-                    rockX,
-                    GetTerrainHeight(rockX, rockZ) + 0.05f,
-                    rockZ
-                ),
-                glm::vec3(
-                    RandomRange(0.6f, 1.2f)
-                ),
+            SceneObject* clusterRockObject =
+                AddEnvironmentModel(
+                    chosenRock,
+                    "Rock Cluster " + std::to_string(rockClusterCounter++),
+                    glm::vec3(
+                        rockX,
+                        GetTerrainHeight(rockX, rockZ) + 0.05f,
+                        rockZ
+                    ),
+                    glm::vec3(
+                        RandomRange(0.6f, 1.2f)
+                    ),
+                    true
+                );
+
+            SetObjectMetadata(
+                clusterRockObject,
+                "rock_cluster",
+                AssetType::Rock,
+                SpawnSource::Procedural,
+                false,
                 true
             );
         }

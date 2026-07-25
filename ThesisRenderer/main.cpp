@@ -953,29 +953,53 @@ if(isSelected)
 
 
 result *= 0.90;
-float fogDistance =
-    distance(viewPos, FragPos);
 
-float fogFactor =
+float fogDistance =
+    distance(
+        viewPos,
+        FragPos
+    );
+
+float fogStart =
+    65.0;
+
+float fogEnd =
+    190.0;
+
+float fogAmount =
     clamp(
-        (fogDistance - 120.0) / 180.0,
+        (fogDistance - fogStart) /
+        (fogEnd - fogStart),
         0.0,
         1.0
     );
 
 vec3 fogColor =
-    vec3(0.70, 0.77, 0.84);
+    vec3(
+        0.66,
+        0.72,
+        0.78
+    );
 
 result =
     mix(
         result,
         fogColor,
-        fogFactor
+        fogAmount
     );
 
-result = clamp(result, 0.0, 1.0);
+result =
+    clamp(
+        result,
+        0.0,
+        1.0
+    );
 
-FragColor = vec4(result, 1.0);
+FragColor =
+    vec4(
+        result,
+        1.0
+    );
 
 }
 
@@ -1803,6 +1827,10 @@ int main()
         "Assets/Models/Environment/WoodenHouse/WoodenHouse.obj",
         "Assets/Models/Environment/WoodenHouse/"
     );
+    Model newHouseModel(
+        "Assets/Models/Environment/WoodenHouse/house2.obj",
+        "Assets/Models/Environment/WoodenHouse/"
+    );
     Model grassClumpModel(
         "Assets/Models/Environment/GrassClump/grass1.obj",
         "Assets/Models/Environment/GrassClump/"
@@ -2540,6 +2568,105 @@ int main()
         &grass2Model,
         &wheatModel
     };
+    auto IsFlatEnoughForCamp =
+        [&](float x, float z)
+        {
+            float center =
+                GetTerrainHeight(
+                    x,
+                    z
+                );
+
+            float right =
+                GetTerrainHeight(
+                    x + 4.0f,
+                    z
+                );
+
+            float left =
+                GetTerrainHeight(
+                    x - 4.0f,
+                    z
+                );
+
+            float front =
+                GetTerrainHeight(
+                    x,
+                    z + 4.0f
+                );
+
+            float back =
+                GetTerrainHeight(
+                    x,
+                    z - 4.0f
+                );
+
+            float maxDifference =
+                std::max(
+                    std::max(
+                        std::abs(center - right),
+                        std::abs(center - left)
+                    ),
+                    std::max(
+                        std::abs(center - front),
+                        std::abs(center - back)
+                    )
+                );
+
+            return
+                maxDifference < 2.8f;
+        };
+    auto AddObjectOnTerrain =
+        [&](Model* model,
+            const std::string& name,
+            float x,
+            float z,
+            glm::vec3 scale,
+            bool collider,
+            AssetType assetType,
+            const std::string& assetId,
+            bool showInHierarchy,
+            float terrainOffset = 0.05f)
+        {
+            float y =
+                GetObjectTerrainY(
+                    x,
+                    z,
+                    terrainOffset
+                );
+
+            SceneObject* object =
+                AddEnvironmentModel(
+                    model,
+                    name,
+                    glm::vec3(
+                        x,
+                        y,
+                        z
+                    ),
+                    scale,
+                    collider
+                );
+
+            object->transform.rotation.y =
+                RandomRange(
+                    0.0f,
+                    360.0f
+                );
+
+            SetObjectMetadata(
+                object,
+                assetId,
+                assetType,
+                SpawnSource::Procedural,
+                false,
+                showInHierarchy
+            );
+
+            return object;
+        };
+   
+
     int grassClumpCounter =
         1;
 
@@ -2563,6 +2690,281 @@ int main()
 
     int rockClusterCounter =
         1;
+    int campCounter =
+        1;
+
+    int campHouseCounter =
+        1;
+
+    int campTreeCounter =
+        1;
+
+    int campRockCounter =
+        1;
+
+    int forestZoneCounter =
+        1;
+
+    int forestZoneTreeCounter =
+        1;
+    int manualHouseCounter =
+        1;
+    auto BuildCamp =
+        [&](float centerX,
+            float centerZ,
+            bool useNewHouse)
+        {
+            if (!IsFlatEnoughForCamp(centerX, centerZ))
+                return;
+            Model* selectedHouse =
+                useNewHouse
+                ? &newHouseModel
+                : &woodenHouseModel;
+
+            glm::vec3 selectedHouseScale =
+                useNewHouse
+                ? glm::vec3(0.01f)
+                : glm::vec3(0.8f);
+
+            float selectedHouseTerrainOffset =
+                useNewHouse
+                ? -0.55f
+                : 0.05f;
+
+            std::string selectedHouseAssetId =
+                useNewHouse
+                ? "house_2"
+                : "wooden_house";
+
+            std::string selectedHouseName =
+                useNewHouse
+                ? "Camp House 2 "
+                : "Camp House 1 ";
+
+            SceneObject* campHouse =
+                AddObjectOnTerrain(
+                    selectedHouse,
+                    selectedHouseName + std::to_string(campHouseCounter++),
+                    centerX,
+                    centerZ,
+                    selectedHouseScale,
+                    true,
+                    AssetType::House,
+                    selectedHouseAssetId,
+                    true,
+                    selectedHouseTerrainOffset
+                );
+
+            campHouse->boundingRadius =
+                120.0f;
+
+            campHouse->colliderRadius =
+                7.0f;
+        
+            // Trees around the camp
+            for (int i = 0; i < 10; i++)
+            {
+                float angle =
+                    RandomRange(
+                        0.0f,
+                        6.28f
+                    );
+
+                float distance =
+                    RandomRange(
+                        12.0f,
+                        28.0f
+                    );
+
+                float x =
+                    centerX +
+                    std::cos(angle) * distance;
+
+                float z =
+                    centerZ +
+                    std::sin(angle) * distance;
+
+                Model* chosenTree =
+                    treeModels[
+                        rand() % treeModels.size()
+                    ];
+
+                SceneObject* campTree =
+                    AddObjectOnTerrain(
+                        chosenTree,
+                        "Camp Tree " + std::to_string(campTreeCounter++),
+                        x,
+                        z,
+                        glm::vec3(
+                            RandomRange(
+                                1.2f,
+                                2.0f
+                            )
+                        ),
+                        false,
+                        AssetType::Tree,
+                        "camp_tree",
+                        false
+                    );
+
+                campTree->boundingRadius =
+                    80.0f;
+            }
+
+            // Rocks around the camp
+            for (int i = 0; i < 7; i++)
+            {
+                float angle =
+                    RandomRange(
+                        0.0f,
+                        6.28f
+                    );
+
+                float distance =
+                    RandomRange(
+                        8.0f,
+                        22.0f
+                    );
+
+                float x =
+                    centerX +
+                    std::cos(angle) * distance;
+
+                float z =
+                    centerZ +
+                    std::sin(angle) * distance;
+
+                Model* chosenRock =
+                    rockModels[
+                        rand() % rockModels.size()
+                    ];
+
+                SceneObject* campRock =
+                    AddObjectOnTerrain(
+                        chosenRock,
+                        "Camp Rock " + std::to_string(campRockCounter++),
+                        x,
+                        z,
+                        glm::vec3(
+                            RandomRange(
+                                1.0f,
+                                1.8f
+                            )
+                        ),
+                        true,
+                        AssetType::Rock,
+                        "camp_rock",
+                        true
+                    );
+
+                campRock->colliderRadius =
+                    1.8f;
+            }
+
+            // Logs and stump decorations
+            for (int i = 0; i < 4; i++)
+            {
+                float angle =
+                    RandomRange(
+                        0.0f,
+                        6.28f
+                    );
+
+                float distance =
+                    RandomRange(
+                        5.0f,
+                        14.0f
+                    );
+
+                float x =
+                    centerX +
+                    std::cos(angle) * distance;
+
+                float z =
+                    centerZ +
+                    std::sin(angle) * distance;
+
+                Model* chosenProp =
+                    rand() % 2 == 0
+                    ? &woodLogModel
+                    : &treeStumpModel;
+
+                AddObjectOnTerrain(
+                    chosenProp,
+                    "Camp Prop " + std::to_string(campCounter++),
+                    x,
+                    z,
+                    glm::vec3(
+                        RandomRange(
+                            0.9f,
+                            1.4f
+                        )
+                    ),
+                    true,
+                    AssetType::Prop,
+                    "camp_prop",
+                    true
+                );
+            }
+        };
+        auto BuildForestZone =
+            [&](float centerX,
+                float centerZ,
+                float radius,
+                int treeCount)
+            {
+                for (int i = 0; i < treeCount; i++)
+                {
+                    float angle =
+                        RandomRange(
+                            0.0f,
+                            6.28f
+                        );
+
+                    float distance =
+                        RandomRange(
+                            0.0f,
+                            radius
+                        );
+
+                    float x =
+                        centerX +
+                        std::cos(angle) * distance;
+
+                    float z =
+                        centerZ +
+                        std::sin(angle) * distance;
+
+                    if (!IsGoodTerrainSpawnPoint(x, z))
+                        continue;
+
+                    Model* chosenTree =
+                        treeModels[
+                            rand() % treeModels.size()
+                        ];
+
+                    SceneObject* tree =
+                        AddObjectOnTerrain(
+                            chosenTree,
+                            "Forest Zone Tree " + std::to_string(forestZoneTreeCounter++),
+                            x,
+                            z,
+                            glm::vec3(
+                                RandomRange(
+                                    1.4f,
+                                    2.3f
+                                )
+                            ),
+                            false,
+                            AssetType::Tree,
+                            "forest_zone_tree",
+                            false
+                        );
+
+                    tree->boundingRadius =
+                        90.0f;
+                }
+            };
     // ================= SIMPLE LOW-POLY GRASS FIELD =================
 
     for (int i = 0; i < 160; i++)
@@ -2697,7 +3099,7 @@ int main()
     // ================= PROCEDURAL GRASS AND FLOWERS =================
 
     // Trees
-    for (int i = 0; i < 60; i++)
+    for (int i = 0; i < 30; i++)
     {
         Model* chosenTree =
             treeModels[
@@ -2747,7 +3149,7 @@ int main()
     }
 
     // Rocks
-    for (int i = 0; i < 40; i++)
+    for (int i = 0; i < 20; i++)
     {
         Model* chosenRock =
             rockModels[
@@ -2898,6 +3300,48 @@ int main()
             true
         );
     }
+    // ================= GENERATED CAMPS =================
+
+    BuildCamp(
+        -45.0f,
+        -20.0f,
+        false
+    );
+
+    BuildCamp(
+        55.0f,
+        35.0f,
+        true
+    );
+
+    BuildCamp(
+        10.0f,
+        85.0f,
+        false
+    );
+
+    // ================= FOREST ZONES =================
+
+    BuildForestZone(
+        -75.0f,
+        45.0f,
+        35.0f,
+        28
+    );
+
+    BuildForestZone(
+        80.0f,
+        -55.0f,
+        40.0f,
+        32
+    );
+
+    BuildForestZone(
+        5.0f,
+        -95.0f,
+        32.0f,
+        24
+    );
     // ================= FOREST BORDER WALL =================
 
     auto AddBorderTree =
@@ -3902,10 +4346,21 @@ appMode == AppMode::Play;
         }
 
         shader.use();
+        shader.setInt( "texture1",0);
         shader.setInt(
-    "texture1",
-    0
-);
+            "terrainGrassTex",
+            1
+        );
+
+        shader.setInt(
+            "terrainDirtTex",
+            2
+        );
+
+        shader.setInt(
+            "terrainCliffTex",
+            3
+        );
 
         shader.setInt(
             "terrainGrassTex",
@@ -4025,7 +4480,6 @@ appMode == AppMode::Play;
                 glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
             }
             if (
-                obj->useModel ||
                 !useCulling ||
                 frustum.IsSphereVisible(
                     obj->transform.position,
@@ -4723,14 +5177,162 @@ appMode == AppMode::Play;
 
             ImGui::Begin("Camp Builder");
 
-            ImGui::TextWrapped(
-                "Use Asset Browser -> Structures -> Build Real Camp."
-            );
+            ImGui::Text("Terrain-Aware Builder");
+            ImGui::Separator();
+
+            auto GetCameraForwardXZ =
+                [&]()
+                {
+                    glm::vec3 forward =
+                        glm::vec3(
+                            camera.Front.x,
+                            0.0f,
+                            camera.Front.z
+                        );
+
+                    if (glm::length(forward) < 0.001f)
+                    {
+                        forward =
+                            glm::vec3(
+                                0.0f,
+                                0.0f,
+                                -1.0f
+                            );
+                    }
+
+                    return glm::normalize(forward);
+                };
+
+            auto SpawnHouseInFront =
+                [&](Model* model,
+                    const std::string& name,
+                    glm::vec3 scale,
+                    float terrainOffset,
+                    const std::string& assetId)
+                {
+                    glm::vec3 forward =
+                        GetCameraForwardXZ();
+
+                    glm::vec3 position =
+                        camera.Position +
+                        forward * 22.0f;
+
+                    SceneObject* house =
+                        AddObjectOnTerrain(
+                            model,
+                            name + " " + std::to_string(manualHouseCounter++),
+                            position.x,
+                            position.z,
+                            scale,
+                            true,
+                            AssetType::House,
+                            assetId,
+                            true,
+                            terrainOffset
+                        );
+
+                    house->transform.rotation.y =
+                        glm::degrees(
+                            std::atan2(
+                                forward.x,
+                                forward.z
+                            )
+                        );
+
+                    house->boundingRadius =
+                        120.0f;
+
+                    house->colliderRadius =
+                        7.0f;
+
+                    selectedObject =
+                        house;
+
+                    selectedLight =
+                        nullptr;
+                };
+
+            if (ImGui::Button("Spawn House 1"))
+            {
+                SpawnHouseInFront(
+                    &woodenHouseModel,
+                    "House 1",
+                    glm::vec3(0.8f),
+                    0.05f,
+                    "wooden_house"
+                );
+            }
+
+            ImGui::SameLine();
+
+            if (ImGui::Button("Spawn House 2"))
+            {
+                SpawnHouseInFront(
+                    &newHouseModel,
+                    "House 2",
+                    glm::vec3(0.01f),
+                    -0.65f,
+                    "house_2"
+                );
+            }
 
             ImGui::Separator();
 
+            if (ImGui::Button("Build Camp 1"))
+            {
+                glm::vec3 forward =
+                    GetCameraForwardXZ();
+
+                glm::vec3 position =
+                    camera.Position +
+                    forward * 35.0f;
+
+                BuildCamp(
+                    position.x,
+                    position.z,
+                    false
+                );
+            }
+
+            ImGui::SameLine();
+
+            if (ImGui::Button("Build Camp 2"))
+            {
+                glm::vec3 forward =
+                    GetCameraForwardXZ();
+
+                glm::vec3 position =
+                    camera.Position +
+                    forward * 35.0f;
+
+                BuildCamp(
+                    position.x,
+                    position.z,
+                    true
+                );
+            }
+
+            ImGui::Separator();
+
+            if (ImGui::Button("Build Forest Here"))
+            {
+                glm::vec3 forward =
+                    GetCameraForwardXZ();
+
+                glm::vec3 position =
+                    camera.Position +
+                    forward * 40.0f;
+
+                BuildForestZone(
+                    position.x,
+                    position.z,
+                    35.0f,
+                    28
+                );
+            }
+
             ImGui::TextWrapped(
-                "The old cube camp builder was removed because it created placeholder objects."
+                "House 2 has a built-in green base, so it is spawned lower into the terrain."
             );
 
             ImGui::End();

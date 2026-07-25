@@ -4750,7 +4750,133 @@ appMode == AppMode::Play;
             EditorUI::DrawInspector(selectedObject);
             EditorUI::DrawDebug(deltaTime, totalObjects, visibleObjects, culledObjects, selectedObject);
             EditorUI::DrawStatistics(scene, camera, selectedObject, deltaTime);
+            auto GetEditorForwardXZ =
+                [&]()
+                {
+                    glm::vec3 forward =
+                        glm::vec3(
+                            camera.Front.x,
+                            0.0f,
+                            camera.Front.z
+                        );
 
+                    if (glm::length(forward) < 0.001f)
+                    {
+                        forward =
+                            glm::vec3(
+                                0.0f,
+                                0.0f,
+                                -1.0f
+                            );
+                    }
+
+                    return glm::normalize(forward);
+                };
+
+            auto SpawnHouseFromAssetBrowser =
+                [&](bool useHouse2)
+                {
+                    glm::vec3 forward =
+                        GetEditorForwardXZ();
+
+                    glm::vec3 position =
+                        camera.Position +
+                        forward * 22.0f;
+
+                    Model* selectedHouse =
+                        useHouse2
+                        ? &newHouseModel
+                        : &woodenHouseModel;
+
+                    glm::vec3 selectedScale =
+                        useHouse2
+                        ? glm::vec3(0.01f)
+                        : glm::vec3(0.8f);
+
+                    float terrainOffset =
+                        useHouse2
+                        ? -0.65f
+                        : 0.05f;
+
+                    std::string houseName =
+                        useHouse2
+                        ? "House 2 "
+                        : "House 1 ";
+
+                    std::string assetId =
+                        useHouse2
+                        ? "house_2"
+                        : "wooden_house";
+
+                    SceneObject* house =
+                        AddObjectOnTerrain(
+                            selectedHouse,
+                            houseName + std::to_string(manualHouseCounter++),
+                            position.x,
+                            position.z,
+                            selectedScale,
+                            true,
+                            AssetType::House,
+                            assetId,
+                            true,
+                            terrainOffset
+                        );
+
+                    house->transform.rotation.y =
+                        glm::degrees(
+                            std::atan2(
+                                forward.x,
+                                forward.z
+                            )
+                        );
+
+                    house->boundingRadius =
+                        120.0f;
+
+                    house->colliderRadius =
+                        7.0f;
+
+                    selectedObject =
+                        house;
+
+                    selectedLight =
+                        nullptr;
+                };
+
+            auto BuildCampFromAssetBrowser =
+                [&](bool useHouse2)
+                {
+                    glm::vec3 forward =
+                        GetEditorForwardXZ();
+
+                    glm::vec3 position =
+                        camera.Position +
+                        forward * 35.0f;
+
+                    BuildCamp(
+                        position.x,
+                        position.z,
+                        useHouse2
+                    );
+                };
+
+            auto BuildForestFromAssetBrowser =
+                [&]()
+                {
+                    glm::vec3 forward =
+                        GetEditorForwardXZ();
+
+                    glm::vec3 position =
+                        camera.Position +
+                        forward * 40.0f;
+
+                    BuildForestZone(
+                        position.x,
+                        position.z,
+                        35.0f,
+                        28
+                    );
+                };
             EditorUI::DrawAssetBrowser(
                 scene,
                 selectedObject,
@@ -4759,14 +4885,20 @@ appMode == AppMode::Play;
                 &cubeMaterial,
                 camera,
 
-                &woodenHouseModel,
-                &pineTreeModel,
-                &commonTreeModel,
-                &rockModel,
-                &bushModel,
-                &woodLogModel,
-                &treeStumpModel,
-                &grassModel
+                & woodenHouseModel,
+                & newHouseModel,
+
+                & pineTreeModel,
+                & commonTreeModel,
+                & rockModel,
+                & bushModel,
+                & woodLogModel,
+                & treeStumpModel,
+                & grassModel,
+
+                SpawnHouseFromAssetBrowser,
+                BuildCampFromAssetBrowser,
+                BuildForestFromAssetBrowser
             );
             // ================= PLAYER SPAWN TOOLS =================
         
@@ -5139,203 +5271,7 @@ appMode == AppMode::Play;
             }
 
             ImGui::End();
-            // ================= CAMP BUILDER TOOLS =================
-
-            ImGui::SetNextWindowPos(
-                ImVec2(
-                    920.0f,
-                    360.0f
-                ),
-                ImGuiCond_Once
-            );
-
-            ImGui::SetNextWindowSize(
-                ImVec2(
-                    300.0f,
-                    220.0f
-                ),
-                ImGuiCond_Once
-            );
-
-            // ================= CAMP BUILDER TOOLS =================
-
-            ImGui::SetNextWindowPos(
-                ImVec2(
-                    920.0f,
-                    360.0f
-                ),
-                ImGuiCond_Once
-            );
-
-            ImGui::SetNextWindowSize(
-                ImVec2(
-                    300.0f,
-                    160.0f
-                ),
-                ImGuiCond_Once
-            );
-
-            ImGui::Begin("Camp Builder");
-
-            ImGui::Text("Terrain-Aware Builder");
-            ImGui::Separator();
-
-            auto GetCameraForwardXZ =
-                [&]()
-                {
-                    glm::vec3 forward =
-                        glm::vec3(
-                            camera.Front.x,
-                            0.0f,
-                            camera.Front.z
-                        );
-
-                    if (glm::length(forward) < 0.001f)
-                    {
-                        forward =
-                            glm::vec3(
-                                0.0f,
-                                0.0f,
-                                -1.0f
-                            );
-                    }
-
-                    return glm::normalize(forward);
-                };
-
-            auto SpawnHouseInFront =
-                [&](Model* model,
-                    const std::string& name,
-                    glm::vec3 scale,
-                    float terrainOffset,
-                    const std::string& assetId)
-                {
-                    glm::vec3 forward =
-                        GetCameraForwardXZ();
-
-                    glm::vec3 position =
-                        camera.Position +
-                        forward * 22.0f;
-
-                    SceneObject* house =
-                        AddObjectOnTerrain(
-                            model,
-                            name + " " + std::to_string(manualHouseCounter++),
-                            position.x,
-                            position.z,
-                            scale,
-                            true,
-                            AssetType::House,
-                            assetId,
-                            true,
-                            terrainOffset
-                        );
-
-                    house->transform.rotation.y =
-                        glm::degrees(
-                            std::atan2(
-                                forward.x,
-                                forward.z
-                            )
-                        );
-
-                    house->boundingRadius =
-                        120.0f;
-
-                    house->colliderRadius =
-                        7.0f;
-
-                    selectedObject =
-                        house;
-
-                    selectedLight =
-                        nullptr;
-                };
-
-            if (ImGui::Button("Spawn House 1"))
-            {
-                SpawnHouseInFront(
-                    &woodenHouseModel,
-                    "House 1",
-                    glm::vec3(0.8f),
-                    0.05f,
-                    "wooden_house"
-                );
-            }
-
-            ImGui::SameLine();
-
-            if (ImGui::Button("Spawn House 2"))
-            {
-                SpawnHouseInFront(
-                    &newHouseModel,
-                    "House 2",
-                    glm::vec3(0.01f),
-                    -0.65f,
-                    "house_2"
-                );
-            }
-
-            ImGui::Separator();
-
-            if (ImGui::Button("Build Camp 1"))
-            {
-                glm::vec3 forward =
-                    GetCameraForwardXZ();
-
-                glm::vec3 position =
-                    camera.Position +
-                    forward * 35.0f;
-
-                BuildCamp(
-                    position.x,
-                    position.z,
-                    false
-                );
-            }
-
-            ImGui::SameLine();
-
-            if (ImGui::Button("Build Camp 2"))
-            {
-                glm::vec3 forward =
-                    GetCameraForwardXZ();
-
-                glm::vec3 position =
-                    camera.Position +
-                    forward * 35.0f;
-
-                BuildCamp(
-                    position.x,
-                    position.z,
-                    true
-                );
-            }
-
-            ImGui::Separator();
-
-            if (ImGui::Button("Build Forest Here"))
-            {
-                glm::vec3 forward =
-                    GetCameraForwardXZ();
-
-                glm::vec3 position =
-                    camera.Position +
-                    forward * 40.0f;
-
-                BuildForestZone(
-                    position.x,
-                    position.z,
-                    35.0f,
-                    28
-                );
-            }
-
-            ImGui::TextWrapped(
-                "House 2 has a built-in green base, so it is spawned lower into the terrain."
-            );
-
-            ImGui::End();
+          
             if (selectedObject != nullptr)
             {
                 glLineWidth(4.0f);

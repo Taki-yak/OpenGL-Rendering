@@ -885,7 +885,11 @@ void EditorUI::DrawAssetBrowser(
     Model* bushModel,
     Model* woodLogModel,
     Model* treeStumpModel,
-    Model* grassModel
+    Model* grassModel,
+    Model* newHouseModel,
+    std::function<void(bool)> spawnHouseCallback,
+    std::function<void(bool)> buildCampCallback,
+    std::function<void()> buildForestCallback
 )
 {
     ImGui::SetNextWindowPos(
@@ -1235,7 +1239,54 @@ void EditorUI::DrawAssetBrowser(
                 selectedObject =
                     house;
             }
+            ImGui::Separator();
 
+            ImGui::Text("Houses");
+
+            if (ImGui::Button("House 1"))
+            {
+                spawnHouseCallback(
+                    false
+                );
+            }
+
+            ImGui::SameLine();
+
+            if (ImGui::Button("House 2"))
+            {
+                spawnHouseCallback(
+                    true
+                );
+            }
+
+            ImGui::Separator();
+
+            ImGui::Text("Generated Camps");
+
+            if (ImGui::Button("Camp 1"))
+            {
+                buildCampCallback(
+                    false
+                );
+            }
+
+            ImGui::SameLine();
+
+            if (ImGui::Button("Camp 2"))
+            {
+                buildCampCallback(
+                    true
+                );
+            }
+
+            ImGui::Separator();
+
+            ImGui::Text("World Zones");
+
+            if (ImGui::Button("Forest Zone"))
+            {
+                buildForestCallback();
+            }
             ImGui::Separator();
             ImGui::Text("Basic Building Pieces");
 

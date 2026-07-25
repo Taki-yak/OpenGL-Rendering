@@ -6,6 +6,7 @@
 #include "AppMode.h"
 #include "Light.h"
 #include "Model.h"
+#include <functional>
 #include "Camera.h"
 class EditorUI
 {
@@ -13,19 +14,25 @@ public:
     static void DrawAssetBrowser(
         Scene& scene,
         SceneObject*& selectedObject,
-        Mesh* cubeMesh,
+        Mesh* cube,
         Shader* shader,
         Material* material,
         Camera& camera,
 
         Model* woodenHouseModel,
+        Model* newHouseModel,
+
         Model* pineTreeModel,
         Model* commonTreeModel,
         Model* rockModel,
         Model* bushModel,
         Model* woodLogModel,
         Model* treeStumpModel,
-        Model* grassModel
+        Model* grassModel,
+
+        std::function<void(bool)> spawnHouseCallback,
+        std::function<void(bool)> buildCampCallback,
+        std::function<void()> buildForestCallback
     );
     static void DrawCrosshair();
     static void DrawHierarchy(

@@ -14,9 +14,9 @@ public:
     static void DrawAssetBrowser(
         Scene& scene,
         SceneObject*& selectedObject,
-        Mesh* cube,
+        Mesh* cubeMesh,
         Shader* shader,
-        Material* material,
+        Material* cubeMaterial,
         Camera& camera,
 
         Model* woodenHouseModel,

@@ -7,6 +7,11 @@
 #include "PrefabManager.h"
 #include "AssetDatabase.h"
 #include <glm/glm.hpp>
+float GetObjectTerrainY(
+    float x,
+    float z,
+    float offset
+);
 extern float GetTerrainHeight(
     float x,
     float z
@@ -870,15 +875,74 @@ static void BuildRealCamp(
         1.0f
     );
 }
+static SceneObject* SpawnAssetInFrontOfCamera(
+    Scene& scene,
+    SceneObject*& selectedObject,
+    Camera& camera,
+    Shader* shader,
+    Model* model,
+    const std::string& objectName,
+    float uniformScale,
+    bool collider,
+    float colliderRadius,
+    float boundingRadius
+)
+{
+    SceneObject* obj = new SceneObject(model, shader);
+    obj->name = objectName;
+    glm::vec3 forward =
+        glm::vec3(
+            camera.Front.x,
+            0.0f,
+            camera.Front.z
+        );
+
+    if (glm::length(forward) < 0.001f)
+    {
+        forward =
+            glm::vec3(
+                0.0f,
+                0.0f,
+                -1.0f
+            );
+    }
+
+    forward =
+        glm::normalize(
+            forward
+        );
+
+    obj->transform.position =
+        camera.Position +
+        forward * 6.0f;
+
+    obj->transform.position.y =
+        GetObjectTerrainY(
+            obj->transform.position.x,
+            obj->transform.position.z,
+            0.05f
+        );
+    obj->transform.scale = glm::vec3(uniformScale);
+    obj->isCollider = collider;
+    obj->colliderRadius = colliderRadius;
+    obj->boundingRadius = boundingRadius;
+
+    scene.AddObject(obj);
+    selectedObject = obj;
+
+    return obj;
+}
 void EditorUI::DrawAssetBrowser(
     Scene& scene,
     SceneObject*& selectedObject,
     Mesh* cubeMesh,
     Shader* shader,
-    Material* material,
+    Material* cubeMaterial,
     Camera& camera,
 
     Model* woodenHouseModel,
+    Model* newHouseModel,
+
     Model* pineTreeModel,
     Model* commonTreeModel,
     Model* rockModel,
@@ -886,7 +950,7 @@ void EditorUI::DrawAssetBrowser(
     Model* woodLogModel,
     Model* treeStumpModel,
     Model* grassModel,
-    Model* newHouseModel,
+
     std::function<void(bool)> spawnHouseCallback,
     std::function<void(bool)> buildCampCallback,
     std::function<void()> buildForestCallback
@@ -1008,7 +1072,7 @@ void EditorUI::DrawAssetBrowser(
                 new SceneObject(
                     cubeMesh,
                     shader,
-                    material
+                    cubeMaterial
                 );
 
             object->name =
@@ -1070,9 +1134,7 @@ void EditorUI::DrawAssetBrowser(
                 SpawnModelObject(
                     "Pine Tree",
                     pineTreeModel,
-                    glm::vec3(
-                        0.8f
-                    ),
+                    glm::vec3(1.4f),
                     false
                 );
             }
@@ -1084,9 +1146,7 @@ void EditorUI::DrawAssetBrowser(
                 SpawnModelObject(
                     "Common Tree",
                     commonTreeModel,
-                    glm::vec3(
-                        0.9f
-                    ),
+                    glm::vec3(1.4f),
                     false
                 );
             }
@@ -1100,9 +1160,7 @@ void EditorUI::DrawAssetBrowser(
                 SpawnModelObject(
                     "Rock",
                     rockModel,
-                    glm::vec3(
-                        0.8f
-                    ),
+                    glm::vec3(1.3f),
                     true
                 );
             }
@@ -1114,9 +1172,7 @@ void EditorUI::DrawAssetBrowser(
                 SpawnModelObject(
                     "Bush",
                     bushModel,
-                    glm::vec3(
-                        0.8f
-                    ),
+                    glm::vec3(1.0f),
                     false
                 );
             }
@@ -1128,9 +1184,7 @@ void EditorUI::DrawAssetBrowser(
                 SpawnModelObject(
                     "Grass",
                     grassModel,
-                    glm::vec3(
-                        0.7f
-                    ),
+                    glm::vec3(0.5f),
                     false
                 );
             }
@@ -1144,9 +1198,7 @@ void EditorUI::DrawAssetBrowser(
                 SpawnModelObject(
                     "Wood Log",
                     woodLogModel,
-                    glm::vec3(
-                        1.0f
-                    ),
+                    glm::vec3(1.0f),
                     true
                 );
             }
@@ -1158,15 +1210,14 @@ void EditorUI::DrawAssetBrowser(
                 SpawnModelObject(
                     "Tree Stump",
                     treeStumpModel,
-                    glm::vec3(
-                        0.9f
-                    ),
+                    glm::vec3(1.0f),
                     true
                 );
             }
 
             ImGui::EndTabItem();
         }
+       
 
         if (ImGui::BeginTabItem("Structures"))
         {

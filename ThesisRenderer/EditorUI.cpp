@@ -1221,77 +1221,6 @@ void EditorUI::DrawAssetBrowser(
 
         if (ImGui::BeginTabItem("Structures"))
         {
-            ImGui::Text("Real Structure Models");
-
-            if (ImGui::Button("Wooden House"))
-            {
-                glm::vec3 forward =
-                    glm::vec3(
-                        camera.Front.x,
-                        0.0f,
-                        camera.Front.z
-                    );
-
-                if (glm::length(forward) < 0.001f)
-                {
-                    forward =
-                        glm::vec3(
-                            0.0f,
-                            0.0f,
-                            -1.0f
-                        );
-                }
-
-                forward =
-                    glm::normalize(
-                        forward
-                    );
-
-                SceneObject* house =
-                    new SceneObject(
-                        woodenHouseModel,
-                        shader
-                    );
-
-                house->name =
-                    "Wooden House";
-
-                glm::vec3 housePosition =
-                    camera.Position +
-                    forward * 8.0f;
-
-                housePosition.y =
-                    GetTerrainHeight(
-                        housePosition.x,
-                        housePosition.z
-                    );
-
-                house->transform.position =
-                    housePosition;
-
-                house->transform.scale =
-                    glm::vec3(
-                        1.0f
-                    );
-
-                house->isCollider =
-                    true;
-
-                house->boundingRadius =
-                    100.0f;
-
-                house->colliderRadius =
-                    6.0f;
-
-                scene.AddObject(
-                    house
-                );
-
-                selectedObject =
-                    house;
-            }
-            ImGui::Separator();
-
             ImGui::Text("Houses");
 
             if (ImGui::Button("House 1"))
@@ -1312,7 +1241,7 @@ void EditorUI::DrawAssetBrowser(
 
             ImGui::Separator();
 
-            ImGui::Text("Generated Camps");
+            ImGui::Text("Camp Presets");
 
             if (ImGui::Button("Camp 1"))
             {
@@ -1338,8 +1267,10 @@ void EditorUI::DrawAssetBrowser(
             {
                 buildForestCallback();
             }
+
             ImGui::Separator();
-            ImGui::Text("Basic Building Pieces");
+
+            ImGui::Text("Building Pieces");
 
             if (ImGui::Button("Wall"))
             {
@@ -1401,23 +1332,8 @@ void EditorUI::DrawAssetBrowser(
 
             ImGui::Separator();
 
-            ImGui::Text("Camp Layout Pieces");
-            if (ImGui::Button("Build Real Camp"))
-            {
-                BuildRealCamp(
-                    scene,
-                    selectedObject,
-                    camera,
-                    shader,
-                    woodenHouseModel,
-                    pineTreeModel,
-                    commonTreeModel,
-                    rockModel,
-                    bushModel,
-                    woodLogModel,
-                    treeStumpModel
-                );
-            }
+            ImGui::Text("Layout Pieces");
+
             if (ImGui::Button("Path Tile"))
             {
                 SpawnCubeObject(
@@ -1455,10 +1371,6 @@ void EditorUI::DrawAssetBrowser(
                     true
                 );
             }
-
-            ImGui::SameLine();
-
-         
 
             ImGui::EndTabItem();
         }

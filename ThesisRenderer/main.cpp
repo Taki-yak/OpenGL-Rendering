@@ -2715,7 +2715,56 @@ int main()
             bool useNewHouse)
         {
             if (!IsFlatEnoughForCamp(centerX, centerZ))
-                return;
+            {
+                bool foundFlatPlace =
+                    false;
+
+                for (int attempt = 0; attempt < 25; attempt++)
+                {
+                    float angle =
+                        RandomRange(
+                            0.0f,
+                            6.28f
+                        );
+
+                    float distance =
+                        RandomRange(
+                            6.0f,
+                            28.0f
+                        );
+
+                    float testX =
+                        centerX +
+                        std::cos(angle) * distance;
+
+                    float testZ =
+                        centerZ +
+                        std::sin(angle) * distance;
+
+                    if (IsFlatEnoughForCamp(testX, testZ))
+                    {
+                        centerX =
+                            testX;
+
+                        centerZ =
+                            testZ;
+
+                        foundFlatPlace =
+                            true;
+
+                        break;
+                    }
+                }
+
+                if (!foundFlatPlace)
+                {
+                    std::cout
+                        << "Camp placement failed: no flat terrain nearby."
+                        << std::endl;
+
+                    return;
+                }
+            }
             Model* selectedHouse =
                 useNewHouse
                 ? &newHouseModel

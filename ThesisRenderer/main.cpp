@@ -96,7 +96,10 @@ bool rightMouseCameraActive =
 false;
 bool interactionKeyPressed =
 false;
+int interactionCount =0;
+float nearbyInteractableDistance =-1.0f;
 
+float interactionRadius =4.0f;
 SceneObject* nearbyInteractableObject =
 nullptr;
 
@@ -109,8 +112,6 @@ std::string interactionResultText =
 float interactionResultTimer =
 0.0f;
 
-int interactionCount =
-0;
 bool ignoreNextMouseDelta =
 false;
 bool IsEditorSavedObject(SceneObject* object)
@@ -4479,8 +4480,32 @@ appMode == AppMode::Play;
                 FindNearestInteractableObject(
                     scene,
                     playerObject->transform.position,
-                    4.0f
+                    interactionRadius
                 );
+
+            nearbyInteractableDistance =
+                -1.0f;
+
+            if (nearbyInteractableObject != nullptr)
+            {
+                glm::vec2 playerXZ =
+                    glm::vec2(
+                        playerObject->transform.position.x,
+                        playerObject->transform.position.z
+                    );
+
+                glm::vec2 objectXZ =
+                    glm::vec2(
+                        nearbyInteractableObject->transform.position.x,
+                        nearbyInteractableObject->transform.position.z
+                    );
+
+                nearbyInteractableDistance =
+                    glm::length(
+                        playerXZ -
+                        objectXZ
+                    );
+            }
 
             if (nearbyInteractableObject != nullptr)
             {
@@ -4565,11 +4590,31 @@ appMode == AppMode::Play;
                     "%s",
                     interactionHintText.c_str()
                 );
+
+                ImGui::Text(
+                    "Target: %s",
+                    nearbyInteractableObject->name.c_str()
+                );
+
+                ImGui::Text(
+                    "Distance: %.2f / %.2f",
+                    nearbyInteractableDistance,
+                    interactionRadius
+                );
+
+                ImGui::Text(
+                    "Nearest object is highlighted."
+                );
             }
             else
             {
                 ImGui::Text(
                     "Walk near a house, camp object, rock, fence, wall, or platform."
+                );
+
+                ImGui::Text(
+                    "Interaction radius: %.2f",
+                    interactionRadius
                 );
             }
 
@@ -5140,15 +5185,40 @@ appMode == AppMode::Play;
         {
             obj->UpdateComponents(deltaTime);
 
-            // Highlight selected object
-            if (obj == selectedObject)
+            bool objectShouldHighlight =
+                obj == selectedObject;
+
+            if (
+                appMode == AppMode::Play &&
+                obj == nearbyInteractableObject
+                )
             {
-                glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-                glLineWidth(3.0f);
+                objectShouldHighlight =
+                    true;
+            }
+
+            shader.setBool(
+                "isSelected",
+                objectShouldHighlight
+            );
+
+            if (objectShouldHighlight)
+            {
+                glPolygonMode(
+                    GL_FRONT_AND_BACK,
+                    GL_LINE
+                );
+
+                glLineWidth(
+                    3.0f
+                );
             }
             else
             {
-                glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+                glPolygonMode(
+                    GL_FRONT_AND_BACK,
+                    GL_FILL
+                );
             }
             if (
                 !useCulling ||
@@ -5309,7 +5379,15 @@ appMode == AppMode::Play;
                     );
                 }
                 obj->Draw(renderer, glm::mat4(1.0f));
-       
+                shader.setBool(
+                    "isSelected",
+                    false
+                );
+
+                glPolygonMode(
+                    GL_FRONT_AND_BACK,
+                    GL_FILL
+                );
             }
             else
             {

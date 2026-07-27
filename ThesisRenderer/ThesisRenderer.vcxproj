@@ -148,6 +148,7 @@
     <ClCompile Include="..\..\..\..\..\sdl\imgui-master\imgui-master\imgui_widgets.cpp" />
     <ClCompile Include="AnimatedModel.cpp" />
     <ClCompile Include="AssetDatabase.cpp" />
+    <ClCompile Include="AudioSystem.cpp" />
     <ClCompile Include="Cubemap.cpp" />
     <ClCompile Include="EditorUI.cpp" />
     <ClCompile Include="Frustum.cpp" />
@@ -167,6 +168,7 @@
     <ClCompile Include="Shader.cpp" />
     <ClCompile Include="stb_image.cpp" />
     <ClCompile Include="Texture.cpp" />
+    <ClCompile Include="ThirdParty\miniaudio\miniaudio.c" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="AnimatedModel.h" />
@@ -174,6 +176,7 @@
     <ClInclude Include="AnimationLibrary.h" />
     <ClInclude Include="AppMode.h" />
     <ClInclude Include="AssetDatabase.h" />
+    <ClInclude Include="AudioSystem.h" />
     <ClInclude Include="BoneInfo.h" />
     <ClInclude Include="Camera.h" />
     <ClInclude Include="Component.h" />
@@ -198,6 +201,7 @@
     <ClInclude Include="SceneSerializer.h" />
     <ClInclude Include="Shader.h" />
     <ClInclude Include="Texture.h" />
+    <ClInclude Include="ThirdParty\miniaudio\miniaudio.h" />
     <ClInclude Include="ThirdPersonController.h" />
     <ClInclude Include="Transform.h" />
   </ItemGroup>

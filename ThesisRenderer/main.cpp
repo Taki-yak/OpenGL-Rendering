@@ -37,6 +37,7 @@
 #include <sstream>
 #include <vector>
 #include <cmath>
+#include "AudioSystem.h"
 // ================= CAMERA VARIABLES =================
 //glm::vec3 cameraPos = glm::vec3(0.0f, 0.0f, 3.0f);
 //glm::vec3 cameraFront = glm::vec3(0.0f, 0.0f, -1.0f);
@@ -4145,6 +4146,28 @@ int main()
     cube3.AddComponent(new OscillatorComponent(0.5f, 2.0f));
 
     AppMode previousAppMode = appMode;
+    // ================= AUDIO SYSTEM =================
+
+    AudioSystem audioSystem;
+
+    audioSystem.Initialize();
+
+    audioSystem.LoadSound(
+        "forest_ambience",
+        "Assets/Audio/forest_ambience.wav",
+        true
+    );
+
+    audioSystem.LoadSound(
+        "interaction",
+        "Assets/Audio/interaction.wav",
+        false
+    );
+
+    audioSystem.Play(
+        "forest_ambience",
+        0.25f
+    );
     while (!glfwWindowShouldClose(window))
     {
         for (SceneObject* obj : scene.objects)
@@ -4546,6 +4569,10 @@ appMode == AppMode::Play;
                     << ": "
                     << interactionResultText
                     << std::endl;
+                audioSystem.PlayFromStart(
+                    "interaction",
+                    0.85f
+                );
             }
 
             interactionKeyPressed =
@@ -6153,6 +6180,7 @@ appMode == AppMode::Play;
     ImGui_ImplOpenGL3_Shutdown();
     ImGui_ImplGlfw_Shutdown();
     ImGui::DestroyContext();
+    audioSystem.Shutdown();
     glfwTerminate();
 
     return 0;

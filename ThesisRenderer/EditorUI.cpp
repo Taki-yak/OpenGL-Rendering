@@ -1066,13 +1066,40 @@ void EditorUI::DrawAssetBrowser(
         [&](const std::string& objectName,
             glm::vec3 scale,
             glm::vec3 positionOffset,
-            bool collider)
+            bool collider,
+            glm::vec3 tint,
+            glm::vec3 ambient,
+            glm::vec3 diffuse)
         {
+            Material* objectMaterial =
+                new Material(
+                    nullptr
+                );
+
+            objectMaterial->tint =
+                tint;
+
+            objectMaterial->ambient =
+                ambient;
+
+            objectMaterial->diffuse =
+                diffuse;
+
+            objectMaterial->specular =
+                glm::vec3(
+                    0.04f,
+                    0.04f,
+                    0.04f
+                );
+
+            objectMaterial->shininess =
+                6.0f;
+
             SceneObject* object =
                 new SceneObject(
                     cubeMesh,
                     shader,
-                    cubeMaterial
+                    objectMaterial
                 );
 
             object->name =
@@ -1275,7 +1302,7 @@ void EditorUI::DrawAssetBrowser(
             if (ImGui::Button("Wall"))
             {
                 SpawnCubeObject(
-                    "Wall",
+                    "Stone Wall",
                     glm::vec3(
                         4.0f,
                         2.5f,
@@ -1286,7 +1313,22 @@ void EditorUI::DrawAssetBrowser(
                         1.25f,
                         0.0f
                     ),
-                    true
+                    true,
+                    glm::vec3(
+                        0.42f,
+                        0.40f,
+                        0.36f
+                    ),
+                    glm::vec3(
+                        0.35f,
+                        0.35f,
+                        0.35f
+                    ),
+                    glm::vec3(
+                        0.75f,
+                        0.72f,
+                        0.66f
+                    )
                 );
             }
 
@@ -1295,7 +1337,7 @@ void EditorUI::DrawAssetBrowser(
             if (ImGui::Button("Fence Segment"))
             {
                 SpawnCubeObject(
-                    "Fence Segment",
+                    "Wood Fence Segment",
                     glm::vec3(
                         3.0f,
                         1.0f,
@@ -1306,7 +1348,22 @@ void EditorUI::DrawAssetBrowser(
                         0.5f,
                         0.0f
                     ),
-                    true
+                    true,
+                    glm::vec3(
+                        0.45f,
+                        0.28f,
+                        0.13f
+                    ),
+                    glm::vec3(
+                        0.32f,
+                        0.25f,
+                        0.18f
+                    ),
+                    glm::vec3(
+                        0.75f,
+                        0.50f,
+                        0.25f
+                    )
                 );
             }
 
@@ -1315,7 +1372,7 @@ void EditorUI::DrawAssetBrowser(
             if (ImGui::Button("Fence Post"))
             {
                 SpawnCubeObject(
-                    "Fence Post",
+                    "Wood Fence Post",
                     glm::vec3(
                         0.3f,
                         1.3f,
@@ -1326,10 +1383,24 @@ void EditorUI::DrawAssetBrowser(
                         0.65f,
                         0.0f
                     ),
-                    true
+                    true,
+                    glm::vec3(
+                        0.34f,
+                        0.20f,
+                        0.10f
+                    ),
+                    glm::vec3(
+                        0.28f,
+                        0.20f,
+                        0.14f
+                    ),
+                    glm::vec3(
+                        0.65f,
+                        0.42f,
+                        0.22f
+                    )
                 );
             }
-
             ImGui::Separator();
 
             ImGui::Text("Layout Pieces");
@@ -1337,7 +1408,7 @@ void EditorUI::DrawAssetBrowser(
             if (ImGui::Button("Path Tile"))
             {
                 SpawnCubeObject(
-                    "Path Tile",
+                    "Dirt Path Tile",
                     glm::vec3(
                         3.0f,
                         0.05f,
@@ -1345,10 +1416,25 @@ void EditorUI::DrawAssetBrowser(
                     ),
                     glm::vec3(
                         0.0f,
-                        0.03f,
+                        0.04f,
                         0.0f
                     ),
-                    false
+                    false,
+                    glm::vec3(
+                        0.42f,
+                        0.31f,
+                        0.18f
+                    ),
+                    glm::vec3(
+                        0.32f,
+                        0.25f,
+                        0.18f
+                    ),
+                    glm::vec3(
+                        0.70f,
+                        0.52f,
+                        0.30f
+                    )
                 );
             }
 
@@ -1365,10 +1451,25 @@ void EditorUI::DrawAssetBrowser(
                     ),
                     glm::vec3(
                         0.0f,
-                        0.1f,
+                        0.12f,
                         0.0f
                     ),
-                    true
+                    true,
+                    glm::vec3(
+                        0.48f,
+                        0.30f,
+                        0.14f
+                    ),
+                    glm::vec3(
+                        0.32f,
+                        0.24f,
+                        0.16f
+                    ),
+                    glm::vec3(
+                        0.78f,
+                        0.52f,
+                        0.28f
+                    )
                 );
             }
 

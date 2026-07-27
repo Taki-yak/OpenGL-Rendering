@@ -125,59 +125,94 @@ bool IsEditorSavedObject(SceneObject* object)
 
     return true;
 }
-
 std::string GetEditorObjectType(SceneObject* object)
 {
     if (object == nullptr)
         return "Unknown";
 
-    if (object->name.find("Wooden House") != std::string::npos)
-        return "WoodenHouse";
+    std::string name =
+        object->name;
 
-    if (object->name.find("Camp House") != std::string::npos)
-        return "WoodenHouse";
+    // ================= HOUSES =================
+    if (name.find("Camp House 2") != std::string::npos)
+        return "House2";
 
-    if (object->name.find("Pine Tree") != std::string::npos)
+    if (name.find("House 2") != std::string::npos)
+        return "House2";
+
+    if (name.find("Camp House 1") != std::string::npos)
+        return "House1";
+
+    if (name.find("House 1") != std::string::npos)
+        return "House1";
+
+    if (name.find("Wooden House") != std::string::npos)
+        return "House1";
+
+    if (name.find("Camp House") != std::string::npos)
+        return "House1";
+
+    // ================= NATURE =================
+    if (name.find("Pine Tree") != std::string::npos)
         return "PineTree";
 
-    if (object->name.find("Camp Tree") != std::string::npos)
+    if (name.find("Camp Tree") != std::string::npos)
         return "PineTree";
 
-    if (object->name.find("Common Tree") != std::string::npos)
+    if (name.find("Common Tree") != std::string::npos)
         return "CommonTree";
 
-    if (object->name.find("Rock") != std::string::npos)
+    if (name.find("Rock") != std::string::npos)
         return "Rock";
 
-    if (object->name.find("Bush") != std::string::npos)
+    if (name.find("Bush") != std::string::npos)
         return "Bush";
 
-    if (object->name.find("Wood Log") != std::string::npos)
+    if (name.find("Wood Log") != std::string::npos)
         return "WoodLog";
 
-    if (object->name.find("Camp Log") != std::string::npos)
+    if (name.find("Camp Log") != std::string::npos)
         return "WoodLog";
 
-    if (object->name.find("Tree Stump") != std::string::npos)
+    if (name.find("Tree Stump") != std::string::npos)
         return "TreeStump";
 
-    if (object->name.find("Camp Stump") != std::string::npos)
+    if (name.find("Camp Stump") != std::string::npos)
         return "TreeStump";
 
-    if (object->name.find("Grass") != std::string::npos)
+    if (name.find("Grass") != std::string::npos)
         return "Grass";
 
-    if (object->name.find("Wall") != std::string::npos)
-        return "Cube";
+  
+    if (name.find("Stone Wall") != std::string::npos)
+        return "StoneWall";
 
-    if (object->name.find("Fence") != std::string::npos)
-        return "Cube";
+    if (name.find("Wall") != std::string::npos)
+        return "StoneWall";
 
-    if (object->name.find("Path") != std::string::npos)
-        return "Cube";
+    if (name.find("Wood Fence Segment") != std::string::npos)
+        return "WoodFenceSegment";
 
-    if (object->name.find("Platform") != std::string::npos)
-        return "Cube";
+    if (name.find("Fence Segment") != std::string::npos)
+        return "WoodFenceSegment";
+
+    if (name.find("Wood Fence Post") != std::string::npos)
+        return "WoodFencePost";
+
+    if (name.find("Fence Post") != std::string::npos)
+        return "WoodFencePost";
+
+    if (name.find("Dirt Path Tile") != std::string::npos)
+        return "DirtPathTile";
+
+    if (name.find("Path Tile") != std::string::npos)
+        return "DirtPathTile";
+
+    if (name.find("Wood Platform") != std::string::npos)
+        return "WoodPlatform";
+
+    if (name.find("Platform") != std::string::npos)
+        return "WoodPlatform";
 
     return "Cube";
 }
@@ -240,6 +275,7 @@ void SaveEditorObjects(
 Model* GetModelFromEditorType(
     const std::string& objectType,
     Model* woodenHouseModel,
+    Model* newHouseModel,
     Model* pineTreeModel,
     Model* commonTreeModel,
     Model* rockModel,
@@ -249,8 +285,16 @@ Model* GetModelFromEditorType(
     Model* grassModel
 )
 {
-    if (objectType == "WoodenHouse")
+    if (
+        objectType == "House1" ||
+        objectType == "WoodenHouse"
+        )
+    {
         return woodenHouseModel;
+    }
+
+    if (objectType == "House2")
+        return newHouseModel;
 
     if (objectType == "PineTree")
         return pineTreeModel;
@@ -275,7 +319,168 @@ Model* GetModelFromEditorType(
 
     return nullptr;
 }
+Material* CreateLoadedCubeMaterial(
+    const std::string& objectType
+)
+{
+    Material* objectMaterial =
+        new Material(
+            nullptr
+        );
 
+    objectMaterial->tint =
+        glm::vec3(
+            0.75f,
+            0.75f,
+            0.75f
+        );
+
+    objectMaterial->ambient =
+        glm::vec3(
+            0.35f,
+            0.35f,
+            0.35f
+        );
+
+    objectMaterial->diffuse =
+        glm::vec3(
+            0.75f,
+            0.75f,
+            0.75f
+        );
+
+    objectMaterial->specular =
+        glm::vec3(
+            0.04f,
+            0.04f,
+            0.04f
+        );
+
+    objectMaterial->shininess =
+        6.0f;
+
+    if (objectType == "StoneWall")
+    {
+        objectMaterial->tint =
+            glm::vec3(
+                0.42f,
+                0.40f,
+                0.36f
+            );
+
+        objectMaterial->ambient =
+            glm::vec3(
+                0.35f,
+                0.35f,
+                0.35f
+            );
+
+        objectMaterial->diffuse =
+            glm::vec3(
+                0.75f,
+                0.72f,
+                0.66f
+            );
+    }
+
+    if (objectType == "WoodFenceSegment")
+    {
+        objectMaterial->tint =
+            glm::vec3(
+                0.45f,
+                0.28f,
+                0.13f
+            );
+
+        objectMaterial->ambient =
+            glm::vec3(
+                0.32f,
+                0.25f,
+                0.18f
+            );
+
+        objectMaterial->diffuse =
+            glm::vec3(
+                0.75f,
+                0.50f,
+                0.25f
+            );
+    }
+
+    if (objectType == "WoodFencePost")
+    {
+        objectMaterial->tint =
+            glm::vec3(
+                0.34f,
+                0.20f,
+                0.10f
+            );
+
+        objectMaterial->ambient =
+            glm::vec3(
+                0.28f,
+                0.20f,
+                0.14f
+            );
+
+        objectMaterial->diffuse =
+            glm::vec3(
+                0.65f,
+                0.42f,
+                0.22f
+            );
+    }
+
+    if (objectType == "DirtPathTile")
+    {
+        objectMaterial->tint =
+            glm::vec3(
+                0.42f,
+                0.31f,
+                0.18f
+            );
+
+        objectMaterial->ambient =
+            glm::vec3(
+                0.32f,
+                0.25f,
+                0.18f
+            );
+
+        objectMaterial->diffuse =
+            glm::vec3(
+                0.70f,
+                0.52f,
+                0.30f
+            );
+    }
+
+    if (objectType == "WoodPlatform")
+    {
+        objectMaterial->tint =
+            glm::vec3(
+                0.48f,
+                0.30f,
+                0.14f
+            );
+
+        objectMaterial->ambient =
+            glm::vec3(
+                0.32f,
+                0.24f,
+                0.16f
+            );
+
+        objectMaterial->diffuse =
+            glm::vec3(
+                0.78f,
+                0.52f,
+                0.28f
+            );
+    }
+
+    return objectMaterial;
+}
 void LoadEditorObjects(
     Scene& scene,
     const std::string& filePath,
@@ -284,6 +489,7 @@ void LoadEditorObjects(
     Material* material,
     SceneObject*& selectedObject,
     Model* woodenHouseModel,
+    Model* newHouseModel,
     Model* pineTreeModel,
     Model* commonTreeModel,
     Model* rockModel,
@@ -293,6 +499,7 @@ void LoadEditorObjects(
     Model* grassModel
 )
 {
+    (void)material;
     std::ifstream file(
         filePath
     );
@@ -338,6 +545,7 @@ void LoadEditorObjects(
             GetModelFromEditorType(
                 typePart,
                 woodenHouseModel,
+                newHouseModel,
                 pineTreeModel,
                 commonTreeModel,
                 rockModel,
@@ -357,11 +565,16 @@ void LoadEditorObjects(
         }
         else
         {
+            Material* loadedMaterial =
+                CreateLoadedCubeMaterial(
+                    typePart
+                );
+
             object =
                 new SceneObject(
                     cubeMesh,
                     shader,
-                    material
+                    loadedMaterial
                 );
         }
 
@@ -4043,8 +4256,13 @@ appMode == AppMode::Play;
         }
         if (glfwGetKey(window, GLFW_KEY_P) == GLFW_PRESS && !pPressed)
         {
-            SceneSerializer::Save(scene, "D:\\taki\\POLAND\\POLAND\\ThesisRenderer\\ThesisRenderer\\scene.txt");
+            SaveEditorObjects(
+                scene,
+                "SavedEditorObjects.txt"
+            );
+
             pPressed = true;
+         
         }
         if (glfwGetKey(window, GLFW_KEY_P) == GLFW_RELEASE)
         {
@@ -4052,7 +4270,25 @@ appMode == AppMode::Play;
         }
         if (glfwGetKey(window, GLFW_KEY_L) == GLFW_PRESS && !lPressed)
         {
-            SceneSerializer::Load(scene, "D:\\taki\\POLAND\\POLAND\\ThesisRenderer\\ThesisRenderer\\scene.txt", &cube, &shader, &cubeMaterial);
+            LoadEditorObjects(
+                scene,
+                "SavedEditorObjects.txt",
+                &cube,
+                &shader,
+                &cubeMaterial,
+                selectedObject,
+                &woodenHouseModel,
+                &newHouseModel,
+                &pineTreeModel,
+                &commonTreeModel,
+                &rockModel,
+                &bushModel,
+                &woodLogModel,
+                &treeStumpModel,
+                &grassModel
+            );
+
+            lPressed = true;
             lPressed = true;
         }
         if (glfwGetKey(window, GLFW_KEY_L) == GLFW_RELEASE)
@@ -4789,7 +5025,36 @@ appMode == AppMode::Play;
             camera,
             &torchModel,
             lightCounter,
-            appMode
+            appMode,
+
+            [&]()
+            {
+                SaveEditorObjects(
+                    scene,
+                    "SavedEditorObjects.txt"
+                );
+            },
+
+            [&]()
+            {
+                LoadEditorObjects(
+                    scene,
+                    "SavedEditorObjects.txt",
+                    &cube,
+                    &shader,
+                    &cubeMaterial,
+                    selectedObject,
+                    &woodenHouseModel,
+                    &newHouseModel,
+                    &pineTreeModel,
+                    &commonTreeModel,
+                    &rockModel,
+                    &bushModel,
+                    &woodLogModel,
+                    &treeStumpModel,
+                    &grassModel
+                );
+            }
         );
 
         if (appMode == AppMode::Editor)
@@ -5404,6 +5669,7 @@ appMode == AppMode::Play;
                     &cubeMaterial,
                     selectedObject,
                     &woodenHouseModel,
+                    &newHouseModel,
                     &pineTreeModel,
                     &commonTreeModel,
                     &rockModel,

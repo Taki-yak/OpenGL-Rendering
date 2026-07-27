@@ -62,7 +62,9 @@ public:
         Camera& camera,
         Model* torchModel,
         int& lightCounter,
-        AppMode& appMode
+        AppMode& appMode,
+        std::function<void()> saveEditorCallback,
+        std::function<void()> loadEditorCallback
     );
     static void DrawStatistics(
         Scene& scene,

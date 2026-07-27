@@ -1513,7 +1513,9 @@ void EditorUI::DrawToolbar(
     Camera& camera,
     Model* torchModel,
     int& lightCounter,
-    AppMode& appMode
+    AppMode& appMode,
+    std::function<void()> saveEditorCallback,
+    std::function<void()> loadEditorCallback
 )
 {
     ImGui::SetNextWindowPos(ImVec2(0, 0), ImGuiCond_Always);
@@ -1538,24 +1540,14 @@ void EditorUI::DrawToolbar(
     ImGui::SameLine();
     if (ImGui::Button("Save"))
     {
-        SceneSerializer::Save(
-            scene,
-            "scene.txt"
-        );
+        saveEditorCallback();
     }
 
     ImGui::SameLine();
 
     if (ImGui::Button("Load"))
     {
-
-        SceneSerializer::Load(
-            scene,
-            "scene.txt",
-            cubeMesh,
-            shader,
-            material
-        );
+        loadEditorCallback();
     }
 
     ImGui::SameLine();

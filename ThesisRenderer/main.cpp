@@ -94,7 +94,23 @@ false;
 float playCameraLookOffset =0.0f;
 bool rightMouseCameraActive =
 false;
+bool interactionKeyPressed =
+false;
 
+SceneObject* nearbyInteractableObject =
+nullptr;
+
+std::string interactionHintText =
+"";
+
+std::string interactionResultText =
+"Walk near an object and press E.";
+
+float interactionResultTimer =
+0.0f;
+
+int interactionCount =
+0;
 bool ignoreNextMouseDelta =
 false;
 bool IsEditorSavedObject(SceneObject* object)
@@ -1756,6 +1772,212 @@ void UpdatePlayModeCameraFollow(
             lookTarget -
             camera.Position
         );
+}
+bool ObjectNameContains(
+    SceneObject* object,
+    const std::string& text
+)
+{
+    if (object == nullptr)
+        return false;
+
+    return
+        object->name.find(text) != std::string::npos;
+}
+
+bool IsGameplayInteractable(
+    SceneObject* object
+)
+{
+    if (object == nullptr)
+        return false;
+
+    if (!object->visible)
+        return false;
+
+    if (object->name == "Player")
+        return false;
+
+    if (object->name == "Ground")
+        return false;
+
+    if (object->name == "Procedural Terrain")
+        return false;
+
+    if (object->name.find("Generated") != std::string::npos)
+        return false;
+
+    if (ObjectNameContains(object, "House"))
+        return true;
+
+    if (ObjectNameContains(object, "Camp"))
+        return true;
+
+    if (ObjectNameContains(object, "Rock"))
+        return true;
+
+    if (ObjectNameContains(object, "Bush"))
+        return true;
+
+    if (ObjectNameContains(object, "Wood Log"))
+        return true;
+
+    if (ObjectNameContains(object, "Tree Stump"))
+        return true;
+
+    if (ObjectNameContains(object, "Stone Wall"))
+        return true;
+
+    if (ObjectNameContains(object, "Fence"))
+        return true;
+
+    if (ObjectNameContains(object, "Path Tile"))
+        return true;
+
+    if (ObjectNameContains(object, "Wood Platform"))
+        return true;
+
+    if (ObjectNameContains(object, "Torch"))
+        return true;
+
+    return false;
+}
+
+std::string GetInteractionActionText(
+    SceneObject* object
+)
+{
+    if (object == nullptr)
+        return "interact";
+
+    if (ObjectNameContains(object, "House"))
+        return "inspect house";
+
+    if (ObjectNameContains(object, "Camp"))
+        return "inspect camp";
+
+    if (ObjectNameContains(object, "Rock"))
+        return "inspect rock";
+
+    if (ObjectNameContains(object, "Bush"))
+        return "inspect bush";
+
+    if (ObjectNameContains(object, "Wood Log"))
+        return "inspect log";
+
+    if (ObjectNameContains(object, "Tree Stump"))
+        return "inspect stump";
+
+    if (ObjectNameContains(object, "Stone Wall"))
+        return "inspect wall";
+
+    if (ObjectNameContains(object, "Fence"))
+        return "inspect fence";
+
+    if (ObjectNameContains(object, "Path Tile"))
+        return "inspect path";
+
+    if (ObjectNameContains(object, "Wood Platform"))
+        return "inspect platform";
+
+    if (ObjectNameContains(object, "Torch"))
+        return "inspect torch";
+
+    return "interact";
+}
+
+std::string GetInteractionResultText(
+    SceneObject* object
+)
+{
+    if (object == nullptr)
+        return "Nothing to interact with.";
+
+    if (ObjectNameContains(object, "House"))
+        return "House inspected. This object was placed from the editor.";
+
+    if (ObjectNameContains(object, "Camp"))
+        return "Camp inspected. This area was generated from a camp preset.";
+
+    if (ObjectNameContains(object, "Rock"))
+        return "Rock inspected. Collision and terrain placement are working.";
+
+    if (ObjectNameContains(object, "Bush"))
+        return "Bush inspected. Environment prop interaction works.";
+
+    if (ObjectNameContains(object, "Wood Log"))
+        return "Wood log inspected. Forest prop interaction works.";
+
+    if (ObjectNameContains(object, "Tree Stump"))
+        return "Tree stump inspected. Camp prop interaction works.";
+
+    if (ObjectNameContains(object, "Stone Wall"))
+        return "Stone wall inspected. Building piece interaction works.";
+
+    if (ObjectNameContains(object, "Fence"))
+        return "Fence inspected. Modular construction object detected.";
+
+    if (ObjectNameContains(object, "Path Tile"))
+        return "Path tile inspected. Layout piece detected.";
+
+    if (ObjectNameContains(object, "Wood Platform"))
+        return "Wood platform inspected. Buildable platform detected.";
+
+    if (ObjectNameContains(object, "Torch"))
+        return "Torch inspected. Light object detected.";
+
+    return "Object inspected.";
+}
+
+SceneObject* FindNearestInteractableObject(
+    Scene& scene,
+    const glm::vec3& playerPosition,
+    float maxDistance
+)
+{
+    SceneObject* nearestObject =
+        nullptr;
+
+    float nearestDistance =
+        maxDistance;
+
+    for (SceneObject* object : scene.objects)
+    {
+        if (!IsGameplayInteractable(object))
+            continue;
+
+        glm::vec3 objectPosition =
+            object->transform.position;
+
+        glm::vec2 playerXZ =
+            glm::vec2(
+                playerPosition.x,
+                playerPosition.z
+            );
+
+        glm::vec2 objectXZ =
+            glm::vec2(
+                objectPosition.x,
+                objectPosition.z
+            );
+
+        float distance =
+            glm::length(
+                playerXZ -
+                objectXZ
+            );
+
+        if (distance < nearestDistance)
+        {
+            nearestDistance =
+                distance;
+
+            nearestObject =
+                object;
+        }
+    }
+
+    return nearestObject;
 }
 // ================= MAIN =================
 glm::vec3 rotationAxis = glm::vec3(0.0f, 1.0f, 0.0f);
@@ -4233,6 +4455,140 @@ appMode == AppMode::Play;
                 playerObject,
                 deltaTime
             );
+        }
+        // ================= GAMEPLAY INTERACTION SYSTEM V1 =================
+
+        if (interactionResultTimer > 0.0f)
+        {
+            interactionResultTimer -=
+                deltaTime;
+        }
+
+        nearbyInteractableObject =
+            nullptr;
+
+        interactionHintText =
+            "";
+
+        if (
+            appMode == AppMode::Play &&
+            playerObject != nullptr
+            )
+        {
+            nearbyInteractableObject =
+                FindNearestInteractableObject(
+                    scene,
+                    playerObject->transform.position,
+                    4.0f
+                );
+
+            if (nearbyInteractableObject != nullptr)
+            {
+                interactionHintText =
+                    "Press E to " +
+                    GetInteractionActionText(
+                        nearbyInteractableObject
+                    ) +
+                    ": " +
+                    nearbyInteractableObject->name;
+            }
+
+            bool eKeyDown =
+                glfwGetKey(
+                    window,
+                    GLFW_KEY_E
+                ) == GLFW_PRESS;
+
+            if (
+                eKeyDown &&
+                !interactionKeyPressed &&
+                nearbyInteractableObject != nullptr
+                )
+            {
+                interactionCount++;
+
+                interactionResultText =
+                    GetInteractionResultText(
+                        nearbyInteractableObject
+                    );
+
+                interactionResultTimer =
+                    3.0f;
+
+                std::cout
+                    << "Interaction "
+                    << interactionCount
+                    << ": "
+                    << interactionResultText
+                    << std::endl;
+            }
+
+            interactionKeyPressed =
+                eKeyDown;
+        }
+        else
+        {
+            interactionKeyPressed =
+                false;
+        }
+        // ================= GAMEPLAY HUD =================
+
+        if (appMode == AppMode::Play)
+        {
+            ImGui::SetNextWindowPos(
+                ImVec2(
+                    20.0f,
+                    680.0f
+                ),
+                ImGuiCond_Always
+            );
+
+            ImGui::SetNextWindowSize(
+                ImVec2(
+                    520.0f,
+                    120.0f
+                ),
+                ImGuiCond_Always
+            );
+
+            ImGui::Begin("Gameplay HUD");
+
+            ImGui::Text(
+                "Gameplay Interaction System"
+            );
+
+            ImGui::Separator();
+
+            if (!interactionHintText.empty())
+            {
+                ImGui::Text(
+                    "%s",
+                    interactionHintText.c_str()
+                );
+            }
+            else
+            {
+                ImGui::Text(
+                    "Walk near a house, camp object, rock, fence, wall, or platform."
+                );
+            }
+
+            if (interactionResultTimer > 0.0f)
+            {
+                ImGui::Separator();
+
+                ImGui::Text(
+                    "%s",
+                    interactionResultText.c_str()
+                );
+            }
+
+            ImGui::Text(
+                "Interactions: %d",
+                interactionCount
+            );
+
+            ImGui::End();
         }
         if (glfwGetKey(window, GLFW_KEY_X) == GLFW_PRESS)
             rotationAxis = glm::vec3(1.0f, 0.0f, 0.0f);

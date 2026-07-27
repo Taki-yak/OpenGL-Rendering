@@ -101,7 +101,8 @@ bool IsEditorSavedObject(SceneObject* object)
 {
     if (object == nullptr)
         return false;
-
+    if (object->name == "Procedural Terrain")
+        return false;
     if (object->name == "Player")
         return false;
 
@@ -512,7 +513,28 @@ void LoadEditorObjects(
 
         return;
     }
+    for (auto it = scene.objects.begin(); it != scene.objects.end(); )
+    {
+        SceneObject* object =
+            *it;
 
+        if (
+            object != nullptr &&
+            IsEditorSavedObject(object)
+            )
+        {
+            delete object;
+
+            it =
+                scene.objects.erase(
+                    it
+                );
+        }
+        else
+        {
+            ++it;
+        }
+    }
     std::string line;
 
     while (std::getline(file, line))
@@ -537,7 +559,15 @@ void LoadEditorObjects(
         std::getline(lineStream, rotationPart, '|');
         std::getline(lineStream, scalePart, '|');
         std::getline(lineStream, colliderPart, '|');
+        if (typePart == "Cube")
+        {
+            std::cout
+                << "Skipped old legacy Cube object: "
+                << namePart
+                << std::endl;
 
+            continue;
+        }
         SceneObject* object =
             nullptr;
 

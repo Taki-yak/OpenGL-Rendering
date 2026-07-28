@@ -98,6 +98,11 @@ false;
 bool interactionKeyPressed =
 false;
 int interactionCount =0;
+bool walkingFootstepPlaying =
+false;
+
+bool runningFootstepPlaying =
+false;
 float nearbyInteractableDistance =-1.0f;
 
 float interactionRadius =4.0f;
@@ -4163,7 +4168,28 @@ int main()
         "Assets/Audio/interaction.wav",
         false
     );
+    audioSystem.LoadSound(
+        "forest_ambience",
+        "Assets/Audio/forest_ambience.wav",
+        true
+    );
 
+    audioSystem.LoadSound(
+        "interaction",
+        "Assets/Audio/interaction.wav",
+        false
+    );
+    audioSystem.LoadSound(
+        "walk_grass",
+        "Assets/Audio/walk-grass.wav",
+        true
+    );
+
+    audioSystem.LoadSound(
+        "run_grass",
+        "Assets/Audio/run-grass.wav",
+        true
+    );
     audioSystem.Play(
         "forest_ambience",
         0.25f
@@ -4479,6 +4505,135 @@ appMode == AppMode::Play;
                 playerObject,
                 deltaTime
             );
+        }
+        // ================= FOOTSTEP AUDIO SYSTEM V1 =================
+
+        bool playerMoving =
+            false;
+
+        bool playerRunning =
+            false;
+
+        if (
+            appMode == AppMode::Play &&
+            playerObject != nullptr
+            )
+        {
+            bool forwardPressed =
+                glfwGetKey(
+                    window,
+                    GLFW_KEY_W
+                ) == GLFW_PRESS;
+
+            bool backwardPressed =
+                glfwGetKey(
+                    window,
+                    GLFW_KEY_S
+                ) == GLFW_PRESS;
+
+            bool leftPressed =
+                glfwGetKey(
+                    window,
+                    GLFW_KEY_A
+                ) == GLFW_PRESS;
+
+            bool rightPressed =
+                glfwGetKey(
+                    window,
+                    GLFW_KEY_D
+                ) == GLFW_PRESS;
+
+            bool shiftPressed =
+                glfwGetKey(
+                    window,
+                    GLFW_KEY_LEFT_SHIFT
+                ) == GLFW_PRESS ||
+                glfwGetKey(
+                    window,
+                    GLFW_KEY_RIGHT_SHIFT
+                ) == GLFW_PRESS;
+
+            playerMoving =
+                forwardPressed ||
+                backwardPressed ||
+                leftPressed ||
+                rightPressed;
+
+            playerRunning =
+                playerMoving &&
+                shiftPressed;
+        }
+
+        if (playerMoving)
+        {
+            if (playerRunning)
+            {
+                if (!runningFootstepPlaying)
+                {
+                    audioSystem.Play(
+                        "run_grass",
+                        0.45f
+                    );
+
+                    runningFootstepPlaying =
+                        true;
+                }
+
+                if (walkingFootstepPlaying)
+                {
+                    audioSystem.Stop(
+                        "walk_grass"
+                    );
+
+                    walkingFootstepPlaying =
+                        false;
+                }
+            }
+            else
+            {
+                if (!walkingFootstepPlaying)
+                {
+                    audioSystem.Play(
+                        "walk_grass",
+                        0.35f
+                    );
+
+                    walkingFootstepPlaying =
+                        true;
+                }
+
+                if (runningFootstepPlaying)
+                {
+                    audioSystem.Stop(
+                        "run_grass"
+                    );
+
+                    runningFootstepPlaying =
+                        false;
+                }
+            }
+        }
+        else
+        {
+            if (walkingFootstepPlaying)
+            {
+                audioSystem.Stop(
+                    "walk_grass"
+                );
+
+                walkingFootstepPlaying =
+                    false;
+            }
+
+            if (runningFootstepPlaying)
+            {
+                audioSystem.Stop(
+                    "run_grass"
+                );
+
+                runningFootstepPlaying =
+                    false;
+            }
         }
         // ================= GAMEPLAY INTERACTION SYSTEM V1 =================
 
@@ -6180,6 +6335,13 @@ appMode == AppMode::Play;
     ImGui_ImplOpenGL3_Shutdown();
     ImGui_ImplGlfw_Shutdown();
     ImGui::DestroyContext();
+    audioSystem.Stop(
+        "walk_grass"
+    );
+
+    audioSystem.Stop(
+        "run_grass"
+    );
     audioSystem.Shutdown();
     glfwTerminate();
 

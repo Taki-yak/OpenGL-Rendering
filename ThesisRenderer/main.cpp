@@ -1791,7 +1791,17 @@ bool ObjectNameContains(
     return
         object->name.find(text) != std::string::npos;
 }
+bool IsTorchObject(
+    SceneObject* object
+);
 
+bool IsTorchLightOn(
+    SceneObject* object
+);
+
+void ToggleTorchLight(
+    SceneObject* object
+);
 bool IsGameplayInteractable(
     SceneObject* object
 )
@@ -1844,7 +1854,7 @@ bool IsGameplayInteractable(
     if (ObjectNameContains(object, "Wood Platform"))
         return true;
 
-    if (ObjectNameContains(object, "Torch"))
+    if (IsTorchObject(object))
         return true;
 
     return false;
@@ -1886,13 +1896,77 @@ std::string GetInteractionActionText(
 
     if (ObjectNameContains(object, "Wood Platform"))
         return "inspect platform";
+    if (IsTorchObject(object))
+    {
+        if (IsTorchLightOn(object))
+            return "turn off torch";
 
-    if (ObjectNameContains(object, "Torch"))
-        return "inspect torch";
+        return "turn on torch";
+    }
 
     return "interact";
 }
+bool IsTorchObject(
+    SceneObject* object
+)
+{
+    if (object == nullptr)
+        return false;
 
+    if (ObjectNameContains(object, "Torch"))
+        return true;
+
+    if (object->attachedLight != nullptr)
+        return true;
+
+    return false;
+}
+
+bool IsTorchLightOn(
+    SceneObject* object
+)
+{
+    if (object == nullptr)
+        return false;
+
+    if (object->attachedLight == nullptr)
+        return false;
+
+    return
+        glm::length(
+            object->attachedLight->color
+        ) > 0.05f;
+}
+
+void ToggleTorchLight(
+    SceneObject* object
+)
+{
+    if (object == nullptr)
+        return;
+
+    if (object->attachedLight == nullptr)
+        return;
+
+    if (IsTorchLightOn(object))
+    {
+        object->attachedLight->color =
+            glm::vec3(
+                0.0f,
+                0.0f,
+                0.0f
+            );
+    }
+    else
+    {
+        object->attachedLight->color =
+            glm::vec3(
+                1.4f,
+                0.9f,
+                0.35f
+            );
+    }
+}
 std::string GetInteractionResultText(
     SceneObject* object
 )
@@ -1930,8 +2004,13 @@ std::string GetInteractionResultText(
     if (ObjectNameContains(object, "Wood Platform"))
         return "Wood platform inspected. Buildable platform detected.";
 
-    if (ObjectNameContains(object, "Torch"))
-        return "Torch inspected. Light object detected.";
+    if (IsTorchObject(object))
+    {
+        if (IsTorchLightOn(object))
+            return "Torch activated. Warm point light is now ON.";
+
+        return "Torch disabled. Point light is now OFF.";
+    }
 
     return "Object inspected.";
 }
@@ -4710,6 +4789,13 @@ appMode == AppMode::Play;
             {
                 interactionCount++;
 
+                if (IsTorchObject(nearbyInteractableObject))
+                {
+                    ToggleTorchLight(
+                        nearbyInteractableObject
+                    );
+                }
+
                 interactionResultText =
                     GetInteractionResultText(
                         nearbyInteractableObject
@@ -4724,6 +4810,7 @@ appMode == AppMode::Play;
                     << ": "
                     << interactionResultText
                     << std::endl;
+
                 audioSystem.PlayFromStart(
                     "interaction",
                     0.85f
@@ -5317,11 +5404,7 @@ appMode == AppMode::Play;
 
             shader.setVec3(
                 "lightColors[" + std::to_string(pointLightIndex) + "]",
-                glm::vec3(
-                    1.4f,
-                    1.1f,
-                    0.65f
-                )
+                light->color
             );
 
             pointLightIndex++;

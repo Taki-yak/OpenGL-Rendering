@@ -1607,6 +1607,16 @@ void EditorUI::DrawToolbar(
             "Torch Light " +
             std::to_string(lightCounter++);
 
+        torchLight->type =
+            LightType::Point;
+
+        torchLight->color =
+            glm::vec3(
+                1.4f,
+                0.9f,
+                0.35f
+            );
+
         torchLight->position =
             spawnPosition +
             glm::vec3(
@@ -1645,6 +1655,16 @@ void EditorUI::DrawToolbar(
 
         torchObject->boundingRadius =
             20.0f;
+
+        torchObject->attachedLight =
+            torchLight;
+
+        torchObject->attachedLightOffset =
+            glm::vec3(
+                0.0f,
+                1.8f,
+                0.0f
+            );
 
         scene.AddObject(
             torchObject

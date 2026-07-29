@@ -1612,9 +1612,9 @@ void EditorUI::DrawToolbar(
 
         torchLight->color =
             glm::vec3(
-                1.4f,
-                0.9f,
-                0.35f
+                3.5f,
+                1.8f,
+                0.55f
             );
 
         torchLight->position =

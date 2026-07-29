@@ -77,6 +77,17 @@ void TestAssimp();
 float deltaTime = 0.0f;
 float lastFrame = 0.0f;
 bool useCulling = true;
+bool useDistanceOptimization =
+true;
+
+float smallPropRenderDistance =
+32.0f;
+
+float mediumPropRenderDistance =
+65.0f;
+
+int distanceCulledObjects =
+0;
 bool cKeyPressed = false;
 bool nKeyPressed = false;
 bool nKeyLastState = false;
@@ -1791,6 +1802,146 @@ bool ObjectNameContains(
     return
         object->name.find(text) != std::string::npos;
 }
+bool IsImportantRenderObject(
+    SceneObject* object
+)
+{
+    if (object == nullptr)
+        return true;
+
+    if (object == selectedObject)
+        return true;
+
+    if (object == nearbyInteractableObject)
+        return true;
+
+    if (object->name == "Player")
+        return true;
+
+    if (object->name == "Procedural Terrain")
+        return true;
+
+    if (ObjectNameContains(object, "House"))
+        return true;
+
+    if (ObjectNameContains(object, "Torch"))
+        return true;
+
+    if (object->attachedLight != nullptr)
+        return true;
+
+    if (ObjectNameContains(object, "Camp House"))
+        return true;
+
+    return false;
+}
+
+bool IsSmallPerformanceProp(
+    SceneObject* object
+)
+{
+    if (object == nullptr)
+        return false;
+
+    if (ObjectNameContains(object, "Grass"))
+        return true;
+
+    if (ObjectNameContains(object, "Bush"))
+        return true;
+
+    if (ObjectNameContains(object, "Plant"))
+        return true;
+
+    if (ObjectNameContains(object, "Flower"))
+        return true;
+
+    if (ObjectNameContains(object, "Wheat"))
+        return true;
+
+    if (ObjectNameContains(object, "Rock"))
+        return true;
+
+    if (ObjectNameContains(object, "Tree Stump"))
+        return true;
+
+    if (ObjectNameContains(object, "Wood Log"))
+        return true;
+
+    return false;
+}
+
+bool IsMediumPerformanceProp(
+    SceneObject* object
+)
+{
+    if (object == nullptr)
+        return false;
+
+    if (ObjectNameContains(object, "Pine Tree"))
+        return true;
+
+    if (ObjectNameContains(object, "Common Tree"))
+        return true;
+
+    if (ObjectNameContains(object, "Birch"))
+        return true;
+
+    if (ObjectNameContains(object, "Willow"))
+        return true;
+
+    if (ObjectNameContains(object, "Tree"))
+        return true;
+
+    return false;
+}
+
+bool ShouldSkipObjectByDistance(
+    SceneObject* object,
+    const glm::vec3& viewerPosition
+)
+{
+    if (!useDistanceOptimization)
+        return false;
+
+    if (object == nullptr)
+        return true;
+
+    if (!object->visible)
+        return true;
+
+    if (IsImportantRenderObject(object))
+        return false;
+
+    glm::vec2 viewerXZ =
+        glm::vec2(
+            viewerPosition.x,
+            viewerPosition.z
+        );
+
+    glm::vec2 objectXZ =
+        glm::vec2(
+            object->transform.position.x,
+            object->transform.position.z
+        );
+
+    float distance =
+        glm::length(
+            viewerXZ -
+            objectXZ
+        );
+
+    if (IsSmallPerformanceProp(object))
+    {
+        return distance > smallPropRenderDistance;
+    }
+
+    if (IsMediumPerformanceProp(object))
+    {
+        return distance > mediumPropRenderDistance;
+    }
+
+    return false;
+}
 bool IsTorchObject(
     SceneObject* object
 );
@@ -1961,9 +2112,9 @@ void ToggleTorchLight(
     {
         object->attachedLight->color =
             glm::vec3(
-                1.4f,
-                0.9f,
-                0.35f
+                5.0f,
+                2.6f,
+                0.8f
             );
     }
 }
@@ -2540,7 +2691,7 @@ int main()
     BuildProceduralTerrain(
         proceduralTerrainVertices,
         520.0f,
-        220
+        170
     );
 
     Mesh proceduralTerrainMesh(
@@ -4275,10 +4426,7 @@ int main()
     );
     while (!glfwWindowShouldClose(window))
     {
-        for (SceneObject* obj : scene.objects)
-        {
-            obj->UpdateComponents(deltaTime);
-        }
+      
         ImGui_ImplOpenGL3_NewFrame();
         ImGui_ImplGlfw_NewFrame();
         ImGui::NewFrame();
@@ -4415,7 +4563,6 @@ appMode == AppMode::Play;
                 window,
                 GLFW_KEY_N
             ) == GLFW_PRESS;
-
         nKeyLastState = nKeyCurrent;
 
         if (glfwGetKey(window, GLFW_KEY_M) == GLFW_PRESS && !mKeyPressed)
@@ -5117,7 +5264,7 @@ appMode == AppMode::Play;
         if (glfwGetKey(window, GLFW_KEY_0) == GLFW_PRESS)
         {
             currentAxis = NONE;
-            std::cout << "Free move\n";
+        
         }
 
         // ===== SCALE
@@ -5442,14 +5589,50 @@ appMode == AppMode::Play;
         cube1.UpdateComponents(deltaTime);
         cube1.Draw(renderer, glm::mat4(1.0f));
        
-        int totalObjects = scene.objects.size();
-        int visibleObjects = 0;
-        int culledObjects = 0;
+        int totalObjects =
+            static_cast<int>(
+                scene.objects.size()
+                );
+
+        int visibleObjects =
+            0;
+
+        int culledObjects =
+            0;
+
+        distanceCulledObjects =
+            0;
+
+        glm::vec3 performanceViewerPosition =
+            camera.Position;
+
+        if (
+            appMode == AppMode::Play &&
+            playerObject != nullptr
+            )
+        {
+            performanceViewerPosition =
+                playerObject->transform.position;
+        }
 
         for (SceneObject* obj : scene.objects)
         {
-            obj->UpdateComponents(deltaTime);
+            if (obj == nullptr)
+                continue;
 
+            if (
+                ShouldSkipObjectByDistance(
+                    obj,
+                    performanceViewerPosition
+                )
+                )
+            {
+                distanceCulledObjects++;
+                culledObjects++;
+                continue;
+            }
+
+            obj->UpdateComponents(deltaTime);
             bool objectShouldHighlight =
                 obj == selectedObject;
 
@@ -5686,10 +5869,27 @@ appMode == AppMode::Play;
         if (currentTime - previousTime >= 1.0)
         {
             double fps = frameCount / (currentTime - previousTime);
-            std::string title = "FPS: " + std::to_string((int)fps) +
-                " | Visible: " + std::to_string(visibleObjects) +
-                " | Culled: " + std::to_string(culledObjects) +
-                " | Total: " + std::to_string(totalObjects);
+            std::string title =
+                "FPS: " +
+                std::to_string(
+                    (int)fps
+                ) +
+                " | Visible: " +
+                std::to_string(
+                    visibleObjects
+                ) +
+                " | Culled: " +
+                std::to_string(
+                    culledObjects
+                ) +
+                " | Distance Culled: " +
+                std::to_string(
+                    distanceCulledObjects
+                ) +
+                " | Total: " +
+                std::to_string(
+                    totalObjects
+                );
             if (selectedObject != nullptr)
             {
                 title += " | Selected Pos: (" +

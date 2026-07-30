@@ -79,12 +79,19 @@ float lastFrame = 0.0f;
 bool useCulling = true;
 bool useDistanceOptimization =
 true;
+bool useTorchFireFlicker =
+true;
+float tinyPropRenderDistance =
+30.0f;
 
 float smallPropRenderDistance =
-32.0f;
+75.0f;
+
+float rockRenderDistance =
+115.0f;
 
 float mediumPropRenderDistance =
-65.0f;
+180.0f;
 
 int distanceCulledObjects =
 0;
@@ -1836,7 +1843,7 @@ bool IsImportantRenderObject(
     return false;
 }
 
-bool IsSmallPerformanceProp(
+bool IsTinyPerformanceProp(
     SceneObject* object
 )
 {
@@ -1844,9 +1851,6 @@ bool IsSmallPerformanceProp(
         return false;
 
     if (ObjectNameContains(object, "Grass"))
-        return true;
-
-    if (ObjectNameContains(object, "Bush"))
         return true;
 
     if (ObjectNameContains(object, "Plant"))
@@ -1858,13 +1862,39 @@ bool IsSmallPerformanceProp(
     if (ObjectNameContains(object, "Wheat"))
         return true;
 
-    if (ObjectNameContains(object, "Rock"))
+    return false;
+}
+
+bool IsSmallPerformanceProp(
+    SceneObject* object
+)
+{
+    if (object == nullptr)
+        return false;
+
+    if (ObjectNameContains(object, "Bush"))
         return true;
 
     if (ObjectNameContains(object, "Tree Stump"))
         return true;
 
     if (ObjectNameContains(object, "Wood Log"))
+        return true;
+
+    if (ObjectNameContains(object, "Camp Prop"))
+        return true;
+
+    return false;
+}
+
+bool IsRockPerformanceProp(
+    SceneObject* object
+)
+{
+    if (object == nullptr)
+        return false;
+
+    if (ObjectNameContains(object, "Rock"))
         return true;
 
     return false;
@@ -1887,6 +1917,9 @@ bool IsMediumPerformanceProp(
         return true;
 
     if (ObjectNameContains(object, "Willow"))
+        return true;
+
+    if (ObjectNameContains(object, "Camp Tree"))
         return true;
 
     if (ObjectNameContains(object, "Tree"))
@@ -1930,9 +1963,19 @@ bool ShouldSkipObjectByDistance(
             objectXZ
         );
 
+    if (IsTinyPerformanceProp(object))
+    {
+        return distance > tinyPropRenderDistance;
+    }
+
     if (IsSmallPerformanceProp(object))
     {
         return distance > smallPropRenderDistance;
+    }
+
+    if (IsRockPerformanceProp(object))
+    {
+        return distance > rockRenderDistance;
     }
 
     if (IsMediumPerformanceProp(object))
@@ -1949,7 +1992,14 @@ bool IsTorchObject(
 bool IsTorchLightOn(
     SceneObject* object
 );
-
+glm::vec3 GetTorchLightOnColor()
+{
+    return glm::vec3(
+        5.0f,
+        2.6f,
+        0.8f
+    );
+}
 void ToggleTorchLight(
     SceneObject* object
 );
@@ -2111,10 +2161,66 @@ void ToggleTorchLight(
     else
     {
         object->attachedLight->color =
+            GetTorchLightOnColor();
+    }
+}
+void UpdateTorchFireFlicker(
+    Scene& scene,
+    float currentTime
+)
+{
+    if (!useTorchFireFlicker)
+        return;
+
+    for (SceneObject* object : scene.objects)
+    {
+        if (object == nullptr)
+            continue;
+
+        if (!IsTorchObject(object))
+            continue;
+
+        if (object->attachedLight == nullptr)
+            continue;
+
+        if (!IsTorchLightOn(object))
+            continue;
+
+        float flickerA =
+            std::sin(
+                currentTime * 8.0f +
+                object->transform.position.x * 0.37f
+            );
+
+        float flickerB =
+            std::sin(
+                currentTime * 15.0f +
+                object->transform.position.z * 0.19f
+            );
+
+        float flicker =
+            0.82f +
+            flickerA * 0.12f +
+            flickerB * 0.06f;
+
+        flicker =
+            glm::clamp(
+                flicker,
+                0.65f,
+                1.15f
+            );
+
+        glm::vec3 baseColor =
+            GetTorchLightOnColor();
+
+        object->attachedLight->color =
             glm::vec3(
-                5.0f,
-                2.6f,
-                0.8f
+                baseColor.r * flicker,
+                baseColor.g * flicker,
+                baseColor.b * (
+                    0.85f +
+                    flicker * 0.15f
+                    )
             );
     }
 }
@@ -2691,7 +2797,7 @@ int main()
     BuildProceduralTerrain(
         proceduralTerrainVertices,
         520.0f,
-        170
+        120
     );
 
     Mesh proceduralTerrainMesh(
@@ -5529,6 +5635,12 @@ appMode == AppMode::Play;
                 1.05f,
                 0.95f
             )
+        );
+        UpdateTorchFireFlicker(
+            scene,
+            static_cast<float>(
+                glfwGetTime()
+                )
         );
         int pointLightIndex =
             0;

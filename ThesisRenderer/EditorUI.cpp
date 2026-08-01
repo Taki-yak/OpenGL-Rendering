@@ -1,5 +1,4 @@
 #include "EditorUI.h"
-#include "EditorUI.h"
 #include "Light.h"
 #include <glm/gtc/type_ptr.hpp>
 #include "SceneSerializer.h"
@@ -10,6 +9,9 @@
 #include <unordered_map>
 #include <glm/glm.hpp>
 #include <iostream>
+#include <vector>
+#include <cmath>
+#include "mesh.h"
 float GetObjectTerrainY(
     float x,
     float z,
@@ -1391,6 +1393,557 @@ static SceneObject* SpawnAssetInFrontOfCamera(
 
     return obj;
 }
+static void AddPrimitiveVertex(
+    std::vector<float>& data,
+    const glm::vec3& position,
+    const glm::vec3& normal,
+    const glm::vec2& texCoord
+)
+{
+    data.push_back(position.x);
+    data.push_back(position.y);
+    data.push_back(position.z);
+
+    data.push_back(normal.x);
+    data.push_back(normal.y);
+    data.push_back(normal.z);
+
+    data.push_back(texCoord.x);
+    data.push_back(texCoord.y);
+}
+
+static Mesh* CreateProceduralSphereMesh(
+    int rings,
+    int sectors
+)
+{
+    std::vector<float> data;
+
+    const float pi =
+        3.14159265359f;
+
+    float radius =
+        0.5f;
+
+    for (int r = 0; r < rings; r++)
+    {
+        float v0 =
+            (float)r /
+            (float)rings;
+
+        float v1 =
+            (float)(r + 1) /
+            (float)rings;
+
+        float phi0 =
+            v0 * pi;
+
+        float phi1 =
+            v1 * pi;
+
+        for (int s = 0; s < sectors; s++)
+        {
+            float u0 =
+                (float)s /
+                (float)sectors;
+
+            float u1 =
+                (float)(s + 1) /
+                (float)sectors;
+
+            float theta0 =
+                u0 * pi * 2.0f;
+
+            float theta1 =
+                u1 * pi * 2.0f;
+
+            glm::vec3 p00 =
+                glm::vec3(
+                    std::sin(phi0) * std::cos(theta0),
+                    std::cos(phi0),
+                    std::sin(phi0) * std::sin(theta0)
+                ) * radius;
+
+            glm::vec3 p01 =
+                glm::vec3(
+                    std::sin(phi0) * std::cos(theta1),
+                    std::cos(phi0),
+                    std::sin(phi0) * std::sin(theta1)
+                ) * radius;
+
+            glm::vec3 p10 =
+                glm::vec3(
+                    std::sin(phi1) * std::cos(theta0),
+                    std::cos(phi1),
+                    std::sin(phi1) * std::sin(theta0)
+                ) * radius;
+
+            glm::vec3 p11 =
+                glm::vec3(
+                    std::sin(phi1) * std::cos(theta1),
+                    std::cos(phi1),
+                    std::sin(phi1) * std::sin(theta1)
+                ) * radius;
+
+            glm::vec3 n00 =
+                glm::normalize(
+                    p00
+                );
+
+            glm::vec3 n01 =
+                glm::normalize(
+                    p01
+                );
+
+            glm::vec3 n10 =
+                glm::normalize(
+                    p10
+                );
+
+            glm::vec3 n11 =
+                glm::normalize(
+                    p11
+                );
+
+            AddPrimitiveVertex(
+                data,
+                p00,
+                n00,
+                glm::vec2(u0, v0)
+            );
+
+            AddPrimitiveVertex(
+                data,
+                p10,
+                n10,
+                glm::vec2(u0, v1)
+            );
+
+            AddPrimitiveVertex(
+                data,
+                p01,
+                n01,
+                glm::vec2(u1, v0)
+            );
+
+            AddPrimitiveVertex(
+                data,
+                p01,
+                n01,
+                glm::vec2(u1, v0)
+            );
+
+            AddPrimitiveVertex(
+                data,
+                p10,
+                n10,
+                glm::vec2(u0, v1)
+            );
+
+            AddPrimitiveVertex(
+                data,
+                p11,
+                n11,
+                glm::vec2(u1, v1)
+            );
+        }
+    }
+
+    return new Mesh(
+        data.data(),
+        static_cast<int>(
+            data.size() * sizeof(float)
+            )
+    );
+}
+
+static Mesh* CreateProceduralCylinderMesh(
+    int sectors
+)
+{
+    std::vector<float> data;
+
+    const float pi =
+        3.14159265359f;
+
+    float radius =
+        0.5f;
+
+    float halfHeight =
+        0.5f;
+
+    for (int i = 0; i < sectors; i++)
+    {
+        float u0 =
+            (float)i /
+            (float)sectors;
+
+        float u1 =
+            (float)(i + 1) /
+            (float)sectors;
+
+        float a0 =
+            u0 * pi * 2.0f;
+
+        float a1 =
+            u1 * pi * 2.0f;
+
+        glm::vec3 b0 =
+            glm::vec3(
+                std::cos(a0) * radius,
+                -halfHeight,
+                std::sin(a0) * radius
+            );
+
+        glm::vec3 b1 =
+            glm::vec3(
+                std::cos(a1) * radius,
+                -halfHeight,
+                std::sin(a1) * radius
+            );
+
+        glm::vec3 t0 =
+            glm::vec3(
+                std::cos(a0) * radius,
+                halfHeight,
+                std::sin(a0) * radius
+            );
+
+        glm::vec3 t1 =
+            glm::vec3(
+                std::cos(a1) * radius,
+                halfHeight,
+                std::sin(a1) * radius
+            );
+
+        glm::vec3 n0 =
+            glm::normalize(
+                glm::vec3(
+                    b0.x,
+                    0.0f,
+                    b0.z
+                )
+            );
+
+        glm::vec3 n1 =
+            glm::normalize(
+                glm::vec3(
+                    b1.x,
+                    0.0f,
+                    b1.z
+                )
+            );
+
+        AddPrimitiveVertex(data, b0, n0, glm::vec2(u0, 0.0f));
+        AddPrimitiveVertex(data, b1, n1, glm::vec2(u1, 0.0f));
+        AddPrimitiveVertex(data, t0, n0, glm::vec2(u0, 1.0f));
+
+        AddPrimitiveVertex(data, t0, n0, glm::vec2(u0, 1.0f));
+        AddPrimitiveVertex(data, b1, n1, glm::vec2(u1, 0.0f));
+        AddPrimitiveVertex(data, t1, n1, glm::vec2(u1, 1.0f));
+
+        glm::vec3 bottomCenter =
+            glm::vec3(
+                0.0f,
+                -halfHeight,
+                0.0f
+            );
+
+        glm::vec3 topCenter =
+            glm::vec3(
+                0.0f,
+                halfHeight,
+                0.0f
+            );
+
+        AddPrimitiveVertex(data, bottomCenter, glm::vec3(0.0f, -1.0f, 0.0f), glm::vec2(0.5f, 0.5f));
+        AddPrimitiveVertex(data, b1, glm::vec3(0.0f, -1.0f, 0.0f), glm::vec2(1.0f, 0.0f));
+        AddPrimitiveVertex(data, b0, glm::vec3(0.0f, -1.0f, 0.0f), glm::vec2(0.0f, 0.0f));
+
+        AddPrimitiveVertex(data, topCenter, glm::vec3(0.0f, 1.0f, 0.0f), glm::vec2(0.5f, 0.5f));
+        AddPrimitiveVertex(data, t0, glm::vec3(0.0f, 1.0f, 0.0f), glm::vec2(0.0f, 0.0f));
+        AddPrimitiveVertex(data, t1, glm::vec3(0.0f, 1.0f, 0.0f), glm::vec2(1.0f, 0.0f));
+    }
+
+    return new Mesh(
+        data.data(),
+        static_cast<int>(
+            data.size() * sizeof(float)
+            )
+    );
+}
+
+static Mesh* CreateProceduralConeMesh(
+    int sectors
+)
+{
+    std::vector<float> data;
+
+    const float pi =
+        3.14159265359f;
+
+    float radius =
+        0.5f;
+
+    float halfHeight =
+        0.5f;
+
+    glm::vec3 top =
+        glm::vec3(
+            0.0f,
+            halfHeight,
+            0.0f
+        );
+
+    glm::vec3 bottomCenter =
+        glm::vec3(
+            0.0f,
+            -halfHeight,
+            0.0f
+        );
+
+    for (int i = 0; i < sectors; i++)
+    {
+        float u0 =
+            (float)i /
+            (float)sectors;
+
+        float u1 =
+            (float)(i + 1) /
+            (float)sectors;
+
+        float a0 =
+            u0 * pi * 2.0f;
+
+        float a1 =
+            u1 * pi * 2.0f;
+
+        glm::vec3 b0 =
+            glm::vec3(
+                std::cos(a0) * radius,
+                -halfHeight,
+                std::sin(a0) * radius
+            );
+
+        glm::vec3 b1 =
+            glm::vec3(
+                std::cos(a1) * radius,
+                -halfHeight,
+                std::sin(a1) * radius
+            );
+
+        glm::vec3 sideNormal =
+            glm::normalize(
+                glm::cross(
+                    b1 - b0,
+                    top - b0
+                )
+            );
+
+        AddPrimitiveVertex(data, b0, sideNormal, glm::vec2(u0, 0.0f));
+        AddPrimitiveVertex(data, b1, sideNormal, glm::vec2(u1, 0.0f));
+        AddPrimitiveVertex(data, top, sideNormal, glm::vec2(0.5f, 1.0f));
+
+        AddPrimitiveVertex(data, bottomCenter, glm::vec3(0.0f, -1.0f, 0.0f), glm::vec2(0.5f, 0.5f));
+        AddPrimitiveVertex(data, b0, glm::vec3(0.0f, -1.0f, 0.0f), glm::vec2(0.0f, 0.0f));
+        AddPrimitiveVertex(data, b1, glm::vec3(0.0f, -1.0f, 0.0f), glm::vec2(1.0f, 0.0f));
+    }
+
+    return new Mesh(
+        data.data(),
+        static_cast<int>(
+            data.size() * sizeof(float)
+            )
+    );
+}
+
+static Mesh* GetProceduralPrimitiveMesh(
+    const std::string& primitiveType
+)
+{
+    static Mesh* sphereMesh =
+        nullptr;
+
+    static Mesh* cylinderMesh =
+        nullptr;
+
+    static Mesh* coneMesh =
+        nullptr;
+
+    if (primitiveType == "Sphere")
+    {
+        if (sphereMesh == nullptr)
+        {
+            sphereMesh =
+                CreateProceduralSphereMesh(
+                    24,
+                    32
+                );
+        }
+
+        return sphereMesh;
+    }
+
+    if (primitiveType == "Cylinder")
+    {
+        if (cylinderMesh == nullptr)
+        {
+            cylinderMesh =
+                CreateProceduralCylinderMesh(
+                    32
+                );
+        }
+
+        return cylinderMesh;
+    }
+
+    if (primitiveType == "Cone")
+    {
+        if (coneMesh == nullptr)
+        {
+            coneMesh =
+                CreateProceduralConeMesh(
+                    32
+                );
+        }
+
+        return coneMesh;
+    }
+
+    return nullptr;
+}
+
+static SceneObject* SpawnProceduralPrimitive(
+    Scene& scene,
+    SceneObject*& selectedObject,
+    Camera& camera,
+    Mesh* mesh,
+    Shader* shader,
+    const std::string& objectName,
+    const glm::vec3& scale,
+    const glm::vec3& tint,
+    float terrainOffset,
+    float colliderRadius
+)
+{
+    if (
+        mesh == nullptr ||
+        shader == nullptr
+        )
+    {
+        return nullptr;
+    }
+
+    Material* objectMaterial =
+        new Material(
+            nullptr
+        );
+
+    objectMaterial->tint =
+        tint;
+
+    objectMaterial->ambient =
+        tint * 0.45f;
+
+    objectMaterial->diffuse =
+        tint;
+
+    objectMaterial->specular =
+        glm::vec3(
+            0.08f,
+            0.08f,
+            0.08f
+        );
+
+    objectMaterial->shininess =
+        12.0f;
+
+    SceneObject* object =
+        new SceneObject(
+            mesh,
+            shader,
+            objectMaterial
+        );
+
+    object->name =
+        objectName;
+
+    glm::vec3 forward =
+        glm::vec3(
+            camera.Front.x,
+            0.0f,
+            camera.Front.z
+        );
+
+    if (glm::length(forward) < 0.001f)
+    {
+        forward =
+            glm::vec3(
+                0.0f,
+                0.0f,
+                -1.0f
+            );
+    }
+
+    forward =
+        glm::normalize(
+            forward
+        );
+
+    glm::vec3 spawnPosition =
+        camera.Position +
+        forward * 6.0f;
+
+    spawnPosition =
+        SnapEditorPositionToTerrain(
+            spawnPosition,
+            terrainOffset
+        );
+
+    object->transform.position =
+        spawnPosition;
+
+    object->transform.rotation =
+        glm::vec3(
+            0.0f
+        );
+
+    object->transform.scale =
+        scale;
+
+    object->isCollider =
+        true;
+
+    object->colliderRadius =
+        colliderRadius;
+
+    object->boundingRadius =
+        colliderRadius * 8.0f;
+
+    object->assetId =
+        objectName;
+
+    object->assetType =
+        AssetType::Prop;
+
+    object->spawnSource =
+        SpawnSource::Manual;
+
+    object->persistent =
+        true;
+
+    object->showInHierarchy =
+        true;
+
+    scene.AddObject(
+        object
+    );
+
+    selectedObject =
+        object;
+
+    return object;
+}
 void EditorUI::DrawAssetBrowser(
     Scene& scene,
     SceneObject*& selectedObject,
@@ -1870,6 +2423,85 @@ void EditorUI::DrawAssetBrowser(
                         0.42f,
                         0.22f
                     )
+                );
+            }
+            ImGui::Separator();
+
+            ImGui::Text("Shape Pieces");
+
+            if (ImGui::Button("Ball"))
+            {
+                SpawnProceduralPrimitive(
+                    scene,
+                    selectedObject,
+                    camera,
+                    GetProceduralPrimitiveMesh(
+                        "Sphere"
+                    ),
+                    shader,
+                    "Primitive Ball",
+                    glm::vec3(
+                        1.0f
+                    ),
+                    glm::vec3(
+                        0.75f,
+                        0.75f,
+                        0.78f
+                    ),
+                    0.5f,
+                    1.2f
+                );
+            }
+
+            ImGui::SameLine();
+
+            if (ImGui::Button("Cylinder"))
+            {
+                SpawnProceduralPrimitive(
+                    scene,
+                    selectedObject,
+                    camera,
+                    GetProceduralPrimitiveMesh(
+                        "Cylinder"
+                    ),
+                    shader,
+                    "Primitive Cylinder",
+                    glm::vec3(
+                        1.0f
+                    ),
+                    glm::vec3(
+                        0.55f,
+                        0.55f,
+                        0.52f
+                    ),
+                    0.5f,
+                    1.2f
+                );
+            }
+
+            ImGui::SameLine();
+
+            if (ImGui::Button("Cone"))
+            {
+                SpawnProceduralPrimitive(
+                    scene,
+                    selectedObject,
+                    camera,
+                    GetProceduralPrimitiveMesh(
+                        "Cone"
+                    ),
+                    shader,
+                    "Primitive Cone",
+                    glm::vec3(
+                        1.0f
+                    ),
+                    glm::vec3(
+                        0.60f,
+                        0.45f,
+                        0.28f
+                    ),
+                    0.5f,
+                    1.2f
                 );
             }
             ImGui::Separator();

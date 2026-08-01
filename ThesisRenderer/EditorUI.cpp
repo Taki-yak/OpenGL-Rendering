@@ -1581,10 +1581,9 @@ void EditorUI::DrawAssetBrowser(
             }
 
             ImGui::Separator();
-
             ImGui::Text("Camp Presets");
 
-            if (ImGui::Button("Camp 1"))
+            if (ImGui::Button("Build Camp 1"))
             {
                 buildCampCallback(
                     false
@@ -1593,13 +1592,29 @@ void EditorUI::DrawAssetBrowser(
 
             ImGui::SameLine();
 
-            if (ImGui::Button("Camp 2"))
+            if (ImGui::Button("Build Camp 2"))
             {
                 buildCampCallback(
                     true
                 );
             }
+
             ImGui::SameLine();
+
+            if (ImGui::Button("Add Campfire"))
+            {
+                SpawnCampfire(
+                    scene,
+                    selectedObject,
+                    camera,
+                    cubeMesh,
+                    shader
+                );
+            }
+
+            ImGui::TextDisabled(
+                "Tip: Build a camp, then place a campfire in the center."
+            );
 
             if (ImGui::Button("Campfire"))
             {

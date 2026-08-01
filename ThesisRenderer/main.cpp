@@ -255,7 +255,11 @@ std::string GetEditorObjectType(SceneObject* object)
 
     if (name.find("Platform") != std::string::npos)
         return "WoodPlatform";
+    if (name.find("Campfire Log") != std::string::npos)
+        return "CampfireLog";
 
+    if (name.find("Campfire") != std::string::npos)
+        return "Campfire";
     return "Cube";
 }
 
@@ -520,9 +524,76 @@ Material* CreateLoadedCubeMaterial(
                 0.28f
             );
     }
+    if (objectType == "CampfireLog")
+    {
+        objectMaterial->tint =
+            glm::vec3(
+                0.42f,
+                0.24f,
+                0.10f
+            );
 
+        objectMaterial->ambient =
+            glm::vec3(
+                0.22f,
+                0.14f,
+                0.08f
+            );
+
+        objectMaterial->diffuse =
+            glm::vec3(
+                0.65f,
+                0.38f,
+                0.18f
+            );
+
+        objectMaterial->specular =
+            glm::vec3(
+                0.05f,
+                0.04f,
+                0.03f
+            );
+
+        objectMaterial->shininess =
+            4.0f;
+    }
+
+    if (objectType == "Campfire")
+    {
+        objectMaterial->tint =
+            glm::vec3(
+                1.0f,
+                0.35f,
+                0.05f
+            );
+
+        objectMaterial->ambient =
+            glm::vec3(
+                0.75f,
+                0.22f,
+                0.04f
+            );
+
+        objectMaterial->diffuse =
+            glm::vec3(
+                1.0f,
+                0.45f,
+                0.08f
+            );
+
+        objectMaterial->specular =
+            glm::vec3(
+                0.08f,
+                0.05f,
+                0.02f
+            );
+
+        objectMaterial->shininess =
+            4.0f;
+    }
     return objectMaterial;
 }
+glm::vec3 GetTorchLightOnColor();
 void LoadEditorObjects(
     Scene& scene,
     const std::string& filePath,
@@ -690,7 +761,42 @@ void LoadEditorObjects(
                 object->transform.scale.x,
                 object->transform.scale.z
             ) * 0.8f;
+        if (typePart == "Campfire")
+        {
+            Light* campfireLight =
+                new Light();
 
+            campfireLight->name =
+                "Loaded Campfire Light";
+
+            campfireLight->type =
+                LightType::Point;
+
+            campfireLight->position =
+                object->transform.position +
+                glm::vec3(
+                    0.0f,
+                    1.25f,
+                    0.0f
+                );
+
+            campfireLight->color =
+                GetTorchLightOnColor();
+
+            scene.AddLight(
+                campfireLight
+            );
+
+            object->attachedLight =
+                campfireLight;
+
+            object->attachedLightOffset =
+                glm::vec3(
+                    0.0f,
+                    1.25f,
+                    0.0f
+                );
+        }
         scene.AddObject(
             object
         );

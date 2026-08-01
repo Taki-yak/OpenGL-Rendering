@@ -1915,6 +1915,119 @@ bool ObjectNameContains(
     return
         object->name.find(text) != std::string::npos;
 }
+bool IsEditorSelectableObject(
+    SceneObject* object
+)
+{
+    if (object == nullptr)
+        return false;
+
+    if (!object->visible)
+        return false;
+
+    if (object->name == "Player")
+        return false;
+
+    if (object->name == "Ground")
+        return false;
+
+    if (object->name == "Procedural Terrain")
+        return false;
+
+    if (object->name.find("Generated") != std::string::npos)
+        return false;
+
+    if (object->name.find("Border") != std::string::npos)
+        return false;
+
+    if (object->name.find("Grass Terrain Tile") != std::string::npos)
+        return false;
+
+    return true;
+}
+
+float GetEditorSelectionRadius(
+    SceneObject* object
+)
+{
+    if (object == nullptr)
+        return 1.0f;
+
+    if (ObjectNameContains(object, "House"))
+        return 8.0f;
+
+    if (ObjectNameContains(object, "Campfire"))
+        return 3.0f;
+
+    if (ObjectNameContains(object, "Torch"))
+        return 2.5f;
+
+    if (ObjectNameContains(object, "Tree"))
+        return 4.5f;
+
+    if (ObjectNameContains(object, "Rock"))
+        return 3.0f;
+
+    if (ObjectNameContains(object, "Bush"))
+        return 2.5f;
+
+    if (ObjectNameContains(object, "Wood Log"))
+        return 2.5f;
+
+    if (ObjectNameContains(object, "Tree Stump"))
+        return 2.5f;
+
+    if (ObjectNameContains(object, "Wall"))
+        return 4.0f;
+
+    if (ObjectNameContains(object, "Fence"))
+        return 3.0f;
+
+    if (ObjectNameContains(object, "Platform"))
+        return 4.0f;
+
+    if (ObjectNameContains(object, "Path Tile"))
+        return 3.5f;
+
+    float maxScale =
+        glm::max(
+            glm::max(
+                object->transform.scale.x,
+                object->transform.scale.y
+            ),
+            object->transform.scale.z
+        );
+
+    return glm::clamp(
+        maxScale * 1.2f,
+        1.2f,
+        6.0f
+    );
+}
+
+void SelectEditorObject(
+    SceneObject*& selectedObject,
+    SceneObject* newSelection
+)
+{
+    if (selectedObject != nullptr)
+        selectedObject->isSelected =
+        false;
+
+    selectedObject =
+        newSelection;
+
+    if (selectedObject != nullptr)
+    {
+        selectedObject->isSelected =
+            true;
+
+        std::cout
+            << "Selected object: "
+            << selectedObject->name
+            << std::endl;
+    }
+}
 bool IsCampfireObject(
     SceneObject* object
 )
@@ -4927,10 +5040,39 @@ appMode == AppMode::Play;
         }
         if (
             appMode == AppMode::Editor &&
-            selectedObject != nullptr
+            selectedObject != nullptr &&
+            !ImGui::GetIO().WantCaptureKeyboard
             )
         {
-            float speed = 5.0f * deltaTime;
+            float speed =
+                5.0f *
+                deltaTime;
+
+            bool shiftPressed =
+                glfwGetKey(
+                    window,
+                    GLFW_KEY_LEFT_SHIFT
+                ) == GLFW_PRESS ||
+                glfwGetKey(
+                    window,
+                    GLFW_KEY_RIGHT_SHIFT
+                ) == GLFW_PRESS;
+
+            bool ctrlPressed =
+                glfwGetKey(
+                    window,
+                    GLFW_KEY_LEFT_CONTROL
+                ) == GLFW_PRESS ||
+                glfwGetKey(
+                    window,
+                    GLFW_KEY_RIGHT_CONTROL
+                ) == GLFW_PRESS;
+
+            if (shiftPressed)
+                speed *= 4.0f;
+
+            if (ctrlPressed)
+                speed *= 0.25f;
 
             if (glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS)
                 selectedObject->transform.position.z -= speed;
@@ -4944,12 +5086,27 @@ appMode == AppMode::Play;
             if (glfwGetKey(window, GLFW_KEY_RIGHT) == GLFW_PRESS)
                 selectedObject->transform.position.x += speed;
 
-
             if (glfwGetKey(window, GLFW_KEY_PAGE_UP) == GLFW_PRESS)
                 selectedObject->transform.position.y += speed;
 
             if (glfwGetKey(window, GLFW_KEY_PAGE_DOWN) == GLFW_PRESS)
                 selectedObject->transform.position.y -= speed;
+
+            if (glfwGetKey(window, GLFW_KEY_H) == GLFW_PRESS)
+            {
+                float terrainOffset =
+                    glm::max(
+                        selectedObject->transform.scale.y * 0.5f,
+                        0.05f
+                    );
+
+                selectedObject->transform.position.y =
+                    GetObjectTerrainY(
+                        selectedObject->transform.position.x,
+                        selectedObject->transform.position.z,
+                        terrainOffset
+                    );
+            }
         }
         
         if (glfwGetKey(window, GLFW_KEY_M) == GLFW_RELEASE)
@@ -5681,58 +5838,109 @@ appMode == AppMode::Play;
             !ImGui::GetIO().WantCaptureMouse
             )
         {
-            double mouseX, mouseY;
-            glfwGetCursorPos(window, &mouseX, &mouseY);
+            double mouseX;
+            double mouseY;
 
-            glm::vec3 rayDir = GetRayFromMouse(
-                mouseX,
-                mouseY,
-                width,
-                height,
-                projection,
-                view
+            glfwGetCursorPos(
+                window,
+                &mouseX,
+                &mouseY
             );
-            glm::vec3 rayOrigin = camera.Position;
 
-            float closestDist = 1000.0f;
+            glm::vec3 rayDir =
+                GetRayFromMouse(
+                    mouseX,
+                    mouseY,
+                    width,
+                    height,
+                    projection,
+                    view
+                );
 
-            SceneObject* hitObject = nullptr;
+            glm::vec3 rayOrigin =
+                camera.Position;
+
+            float closestDist =
+                1000.0f;
+
+            SceneObject* hitObject =
+                nullptr;
 
             for (SceneObject* obj : scene.objects)
             {
-                float radius = obj->boundingRadius;
-                glm::vec3 oc = rayOrigin - obj->transform.position;
+                if (!IsEditorSelectableObject(obj))
+                    continue;
 
-                float a = glm::dot(rayDir, rayDir);
-                float b = 2.0f * glm::dot(oc, rayDir);
-                float c = glm::dot(oc, oc) - radius * radius;
+                float radius =
+                    GetEditorSelectionRadius(
+                        obj
+                    );
 
-                float discriminant = b * b - 4 * a * c;
+                glm::vec3 oc =
+                    rayOrigin -
+                    obj->transform.position;
 
-                if (discriminant > 0)
+                float a =
+                    glm::dot(
+                        rayDir,
+                        rayDir
+                    );
+
+                float b =
+                    2.0f *
+                    glm::dot(
+                        oc,
+                        rayDir
+                    );
+
+                float c =
+                    glm::dot(
+                        oc,
+                        oc
+                    ) -
+                    radius * radius;
+
+                float discriminant =
+                    b * b -
+                    4.0f * a * c;
+
+                if (discriminant > 0.0f)
                 {
-                    float dist = (-b - sqrt(discriminant)) / (2.0f * a);
+                    float dist =
+                        (
+                            -b -
+                            std::sqrt(
+                                discriminant
+                            )
+                            ) /
+                        (
+                            2.0f * a
+                            );
 
-                    if (dist < closestDist && dist > 0)
+                    if (
+                        dist > 0.0f &&
+                        dist < closestDist
+                        )
                     {
-                        closestDist = dist;
-                        hitObject = obj;
+                        closestDist =
+                            dist;
+
+                        hitObject =
+                            obj;
                     }
                 }
             }
 
             if (hitObject != nullptr)
             {
-                if (selectedObject != nullptr)
-                    selectedObject->isSelected = false;
-
-                selectedObject = hitObject;
-                if (selectedObject != nullptr)
-                    selectedObject->isSelected = true;
-                std::cout << "Object selected!\n";
+                SelectEditorObject(
+                    selectedObject,
+                    hitObject
+                );
             }
 
-            mouseClicked = false;
+            mouseClicked =
+                false;
         }
         if (
             appMode == AppMode::Editor &&

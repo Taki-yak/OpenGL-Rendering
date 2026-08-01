@@ -6,6 +6,8 @@
 #include <algorithm>
 #include "PrefabManager.h"
 #include "AssetDatabase.h"
+#include "Texture.h"
+#include <unordered_map>
 #include <glm/glm.hpp>
 #include <iostream>
 float GetObjectTerrainY(
@@ -561,6 +563,88 @@ static void ApplyMaterialPreset(
     object->material->shininess =
         shininess;
 }
+static Texture* GetEditorTexture(
+    const std::string& path
+)
+{
+    static std::unordered_map<std::string, Texture*> loadedTextures;
+
+    auto it =
+        loadedTextures.find(
+            path
+        );
+
+    if (it != loadedTextures.end())
+    {
+        return it->second;
+    }
+
+    Texture* texture =
+        new Texture(
+            path.c_str()
+        );
+
+    loadedTextures[path] =
+        texture;
+
+    return texture;
+}
+
+static void ApplyTexturePreset(
+    SceneObject* object,
+    const std::string& texturePath,
+    const glm::vec3& tint,
+    const glm::vec3& ambient,
+    const glm::vec3& diffuse,
+    const glm::vec3& specular,
+    float shininess
+)
+{
+    if (object == nullptr)
+        return;
+
+    if (object->material == nullptr)
+    {
+        object->material =
+            new Material(
+                nullptr
+            );
+    }
+
+    object->material->texture =
+        GetEditorTexture(
+            texturePath
+        );
+
+    object->material->tint =
+        tint;
+
+    object->material->ambient =
+        ambient;
+
+    object->material->diffuse =
+        diffuse;
+
+    object->material->specular =
+        specular;
+
+    object->material->shininess =
+        shininess;
+}
+
+static void RemoveTextureFromObject(
+    SceneObject* object
+)
+{
+    if (object == nullptr)
+        return;
+
+    if (object->material == nullptr)
+        return;
+
+    object->material->texture =
+        nullptr;
+}
 void EditorUI::DrawInspector(
     SceneObject* selectedObject
 )
@@ -787,6 +871,59 @@ if (selectedObject != nullptr)
             glm::vec3(1.0f, 0.45f, 0.08f),
             glm::vec3(0.10f, 0.06f, 0.02f),
             4.0f
+        );
+    }
+    ImGui::Separator();
+
+    ImGui::Text("Texture Presets");
+
+    if (ImGui::Button("Wall1"))
+    {
+        ApplyTexturePreset(
+            selectedObject,
+            "Assets/Textures/Materials/wall1.jpg",
+            glm::vec3(1.0f),
+            glm::vec3(0.35f),
+            glm::vec3(0.85f),
+            glm::vec3(0.08f),
+            12.0f
+        );
+    }
+
+    ImGui::SameLine();
+
+    if (ImGui::Button("wall2"))
+    {
+        ApplyTexturePreset(
+            selectedObject,
+            "Assets/Textures/Materials/wall2.jpg",
+            glm::vec3(1.0f),
+            glm::vec3(0.32f, 0.24f, 0.16f),
+            glm::vec3(0.85f, 0.65f, 0.42f),
+            glm::vec3(0.06f, 0.05f, 0.04f),
+            8.0f
+        );
+    }
+
+    ImGui::SameLine();
+
+    if (ImGui::Button("wall3"))
+    {
+        ApplyTexturePreset(
+            selectedObject,
+            "Assets/Textures/Materials/wall3.jpg",
+            glm::vec3(1.0f),
+            glm::vec3(0.28f),
+            glm::vec3(0.75f),
+            glm::vec3(0.10f),
+            14.0f
+        );
+    }
+
+    if (ImGui::Button("Remove Texture"))
+    {
+        RemoveTextureFromObject(
+            selectedObject
         );
     }
 }

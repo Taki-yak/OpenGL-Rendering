@@ -7,6 +7,7 @@
 #include "PrefabManager.h"
 #include "AssetDatabase.h"
 #include <glm/glm.hpp>
+#include <iostream>
 float GetObjectTerrainY(
     float x,
     float z,
@@ -29,6 +30,319 @@ static glm::vec3 SnapEditorPositionToTerrain(
         ) + offset;
 
     return position;
+}
+static Material* CreateCampfireMaterial(
+    const glm::vec3& tint,
+    const glm::vec3& ambient,
+    const glm::vec3& diffuse
+)
+{
+    Material* material =
+        new Material(
+            nullptr
+        );
+
+    material->tint =
+        tint;
+
+    material->ambient =
+        ambient;
+
+    material->diffuse =
+        diffuse;
+
+    material->specular =
+        glm::vec3(
+            0.05f,
+            0.04f,
+            0.03f
+        );
+
+    material->shininess =
+        4.0f;
+
+    return material;
+}
+
+static SceneObject* SpawnCampfire(
+    Scene& scene,
+    SceneObject*& selectedObject,
+    Camera& camera,
+    Mesh* cubeMesh,
+    Shader* shader
+)
+{
+    if (
+        cubeMesh == nullptr ||
+        shader == nullptr
+        )
+    {
+        return nullptr;
+    }
+
+    glm::vec3 forward =
+        glm::vec3(
+            camera.Front.x,
+            0.0f,
+            camera.Front.z
+        );
+
+    if (glm::length(forward) < 0.001f)
+    {
+        forward =
+            glm::vec3(
+                0.0f,
+                0.0f,
+                -1.0f
+            );
+    }
+
+    forward =
+        glm::normalize(
+            forward
+        );
+
+    glm::vec3 right =
+        glm::normalize(
+            glm::cross(
+                forward,
+                glm::vec3(
+                    0.0f,
+                    1.0f,
+                    0.0f
+                )
+            )
+        );
+
+    glm::vec3 center =
+        camera.Position +
+        forward * 7.0f;
+
+    center =
+        SnapEditorPositionToTerrain(
+            center,
+            0.08f
+        );
+
+    auto CreateCampfirePiece =
+        [&](
+            const std::string& name,
+            const glm::vec3& position,
+            const glm::vec3& rotation,
+            const glm::vec3& scale,
+            Material* material,
+            bool collider
+            )
+        {
+            SceneObject* object =
+                new SceneObject(
+                    cubeMesh,
+                    shader,
+                    material
+                );
+
+            object->name =
+                name;
+
+            object->transform.position =
+                position;
+
+            object->transform.rotation =
+                rotation;
+
+            object->transform.scale =
+                scale;
+
+            object->isCollider =
+                collider;
+
+            object->colliderRadius =
+                1.2f;
+
+            object->boundingRadius =
+                18.0f;
+
+            object->assetId =
+                name;
+
+            object->assetType =
+                AssetType::Prop;
+
+            object->spawnSource =
+                SpawnSource::Manual;
+
+            object->persistent =
+                true;
+
+            object->showInHierarchy =
+                true;
+
+            scene.AddObject(
+                object
+            );
+
+            return object;
+        };
+
+    Material* logMaterial =
+        CreateCampfireMaterial(
+            glm::vec3(
+                0.42f,
+                0.24f,
+                0.10f
+            ),
+            glm::vec3(
+                0.22f,
+                0.14f,
+                0.08f
+            ),
+            glm::vec3(
+                0.65f,
+                0.38f,
+                0.18f
+            )
+        );
+
+    Material* fireMaterial =
+        CreateCampfireMaterial(
+            glm::vec3(
+                1.0f,
+                0.35f,
+                0.05f
+            ),
+            glm::vec3(
+                0.75f,
+                0.22f,
+                0.04f
+            ),
+            glm::vec3(
+                1.0f,
+                0.45f,
+                0.08f
+            )
+        );
+
+    CreateCampfirePiece(
+        "Campfire Log 1",
+        center +
+        right * 0.45f,
+        glm::vec3(
+            0.0f,
+            35.0f,
+            0.0f
+        ),
+        glm::vec3(
+            1.5f,
+            0.22f,
+            0.22f
+        ),
+        logMaterial,
+        true
+    );
+
+    CreateCampfirePiece(
+        "Campfire Log 2",
+        center -
+        right * 0.45f,
+        glm::vec3(
+            0.0f,
+            -35.0f,
+            0.0f
+        ),
+        glm::vec3(
+            1.5f,
+            0.22f,
+            0.22f
+        ),
+        logMaterial,
+        true
+    );
+
+    CreateCampfirePiece(
+        "Campfire Log 3",
+        center,
+        glm::vec3(
+            0.0f,
+            90.0f,
+            0.0f
+        ),
+        glm::vec3(
+            1.25f,
+            0.18f,
+            0.18f
+        ),
+        logMaterial,
+        true
+    );
+
+    SceneObject* fireObject =
+        CreateCampfirePiece(
+            "Campfire",
+            center +
+            glm::vec3(
+                0.0f,
+                0.45f,
+                0.0f
+            ),
+            glm::vec3(
+                0.0f,
+                0.0f,
+                0.0f
+            ),
+            glm::vec3(
+                0.45f,
+                0.85f,
+                0.45f
+            ),
+            fireMaterial,
+            false
+        );
+
+    Light* campfireLight =
+        new Light();
+
+    campfireLight->name =
+        "Campfire Light";
+
+    campfireLight->type =
+        LightType::Point;
+
+    campfireLight->position =
+        fireObject->transform.position +
+        glm::vec3(
+            0.0f,
+            1.25f,
+            0.0f
+        );
+
+    campfireLight->color =
+        glm::vec3(
+            5.0f,
+            2.6f,
+            0.8f
+        );
+
+    scene.AddLight(
+        campfireLight
+    );
+
+    fireObject->attachedLight =
+        campfireLight;
+
+    fireObject->attachedLightOffset =
+        glm::vec3(
+            0.0f,
+            1.25f,
+            0.0f
+        );
+
+    selectedObject =
+        fireObject;
+
+    std::cout << "Campfire spawned."
+        << std::endl;
+
+    return fireObject;
 }
 void DrawHierarchyNode(
     SceneObject* obj,
@@ -1285,7 +1599,18 @@ void EditorUI::DrawAssetBrowser(
                     true
                 );
             }
+            ImGui::SameLine();
 
+            if (ImGui::Button("Campfire"))
+            {
+                SpawnCampfire(
+                    scene,
+                    selectedObject,
+                    camera,
+                    cubeMesh,
+                    shader
+                );
+            }
             ImGui::Separator();
 
             ImGui::Text("World Zones");

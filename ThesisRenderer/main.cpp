@@ -1809,6 +1809,18 @@ bool ObjectNameContains(
     return
         object->name.find(text) != std::string::npos;
 }
+bool IsCampfireObject(
+    SceneObject* object
+)
+{
+    if (object == nullptr)
+        return false;
+
+    return ObjectNameContains(
+        object,
+        "Campfire"
+    );
+}
 bool IsImportantRenderObject(
     SceneObject* object
 )
@@ -2027,7 +2039,8 @@ bool IsGameplayInteractable(
 
     if (ObjectNameContains(object, "House"))
         return true;
-
+    if (IsCampfireObject(object))
+        return true;
     if (ObjectNameContains(object, "Camp"))
         return true;
 
@@ -2070,7 +2083,8 @@ std::string GetInteractionActionText(
 
     if (ObjectNameContains(object, "House"))
         return "inspect house";
-
+    if (IsCampfireObject(object))
+        return "rest at campfire";
     if (ObjectNameContains(object, "Camp"))
         return "inspect camp";
 
@@ -2116,10 +2130,6 @@ bool IsTorchObject(
 
     if (ObjectNameContains(object, "Torch"))
         return true;
-
-    if (object->attachedLight != nullptr)
-        return true;
-
     return false;
 }
 
@@ -2177,9 +2187,13 @@ void UpdateTorchFireFlicker(
         if (object == nullptr)
             continue;
 
-        if (!IsTorchObject(object))
+        if (
+            !IsTorchObject(object) &&
+            !IsCampfireObject(object)
+            )
+        {
             continue;
-
+        }
         if (object->attachedLight == nullptr)
             continue;
 
@@ -2233,7 +2247,8 @@ std::string GetInteractionResultText(
 
     if (ObjectNameContains(object, "House"))
         return "House inspected. This object was placed from the editor.";
-
+    if (IsCampfireObject(object))
+        return "Campfire used. Dynamic fire light and interaction feedback are working.";
     if (ObjectNameContains(object, "Camp"))
         return "Camp inspected. This area was generated from a camp preset.";
 

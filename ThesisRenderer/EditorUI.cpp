@@ -72,12 +72,21 @@ static SceneObject* SpawnCampfire(
     Shader* shader
 )
 {
-    if (
-        cubeMesh == nullptr ||
-        shader == nullptr
-        )
-    {
+    (void)cubeMesh;
+
+    if (shader == nullptr)
         return nullptr;
+
+    static Model* campfireModel =
+        nullptr;
+
+    if (campfireModel == nullptr)
+    {
+        campfireModel =
+            new Model(
+                "Assets/Models/Environment/Campfire/campfire.obj",
+                "Assets/Models/Environment/Campfire/"
+            );
     }
 
     glm::vec3 forward =
@@ -102,18 +111,6 @@ static SceneObject* SpawnCampfire(
             forward
         );
 
-    glm::vec3 right =
-        glm::normalize(
-            glm::cross(
-                forward,
-                glm::vec3(
-                    0.0f,
-                    1.0f,
-                    0.0f
-                )
-            )
-        );
-
     glm::vec3 center =
         camera.Position +
         forward * 7.0f;
@@ -124,179 +121,53 @@ static SceneObject* SpawnCampfire(
             0.08f
         );
 
-    auto CreateCampfirePiece =
-        [&](
-            const std::string& name,
-            const glm::vec3& position,
-            const glm::vec3& rotation,
-            const glm::vec3& scale,
-            Material* material,
-            bool collider
-            )
-        {
-            SceneObject* object =
-                new SceneObject(
-                    cubeMesh,
-                    shader,
-                    material
-                );
-
-            object->name =
-                name;
-
-            object->transform.position =
-                position;
-
-            object->transform.rotation =
-                rotation;
-
-            object->transform.scale =
-                scale;
-
-            object->isCollider =
-                collider;
-
-            object->colliderRadius =
-                1.2f;
-
-            object->boundingRadius =
-                18.0f;
-
-            object->assetId =
-                name;
-
-            object->assetType =
-                AssetType::Prop;
-
-            object->spawnSource =
-                SpawnSource::Manual;
-
-            object->persistent =
-                true;
-
-            object->showInHierarchy =
-                true;
-
-            scene.AddObject(
-                object
-            );
-
-            return object;
-        };
-
-    Material* logMaterial =
-        CreateCampfireMaterial(
-            glm::vec3(
-                0.42f,
-                0.24f,
-                0.10f
-            ),
-            glm::vec3(
-                0.22f,
-                0.14f,
-                0.08f
-            ),
-            glm::vec3(
-                0.65f,
-                0.38f,
-                0.18f
-            )
+    SceneObject* campfireObject =
+        new SceneObject(
+            campfireModel,
+            shader
         );
 
-    Material* fireMaterial =
-        CreateCampfireMaterial(
-            glm::vec3(
-                1.0f,
-                0.35f,
-                0.05f
-            ),
-            glm::vec3(
-                0.75f,
-                0.22f,
-                0.04f
-            ),
-            glm::vec3(
-                1.0f,
-                0.45f,
-                0.08f
-            )
+    campfireObject->name =
+        "Campfire";
+
+    campfireObject->transform.position =
+        center;
+
+    campfireObject->transform.rotation =
+        glm::vec3(
+            0.0f,
+            0.0f,
+            0.0f
         );
 
-    CreateCampfirePiece(
-        "Campfire Log 1",
-        center +
-        right * 0.45f,
+    campfireObject->transform.scale =
         glm::vec3(
-            0.0f,
-            35.0f,
-            0.0f
-        ),
-        glm::vec3(
-            1.5f,
-            0.22f,
-            0.22f
-        ),
-        logMaterial,
-        true
-    );
-
-    CreateCampfirePiece(
-        "Campfire Log 2",
-        center -
-        right * 0.45f,
-        glm::vec3(
-            0.0f,
-            -35.0f,
-            0.0f
-        ),
-        glm::vec3(
-            1.5f,
-            0.22f,
-            0.22f
-        ),
-        logMaterial,
-        true
-    );
-
-    CreateCampfirePiece(
-        "Campfire Log 3",
-        center,
-        glm::vec3(
-            0.0f,
-            90.0f,
-            0.0f
-        ),
-        glm::vec3(
-            1.25f,
-            0.18f,
-            0.18f
-        ),
-        logMaterial,
-        true
-    );
-
-    SceneObject* fireObject =
-        CreateCampfirePiece(
-            "Campfire",
-            center +
-            glm::vec3(
-                0.0f,
-                0.45f,
-                0.0f
-            ),
-            glm::vec3(
-                0.0f,
-                0.0f,
-                0.0f
-            ),
-            glm::vec3(
-                0.45f,
-                0.85f,
-                0.45f
-            ),
-            fireMaterial,
-            false
+            1.0f
         );
+
+    campfireObject->isCollider =
+        true;
+
+    campfireObject->colliderRadius =
+        1.6f;
+
+    campfireObject->boundingRadius =
+        25.0f;
+
+    campfireObject->assetId =
+        "Campfire";
+
+    campfireObject->assetType =
+        AssetType::Prop;
+
+    campfireObject->spawnSource =
+        SpawnSource::Manual;
+
+    campfireObject->persistent =
+        true;
+
+    campfireObject->showInHierarchy =
+        true;
 
     Light* campfireLight =
         new Light();
@@ -308,7 +179,7 @@ static SceneObject* SpawnCampfire(
         LightType::Point;
 
     campfireLight->position =
-        fireObject->transform.position +
+        campfireObject->transform.position +
         glm::vec3(
             0.0f,
             1.25f,
@@ -326,23 +197,28 @@ static SceneObject* SpawnCampfire(
         campfireLight
     );
 
-    fireObject->attachedLight =
+    campfireObject->attachedLight =
         campfireLight;
 
-    fireObject->attachedLightOffset =
+    campfireObject->attachedLightOffset =
         glm::vec3(
             0.0f,
             1.25f,
             0.0f
         );
 
-    selectedObject =
-        fireObject;
+    scene.AddObject(
+        campfireObject
+    );
 
-    std::cout << "Campfire spawned."
+    selectedObject =
+        campfireObject;
+
+    std::cout
+        << "Campfire model spawned."
         << std::endl;
 
-    return fireObject;
+    return campfireObject;
 }
 void DrawHierarchyNode(
     SceneObject* obj,
@@ -1599,22 +1475,9 @@ void EditorUI::DrawAssetBrowser(
                 );
             }
 
-            ImGui::SameLine();
+            ImGui::Separator();
 
-            if (ImGui::Button("Add Campfire"))
-            {
-                SpawnCampfire(
-                    scene,
-                    selectedObject,
-                    camera,
-                    cubeMesh,
-                    shader
-                );
-            }
-
-            ImGui::TextDisabled(
-                "Tip: Build a camp, then place a campfire in the center."
-            );
+            ImGui::Text("Fire Props");
 
             if (ImGui::Button("Campfire"))
             {
@@ -1626,7 +1489,6 @@ void EditorUI::DrawAssetBrowser(
                     shader
                 );
             }
-            ImGui::Separator();
 
             ImGui::Text("World Zones");
 

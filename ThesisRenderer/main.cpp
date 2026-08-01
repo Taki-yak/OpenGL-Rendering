@@ -1033,7 +1033,7 @@ void main()
 const char* fragmentShaderSource = R"(
 
 #version 330 core
-#define MAX_LIGHTS 5
+#define MAX_LIGHTS 12
 
 out vec4 FragColor;
 uniform vec3 sunDirection;
@@ -2333,6 +2333,16 @@ void UpdateTorchFireFlicker(
         glm::vec3 baseColor =
             GetTorchLightOnColor();
 
+        if (IsCampfireObject(object))
+        {
+            baseColor =
+                glm::vec3(
+                    7.0f,
+                    3.5f,
+                    1.0f
+                );
+        }
+
         object->attachedLight->color =
             glm::vec3(
                 baseColor.r * flicker,
@@ -2751,6 +2761,10 @@ int main()
     Model torchModel(
         "Assets/Models/Environment/Torch/Torch.obj",
         "Assets/Models/Environment/Torch/"
+    );
+    Model campfireModel(
+        "Assets/Models/Environment/Campfire/campfire.obj",
+        "Assets/Models/Environment/Campfire/"
     );
     Model woodenHouseModel(
         "Assets/Models/Environment/WoodenHouse/WoodenHouse.obj",
@@ -3630,7 +3644,8 @@ int main()
 
     int campRockCounter =
         1;
-
+    int campfireCounter =
+        1;
     int forestZoneCounter =
         1;
 
@@ -3738,7 +3753,97 @@ int main()
 
             campHouse->colliderRadius =
                 7.0f;
-        
+     
+
+            float campfireX =
+                centerX;
+
+            float campfireZ =
+                centerZ + 12.0f;
+
+            if (!IsGoodTerrainSpawnPoint(campfireX, campfireZ))
+            {
+                campfireZ =
+                    centerZ - 12.0f;
+            }
+
+            if (!IsGoodTerrainSpawnPoint(campfireX, campfireZ))
+            {
+                campfireX =
+                    centerX + 12.0f;
+
+                campfireZ =
+                    centerZ;
+            }
+
+            if (!IsGoodTerrainSpawnPoint(campfireX, campfireZ))
+            {
+                campfireX =
+                    centerX - 12.0f;
+
+                campfireZ =
+                    centerZ;
+            }
+            SceneObject* campfireObject =
+                AddObjectOnTerrain(
+                    &campfireModel,
+                    "Campfire " + std::to_string(campfireCounter++),
+                    campfireX,
+                    campfireZ,
+                    glm::vec3(
+                        0.8f
+                    ),
+                    true,
+                    AssetType::Prop,
+                    "campfire",
+                    true,
+                    0.05f
+                );
+
+            campfireObject->boundingRadius =
+                30.0f;
+
+            campfireObject->colliderRadius =
+                1.8f;
+
+            Light* campfireLight =
+                new Light();
+
+            campfireLight->name =
+                "Campfire Light " +
+                std::to_string(campfireCounter);
+
+            campfireLight->type =
+                LightType::Point;
+
+            campfireLight->position =
+                campfireObject->transform.position +
+                glm::vec3(
+                    0.0f,
+                    1.25f,
+                    0.0f
+                );
+
+            campfireLight->color =
+                glm::vec3(
+                    7.0f,
+                    3.5f,
+                    1.0f
+                );
+
+            scene.AddLight(
+                campfireLight
+            );
+
+            campfireObject->attachedLight =
+                campfireLight;
+
+            campfireObject->attachedLightOffset =
+                glm::vec3(
+                    0.0f,
+                    1.25f,
+                    0.0f
+                );
             // Trees around the camp
             for (int i = 0; i < 10; i++)
             {
@@ -5774,7 +5879,7 @@ appMode == AppMode::Play;
             if (light->type == LightType::Directional)
                 continue;
 
-            if (pointLightIndex >= 5)
+            if (pointLightIndex >= 12)
                 break;
 
             shader.setVec3(
@@ -5790,7 +5895,7 @@ appMode == AppMode::Play;
             pointLightIndex++;
         }
 
-        for (int i = pointLightIndex; i < 5; i++)
+        for (int i = pointLightIndex; i < 12; i++)
         {
             shader.setVec3(
                 "lightPositions[" + std::to_string(i) + "]",

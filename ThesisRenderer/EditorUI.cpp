@@ -526,7 +526,41 @@ void EditorUI::DrawHierarchy(
     }
     ImGui::End();
 }
+static void ApplyMaterialPreset(
+    SceneObject* object,
+    const glm::vec3& tint,
+    const glm::vec3& ambient,
+    const glm::vec3& diffuse,
+    const glm::vec3& specular,
+    float shininess
+)
+{
+    if (object == nullptr)
+        return;
 
+    if (object->material == nullptr)
+    {
+        object->material =
+            new Material(
+                nullptr
+            );
+    }
+
+    object->material->tint =
+        tint;
+
+    object->material->ambient =
+        ambient;
+
+    object->material->diffuse =
+        diffuse;
+
+    object->material->specular =
+        specular;
+
+    object->material->shininess =
+        shininess;
+}
 void EditorUI::DrawInspector(
     SceneObject* selectedObject
 )
@@ -653,11 +687,109 @@ void EditorUI::DrawInspector(
         }
 
     }
-    else
+   else
+   {
+       ImGui::Text("No object selected");
+}
+
+if (selectedObject != nullptr)
+{
+    ImGui::Separator();
+
+    ImGui::Text("Material Presets");
+
+    if (ImGui::Button("Wood"))
     {
-        ImGui::Text("No object selected");
+        ApplyMaterialPreset(
+            selectedObject,
+            glm::vec3(0.45f, 0.25f, 0.10f),
+            glm::vec3(0.18f, 0.10f, 0.04f),
+            glm::vec3(0.55f, 0.32f, 0.14f),
+            glm::vec3(0.05f, 0.04f, 0.03f),
+            6.0f
+        );
     }
 
+    ImGui::SameLine();
+
+    if (ImGui::Button("Stone"))
+    {
+        ApplyMaterialPreset(
+            selectedObject,
+            glm::vec3(0.45f, 0.45f, 0.42f),
+            glm::vec3(0.18f, 0.18f, 0.16f),
+            glm::vec3(0.55f, 0.55f, 0.50f),
+            glm::vec3(0.08f, 0.08f, 0.08f),
+            10.0f
+        );
+    }
+
+    ImGui::SameLine();
+
+    if (ImGui::Button("Metal"))
+    {
+        ApplyMaterialPreset(
+            selectedObject,
+            glm::vec3(0.55f, 0.55f, 0.58f),
+            glm::vec3(0.15f, 0.15f, 0.16f),
+            glm::vec3(0.55f, 0.55f, 0.58f),
+            glm::vec3(0.75f, 0.75f, 0.80f),
+            64.0f
+        );
+    }
+
+    if (ImGui::Button("Dirt"))
+    {
+        ApplyMaterialPreset(
+            selectedObject,
+            glm::vec3(0.32f, 0.20f, 0.10f),
+            glm::vec3(0.14f, 0.08f, 0.04f),
+            glm::vec3(0.40f, 0.25f, 0.12f),
+            glm::vec3(0.03f, 0.03f, 0.02f),
+            4.0f
+        );
+    }
+
+    ImGui::SameLine();
+
+    if (ImGui::Button("Grass"))
+    {
+        ApplyMaterialPreset(
+            selectedObject,
+            glm::vec3(0.20f, 0.45f, 0.14f),
+            glm::vec3(0.08f, 0.18f, 0.05f),
+            glm::vec3(0.25f, 0.55f, 0.18f),
+            glm::vec3(0.03f, 0.04f, 0.03f),
+            5.0f
+        );
+    }
+
+    ImGui::SameLine();
+
+    if (ImGui::Button("Dark"))
+    {
+        ApplyMaterialPreset(
+            selectedObject,
+            glm::vec3(0.08f, 0.08f, 0.09f),
+            glm::vec3(0.03f, 0.03f, 0.035f),
+            glm::vec3(0.10f, 0.10f, 0.12f),
+            glm::vec3(0.02f, 0.02f, 0.025f),
+            8.0f
+        );
+    }
+
+    if (ImGui::Button("Fire Glow"))
+    {
+        ApplyMaterialPreset(
+            selectedObject,
+            glm::vec3(1.0f, 0.35f, 0.05f),
+            glm::vec3(0.80f, 0.22f, 0.04f),
+            glm::vec3(1.0f, 0.45f, 0.08f),
+            glm::vec3(0.10f, 0.06f, 0.02f),
+            4.0f
+        );
+    }
+}
     ImGui::End();
 }
 void EditorUI::DrawLightInspector(
@@ -1927,6 +2059,7 @@ void EditorUI::DrawToolbar(
             );
         }
     }
+   
     ImGui::End();
 }
 void EditorUI::DrawCrosshair()

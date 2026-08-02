@@ -680,9 +680,39 @@ static void RemoveTextureFromObject(
     object->editorTexturePath =
         "";
 }
+struct EditorTexturePreset
+{
+    const char* label;
+    const char* path;
+    glm::vec3 tint;
+    glm::vec3 ambient;
+    glm::vec3 diffuse;
+    glm::vec3 specular;
+    float shininess;
+};
+
+static void DrawEditorTexturePresetButton(
+    SceneObject* selectedObject,
+    const EditorTexturePreset& preset
+)
+{
+    if (ImGui::Button(preset.label))
+    {
+        ApplyTexturePreset(
+            selectedObject,
+            preset.path,
+            preset.tint,
+            preset.ambient,
+            preset.diffuse,
+            preset.specular,
+            preset.shininess
+        );
+    }
+}
 static Material* CloneEditorMaterial(
     Material* sourceMaterial
 )
+
 {
     if (sourceMaterial == nullptr)
     {
@@ -1064,46 +1094,195 @@ if (selectedObject != nullptr)
 
     ImGui::Text("Texture Presets");
 
-    if (ImGui::Button("Wall1"))
+    static EditorTexturePreset texturePresets[] =
     {
-        ApplyTexturePreset(
-            selectedObject,
+        {
+            "Wall 1",
             "Assets/Textures/Materials/wall1.jpg",
             glm::vec3(1.0f),
             glm::vec3(0.35f),
             glm::vec3(0.85f),
             glm::vec3(0.08f),
             12.0f
-        );
-    }
-
-    ImGui::SameLine();
-
-    if (ImGui::Button("wall2"))
-    {
-        ApplyTexturePreset(
-            selectedObject,
+        },
+        {
+            "Wall 2",
             "Assets/Textures/Materials/wall2.jpg",
             glm::vec3(1.0f),
             glm::vec3(0.32f, 0.24f, 0.16f),
             glm::vec3(0.85f, 0.65f, 0.42f),
             glm::vec3(0.06f, 0.05f, 0.04f),
             8.0f
-        );
-    }
-
-    ImGui::SameLine();
-
-    if (ImGui::Button("wall3"))
-    {
-        ApplyTexturePreset(
-            selectedObject,
+        },
+        {
+            "Wall 3",
             "Assets/Textures/Materials/wall3.jpg",
             glm::vec3(1.0f),
             glm::vec3(0.28f),
             glm::vec3(0.75f),
             glm::vec3(0.10f),
             14.0f
+        },
+
+        {
+            "Wood Floor",
+            "Assets/Textures/Materials/floor_wood.jpg",
+            glm::vec3(1.0f),
+            glm::vec3(0.30f, 0.22f, 0.14f),
+            glm::vec3(0.78f, 0.55f, 0.32f),
+            glm::vec3(0.06f),
+            8.0f
+        },
+        {
+            "Stone Floor",
+            "Assets/Textures/Materials/floor_stone.jpg",
+            glm::vec3(1.0f),
+            glm::vec3(0.26f),
+            glm::vec3(0.68f),
+            glm::vec3(0.07f),
+            10.0f
+        },
+        {
+            "Tile Floor",
+            "Assets/Textures/Materials/floor_tiles.jpg",
+            glm::vec3(1.0f),
+            glm::vec3(0.30f),
+            glm::vec3(0.78f),
+            glm::vec3(0.10f),
+            16.0f
+        },
+
+        {
+            "Window Wood",
+            "Assets/Textures/Materials/window_wood.jpg",
+            glm::vec3(1.0f),
+            glm::vec3(0.28f, 0.18f, 0.10f),
+            glm::vec3(0.70f, 0.42f, 0.22f),
+            glm::vec3(0.05f),
+            7.0f
+        },
+        {
+            "Dark Window",
+            "Assets/Textures/Materials/window_darkwood.jpg",
+            glm::vec3(1.0f),
+            glm::vec3(0.12f, 0.08f, 0.05f),
+            glm::vec3(0.35f, 0.22f, 0.12f),
+            glm::vec3(0.04f),
+            8.0f
+        },
+        {
+            "Glass",
+            "Assets/Textures/Materials/window_glass.jpg",
+            glm::vec3(0.65f, 0.85f, 1.0f),
+            glm::vec3(0.12f, 0.18f, 0.22f),
+            glm::vec3(0.45f, 0.65f, 0.80f),
+            glm::vec3(0.90f),
+            96.0f
+        },
+
+        {
+            "Roof Tiles",
+            "Assets/Textures/Materials/roof_tiles.jpg",
+            glm::vec3(1.0f),
+            glm::vec3(0.25f, 0.10f, 0.06f),
+            glm::vec3(0.70f, 0.25f, 0.14f),
+            glm::vec3(0.04f),
+            6.0f
+        },
+        {
+            "Roof Wood",
+            "Assets/Textures/Materials/roof_wood.jpg",
+            glm::vec3(1.0f),
+            glm::vec3(0.24f, 0.16f, 0.09f),
+            glm::vec3(0.65f, 0.38f, 0.18f),
+            glm::vec3(0.05f),
+            7.0f
+        },
+
+        {
+            "Pillar Stone",
+            "Assets/Textures/Materials/pillar_stone.jpg",
+            glm::vec3(1.0f),
+            glm::vec3(0.28f),
+            glm::vec3(0.72f),
+            glm::vec3(0.08f),
+            12.0f
+        },
+        {
+            "Marble",
+            "Assets/Textures/Materials/pillar_marble.jpg",
+            glm::vec3(1.0f),
+            glm::vec3(0.36f),
+            glm::vec3(0.88f),
+            glm::vec3(0.18f),
+            24.0f
+        },
+
+        {
+            "Ramp Wood",
+            "Assets/Textures/Materials/ramp_wood.jpg",
+            glm::vec3(1.0f),
+            glm::vec3(0.28f, 0.18f, 0.10f),
+            glm::vec3(0.72f, 0.45f, 0.23f),
+            glm::vec3(0.05f),
+            7.0f
+        },
+        {
+            "Dirt Path",
+            "Assets/Textures/Materials/path_dirt.jpg",
+            glm::vec3(1.0f),
+            glm::vec3(0.18f, 0.10f, 0.05f),
+            glm::vec3(0.45f, 0.27f, 0.12f),
+            glm::vec3(0.03f),
+            4.0f
+        },
+        {
+            "Stone Path",
+            "Assets/Textures/Materials/path_stone.jpg",
+            glm::vec3(1.0f),
+            glm::vec3(0.25f),
+            glm::vec3(0.62f),
+            glm::vec3(0.07f),
+            10.0f
+        },
+
+        {
+            "Dark Metal",
+            "Assets/Textures/Materials/metal_dark.jpg",
+            glm::vec3(1.0f),
+            glm::vec3(0.12f),
+            glm::vec3(0.35f),
+            glm::vec3(0.80f),
+            80.0f
+        },
+        {
+            "Rusty Metal",
+            "Assets/Textures/Materials/metal_rusty.jpg",
+            glm::vec3(1.0f),
+            glm::vec3(0.24f, 0.12f, 0.06f),
+            glm::vec3(0.65f, 0.30f, 0.12f),
+            glm::vec3(0.35f),
+            32.0f
+        }
+    };
+
+    for (int i = 0; i < IM_ARRAYSIZE(texturePresets); i++)
+    {
+        DrawEditorTexturePresetButton(
+            selectedObject,
+            texturePresets[i]
+        );
+
+        if ((i + 1) % 3 != 0)
+        {
+            ImGui::SameLine();
+        }
+    }
+
+    if (ImGui::Button("Remove Texture"))
+    {
+        RemoveTextureFromObject(
+            selectedObject
         );
     }
 
@@ -2647,6 +2826,371 @@ void EditorUI::DrawAssetBrowser(
             }
             ImGui::Separator();
 
+            ImGui::Text("Advanced Building Pieces");
+
+            if (ImGui::Button("Floor Tile"))
+            {
+                SpawnCubeObject(
+                    "Floor Tile",
+                    glm::vec3(
+                        4.0f,
+                        0.12f,
+                        4.0f
+                    ),
+                    glm::vec3(
+                        0.0f,
+                        0.06f,
+                        0.0f
+                    ),
+                    true,
+                    glm::vec3(
+                        0.45f,
+                        0.38f,
+                        0.28f
+                    ),
+                    glm::vec3(
+                        0.28f,
+                        0.23f,
+                        0.18f
+                    ),
+                    glm::vec3(
+                        0.70f,
+                        0.58f,
+                        0.42f
+                    )
+                );
+            }
+
+            ImGui::SameLine();
+
+            if (ImGui::Button("Ceiling Tile"))
+            {
+                SpawnCubeObject(
+                    "Ceiling Tile",
+                    glm::vec3(
+                        4.0f,
+                        0.12f,
+                        4.0f
+                    ),
+                    glm::vec3(
+                        0.0f,
+                        3.0f,
+                        0.0f
+                    ),
+                    true,
+                    glm::vec3(
+                        0.40f,
+                        0.36f,
+                        0.30f
+                    ),
+                    glm::vec3(
+                        0.24f,
+                        0.22f,
+                        0.18f
+                    ),
+                    glm::vec3(
+                        0.62f,
+                        0.56f,
+                        0.46f
+                    )
+                );
+            }
+
+            ImGui::SameLine();
+
+            if (ImGui::Button("Pillar"))
+            {
+                SpawnCubeObject(
+                    "Stone Pillar",
+                    glm::vec3(
+                        0.55f,
+                        3.0f,
+                        0.55f
+                    ),
+                    glm::vec3(
+                        0.0f,
+                        1.5f,
+                        0.0f
+                    ),
+                    true,
+                    glm::vec3(
+                        0.42f,
+                        0.41f,
+                        0.38f
+                    ),
+                    glm::vec3(
+                        0.28f,
+                        0.28f,
+                        0.26f
+                    ),
+                    glm::vec3(
+                        0.70f,
+                        0.68f,
+                        0.62f
+                    )
+                );
+            }
+
+            if (ImGui::Button("Ramp"))
+            {
+                SpawnCubeObject(
+                    "Ramp",
+                    glm::vec3(
+                        3.0f,
+                        0.25f,
+                        4.0f
+                    ),
+                    glm::vec3(
+                        0.0f,
+                        0.35f,
+                        0.0f
+                    ),
+                    true,
+                    glm::vec3(
+                        0.38f,
+                        0.30f,
+                        0.20f
+                    ),
+                    glm::vec3(
+                        0.25f,
+                        0.20f,
+                        0.14f
+                    ),
+                    glm::vec3(
+                        0.65f,
+                        0.48f,
+                        0.30f
+                    )
+                );
+
+                if (selectedObject != nullptr)
+                {
+                    selectedObject->transform.rotation.x =
+                        18.0f;
+                }
+            }
+
+            ImGui::SameLine();
+
+            if (ImGui::Button("Door Frame"))
+            {
+                SpawnCubeObject(
+                    "Door Frame Top",
+                    glm::vec3(
+                        2.2f,
+                        0.30f,
+                        0.35f
+                    ),
+                    glm::vec3(
+                        0.0f,
+                        2.45f,
+                        0.0f
+                    ),
+                    true,
+                    glm::vec3(
+                        0.38f,
+                        0.22f,
+                        0.10f
+                    ),
+                    glm::vec3(
+                        0.24f,
+                        0.15f,
+                        0.08f
+                    ),
+                    glm::vec3(
+                        0.65f,
+                        0.40f,
+                        0.20f
+                    )
+                );
+
+                SpawnCubeObject(
+                    "Door Frame Left",
+                    glm::vec3(
+                        0.30f,
+                        2.4f,
+                        0.35f
+                    ),
+                    glm::vec3(
+                        -1.1f,
+                        1.2f,
+                        0.0f
+                    ),
+                    true,
+                    glm::vec3(
+                        0.38f,
+                        0.22f,
+                        0.10f
+                    ),
+                    glm::vec3(
+                        0.24f,
+                        0.15f,
+                        0.08f
+                    ),
+                    glm::vec3(
+                        0.65f,
+                        0.40f,
+                        0.20f
+                    )
+                );
+
+                SpawnCubeObject(
+                    "Door Frame Right",
+                    glm::vec3(
+                        0.30f,
+                        2.4f,
+                        0.35f
+                    ),
+                    glm::vec3(
+                        1.1f,
+                        1.2f,
+                        0.0f
+                    ),
+                    true,
+                    glm::vec3(
+                        0.38f,
+                        0.22f,
+                        0.10f
+                    ),
+                    glm::vec3(
+                        0.24f,
+                        0.15f,
+                        0.08f
+                    ),
+                    glm::vec3(
+                        0.65f,
+                        0.40f,
+                        0.20f
+                    )
+                );
+            }
+
+            ImGui::SameLine();
+
+            if (ImGui::Button("Window Frame"))
+            {
+                SpawnCubeObject(
+                    "Window Frame Top",
+                    glm::vec3(
+                        1.8f,
+                        0.20f,
+                        0.25f
+                    ),
+                    glm::vec3(
+                        0.0f,
+                        2.0f,
+                        0.0f
+                    ),
+                    true,
+                    glm::vec3(
+                        0.36f,
+                        0.22f,
+                        0.12f
+                    ),
+                    glm::vec3(
+                        0.23f,
+                        0.15f,
+                        0.09f
+                    ),
+                    glm::vec3(
+                        0.62f,
+                        0.42f,
+                        0.24f
+                    )
+                );
+
+                SpawnCubeObject(
+                    "Window Frame Bottom",
+                    glm::vec3(
+                        1.8f,
+                        0.20f,
+                        0.25f
+                    ),
+                    glm::vec3(
+                        0.0f,
+                        1.0f,
+                        0.0f
+                    ),
+                    true,
+                    glm::vec3(
+                        0.36f,
+                        0.22f,
+                        0.12f
+                    ),
+                    glm::vec3(
+                        0.23f,
+                        0.15f,
+                        0.09f
+                    ),
+                    glm::vec3(
+                        0.62f,
+                        0.42f,
+                        0.24f
+                    )
+                );
+
+                SpawnCubeObject(
+                    "Window Frame Left",
+                    glm::vec3(
+                        0.20f,
+                        1.2f,
+                        0.25f
+                    ),
+                    glm::vec3(
+                        -0.9f,
+                        1.5f,
+                        0.0f
+                    ),
+                    true,
+                    glm::vec3(
+                        0.36f,
+                        0.22f,
+                        0.12f
+                    ),
+                    glm::vec3(
+                        0.23f,
+                        0.15f,
+                        0.09f
+                    ),
+                    glm::vec3(
+                        0.62f,
+                        0.42f,
+                        0.24f
+                    )
+                );
+
+                SpawnCubeObject(
+                    "Window Frame Right",
+                    glm::vec3(
+                        0.20f,
+                        1.2f,
+                        0.25f
+                    ),
+                    glm::vec3(
+                        0.9f,
+                        1.5f,
+                        0.0f
+                    ),
+                    true,
+                    glm::vec3(
+                        0.36f,
+                        0.22f,
+                        0.12f
+                    ),
+                    glm::vec3(
+                        0.23f,
+                        0.15f,
+                        0.09f
+                    ),
+                    glm::vec3(
+                        0.62f,
+                        0.42f,
+                        0.24f
+                    )
+                );
+            }
+            ImGui::Separator();
+
             ImGui::Text("Shape Pieces");
 
             if (ImGui::Button("Ball"))
@@ -2726,7 +3270,7 @@ void EditorUI::DrawAssetBrowser(
             }
             ImGui::Separator();
 
-            ImGui::Text("Layout Pieces");
+            ImGui::Text("Outdoor Pieces");
 
             if (ImGui::Button("Path Tile"))
             {

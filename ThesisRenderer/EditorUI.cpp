@@ -2390,7 +2390,6 @@ void EditorUI::DrawAssetBrowser(
 
             return spawnPosition;
         };
-
     auto SpawnModelObject =
         [&](const std::string& objectName,
             Model* model,
@@ -2447,10 +2446,6 @@ void EditorUI::DrawAssetBrowser(
 
             object->showInHierarchy =
                 true;
-            SetEditorSaveMetadata(
-                object,
-                "Cube"
-            );
             object->isCollider =
                 collider;
 
@@ -2572,8 +2567,8 @@ void EditorUI::DrawAssetBrowser(
                     pineTreeModel,
                     glm::vec3(1.4f),
                     false,
-                    "Assets/Models/Environment/PineTree/pine_tree.obj",
-                    "Assets/Models/Environment/PineTree/"
+                    "Assets/Models/Environment/NaturePack/PineTree_1.obj",
+                    ""
                 );
             }
 
@@ -2585,7 +2580,9 @@ void EditorUI::DrawAssetBrowser(
                     "Common Tree",
                     commonTreeModel,
                     glm::vec3(1.4f),
-                    false
+                    false,
+                    "Assets/Models/Environment/NaturePack/CommonTree_1.obj",
+                    ""
                 );
             }
 
@@ -2599,10 +2596,13 @@ void EditorUI::DrawAssetBrowser(
                     "Rock",
                     rockModel,
                     glm::vec3(1.3f),
-                    true
+                    true,
+                    "Assets/Models/Environment/NaturePack/Rock_1.obj",
+                    ""
                 );
             }
 
+            ImGui::SameLine();
             ImGui::SameLine();
 
             if (ImGui::Button("Bush"))
@@ -2611,7 +2611,9 @@ void EditorUI::DrawAssetBrowser(
                     "Bush",
                     bushModel,
                     glm::vec3(1.0f),
-                    false
+                    false,
+                    "Assets/Models/Environment/NaturePack/Bush_1.obj",
+                    ""
                 );
             }
 
@@ -2623,7 +2625,9 @@ void EditorUI::DrawAssetBrowser(
                     "Grass",
                     grassModel,
                     glm::vec3(0.5f),
-                    false
+                    false,
+                    "Assets/Models/Environment/NaturePack/Grass.obj",
+                    ""
                 );
             }
 
@@ -2637,7 +2641,9 @@ void EditorUI::DrawAssetBrowser(
                     "Wood Log",
                     woodLogModel,
                     glm::vec3(1.0f),
-                    true
+                    true,
+                    "Assets/Models/Environment/NaturePack/WoodLog.obj",
+                    ""
                 );
             }
 
@@ -2649,7 +2655,9 @@ void EditorUI::DrawAssetBrowser(
                     "Tree Stump",
                     treeStumpModel,
                     glm::vec3(1.0f),
-                    true
+                    true,
+                    "Assets/Models/Environment/NaturePack/TreeStump.obj",
+                    ""
                 );
             }
 

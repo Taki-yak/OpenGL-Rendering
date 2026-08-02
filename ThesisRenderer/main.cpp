@@ -38,6 +38,7 @@
 #include <vector>
 #include <cmath>
 #include "AudioSystem.h"
+#include <unordered_map>
 // ================= CAMERA VARIABLES =================
 //glm::vec3 cameraPos = glm::vec3(0.0f, 0.0f, 3.0f);
 //glm::vec3 cameraFront = glm::vec3(0.0f, 0.0f, -1.0f);
@@ -138,31 +139,26 @@ float interactionResultTimer =
 
 bool ignoreNextMouseDelta =
 false;
-bool IsEditorSavedObject(SceneObject* object)
+bool IsEditorSavedObject(
+    SceneObject* object
+)
 {
     if (object == nullptr)
         return false;
-    if (object->name == "Procedural Terrain")
-        return false;
+
     if (object->name == "Player")
         return false;
 
-    if (object->name == "Ground")
-        return false;
-
-    if (object->name == "Forest Cabin Environment")
-        return false;
-
-    if (object->name == "Imported Tree")
+    if (object->name == "Procedural Terrain")
         return false;
 
     if (object->name.find("Generated") != std::string::npos)
         return false;
 
-    if (object->name.find("Border") != std::string::npos)
+    if (!object->persistent)
         return false;
 
-    if (object->name.find("Grass Terrain Tile") != std::string::npos)
+    if (object->spawnSource != SpawnSource::Manual)
         return false;
 
     return true;
@@ -286,15 +282,62 @@ void SaveEditorObjects(
         if (!IsEditorSavedObject(object))
             continue;
 
-        std::string objectType =
-            GetEditorObjectType(
-                object
+        Material* objectMaterial =
+            object->material;
+
+        bool hasMaterial =
+            objectMaterial != nullptr;
+
+        glm::vec3 tint =
+            hasMaterial ?
+            objectMaterial->tint :
+            glm::vec3(
+                1.0f
             );
 
-        file
-            << objectType << "|"
-            << object->name << "|"
+        glm::vec3 ambient =
+            hasMaterial ?
+            objectMaterial->ambient :
+            glm::vec3(
+                0.35f
+            );
 
+        glm::vec3 diffuse =
+            hasMaterial ?
+            objectMaterial->diffuse :
+            glm::vec3(
+                0.75f
+            );
+
+        glm::vec3 specular =
+            hasMaterial ?
+            objectMaterial->specular :
+            glm::vec3(
+                0.04f
+            );
+
+        float shininess =
+            hasMaterial ?
+            objectMaterial->shininess :
+            6.0f;
+
+        bool wireframe =
+            hasMaterial ?
+            objectMaterial->wireframe :
+            false;
+
+        file
+            << "V2" << "|"
+
+            // identity
+            << object->name << "|"
+            << object->editorMeshType << "|"
+            << object->editorModelPath << "|"
+            << object->editorModelDirectory << "|"
+            << object->editorTexturePath << "|"
+            << object->editorGameplayType << "|"
+
+            // transform
             << object->transform.position.x << " "
             << object->transform.position.y << " "
             << object->transform.position.z << "|"
@@ -307,14 +350,41 @@ void SaveEditorObjects(
             << object->transform.scale.y << " "
             << object->transform.scale.z << "|"
 
-            << object->isCollider
+            // object state
+            << object->visible << "|"
+            << object->isCollider << "|"
+            << object->colliderRadius << "|"
+            << object->boundingRadius << "|"
+
+            // material state
+            << hasMaterial << "|"
+
+            << tint.x << " "
+            << tint.y << " "
+            << tint.z << "|"
+
+            << ambient.x << " "
+            << ambient.y << " "
+            << ambient.z << "|"
+
+            << diffuse.x << " "
+            << diffuse.y << " "
+            << diffuse.z << "|"
+
+            << specular.x << " "
+            << specular.y << " "
+            << specular.z << "|"
+
+            << shininess << "|"
+            << wireframe
+
             << "\n";
     }
 
     file.close();
 
     std::cout
-        << "Editor objects saved with prefab types to "
+        << "Generic editor scene saved to "
         << filePath
         << std::endl;
 }
@@ -594,6 +664,412 @@ Material* CreateLoadedCubeMaterial(
     return objectMaterial;
 }
 glm::vec3 GetTorchLightOnColor();
+static std::vector<std::string> SplitEditorSaveLine(
+    const std::string& line
+)
+{
+    std::vector<std::string> parts;
+    std::stringstream stream(line);
+    std::string part;
+
+    while (std::getline(stream, part, '|'))
+    {
+        parts.push_back(part);
+    }
+
+    return parts;
+}
+
+static glm::vec3 ParseEditorVec3(
+    const std::string& text,
+    const glm::vec3& fallback = glm::vec3(0.0f)
+)
+{
+    std::stringstream stream(text);
+
+    glm::vec3 value =
+        fallback;
+
+    stream
+        >> value.x
+        >> value.y
+        >> value.z;
+
+    return value;
+}
+
+static Texture* GetLoadedEditorTexture(
+    const std::string& path
+)
+{
+    if (path.empty())
+        return nullptr;
+
+    static std::unordered_map<std::string, Texture*> loadedTextures;
+
+    auto it =
+        loadedTextures.find(path);
+
+    if (it != loadedTextures.end())
+        return it->second;
+
+    Texture* texture =
+        new Texture(
+            path.c_str()
+        );
+
+    loadedTextures[path] =
+        texture;
+
+    return texture;
+}
+
+static void AddPrimitiveVertexMain(
+    std::vector<float>& data,
+    const glm::vec3& position,
+    const glm::vec3& normal,
+    const glm::vec2& texCoord
+)
+{
+    data.push_back(position.x);
+    data.push_back(position.y);
+    data.push_back(position.z);
+
+    data.push_back(normal.x);
+    data.push_back(normal.y);
+    data.push_back(normal.z);
+
+    data.push_back(texCoord.x);
+    data.push_back(texCoord.y);
+}
+
+static Mesh* CreateLoadedSphereMesh(
+    int rings,
+    int sectors
+)
+{
+    std::vector<float> data;
+
+    const float pi =
+        3.14159265359f;
+
+    float radius =
+        0.5f;
+
+    for (int r = 0; r < rings; r++)
+    {
+        float v0 = (float)r / (float)rings;
+        float v1 = (float)(r + 1) / (float)rings;
+
+        float phi0 = v0 * pi;
+        float phi1 = v1 * pi;
+
+        for (int s = 0; s < sectors; s++)
+        {
+            float u0 = (float)s / (float)sectors;
+            float u1 = (float)(s + 1) / (float)sectors;
+
+            float theta0 = u0 * pi * 2.0f;
+            float theta1 = u1 * pi * 2.0f;
+
+            glm::vec3 p00 =
+                glm::vec3(
+                    std::sin(phi0) * std::cos(theta0),
+                    std::cos(phi0),
+                    std::sin(phi0) * std::sin(theta0)
+                ) * radius;
+
+            glm::vec3 p01 =
+                glm::vec3(
+                    std::sin(phi0) * std::cos(theta1),
+                    std::cos(phi0),
+                    std::sin(phi0) * std::sin(theta1)
+                ) * radius;
+
+            glm::vec3 p10 =
+                glm::vec3(
+                    std::sin(phi1) * std::cos(theta0),
+                    std::cos(phi1),
+                    std::sin(phi1) * std::sin(theta0)
+                ) * radius;
+
+            glm::vec3 p11 =
+                glm::vec3(
+                    std::sin(phi1) * std::cos(theta1),
+                    std::cos(phi1),
+                    std::sin(phi1) * std::sin(theta1)
+                ) * radius;
+
+            AddPrimitiveVertexMain(data, p00, glm::normalize(p00), glm::vec2(u0, v0));
+            AddPrimitiveVertexMain(data, p10, glm::normalize(p10), glm::vec2(u0, v1));
+            AddPrimitiveVertexMain(data, p01, glm::normalize(p01), glm::vec2(u1, v0));
+
+            AddPrimitiveVertexMain(data, p01, glm::normalize(p01), glm::vec2(u1, v0));
+            AddPrimitiveVertexMain(data, p10, glm::normalize(p10), glm::vec2(u0, v1));
+            AddPrimitiveVertexMain(data, p11, glm::normalize(p11), glm::vec2(u1, v1));
+        }
+    }
+
+    return new Mesh(
+        data.data(),
+        static_cast<int>(data.size() * sizeof(float))
+    );
+}
+
+static Mesh* CreateLoadedCylinderMesh(
+    int sectors
+)
+{
+    std::vector<float> data;
+
+    const float pi =
+        3.14159265359f;
+
+    float radius =
+        0.5f;
+
+    float halfHeight =
+        0.5f;
+
+    for (int i = 0; i < sectors; i++)
+    {
+        float u0 = (float)i / (float)sectors;
+        float u1 = (float)(i + 1) / (float)sectors;
+
+        float a0 = u0 * pi * 2.0f;
+        float a1 = u1 * pi * 2.0f;
+
+        glm::vec3 b0(std::cos(a0) * radius, -halfHeight, std::sin(a0) * radius);
+        glm::vec3 b1(std::cos(a1) * radius, -halfHeight, std::sin(a1) * radius);
+        glm::vec3 t0(std::cos(a0) * radius, halfHeight, std::sin(a0) * radius);
+        glm::vec3 t1(std::cos(a1) * radius, halfHeight, std::sin(a1) * radius);
+
+        glm::vec3 n0 =
+            glm::normalize(glm::vec3(b0.x, 0.0f, b0.z));
+
+        glm::vec3 n1 =
+            glm::normalize(glm::vec3(b1.x, 0.0f, b1.z));
+
+        AddPrimitiveVertexMain(data, b0, n0, glm::vec2(u0, 0.0f));
+        AddPrimitiveVertexMain(data, b1, n1, glm::vec2(u1, 0.0f));
+        AddPrimitiveVertexMain(data, t0, n0, glm::vec2(u0, 1.0f));
+
+        AddPrimitiveVertexMain(data, t0, n0, glm::vec2(u0, 1.0f));
+        AddPrimitiveVertexMain(data, b1, n1, glm::vec2(u1, 0.0f));
+        AddPrimitiveVertexMain(data, t1, n1, glm::vec2(u1, 1.0f));
+
+        glm::vec3 bottomCenter(0.0f, -halfHeight, 0.0f);
+        glm::vec3 topCenter(0.0f, halfHeight, 0.0f);
+
+        AddPrimitiveVertexMain(data, bottomCenter, glm::vec3(0.0f, -1.0f, 0.0f), glm::vec2(0.5f));
+        AddPrimitiveVertexMain(data, b1, glm::vec3(0.0f, -1.0f, 0.0f), glm::vec2(1.0f, 0.0f));
+        AddPrimitiveVertexMain(data, b0, glm::vec3(0.0f, -1.0f, 0.0f), glm::vec2(0.0f, 0.0f));
+
+        AddPrimitiveVertexMain(data, topCenter, glm::vec3(0.0f, 1.0f, 0.0f), glm::vec2(0.5f));
+        AddPrimitiveVertexMain(data, t0, glm::vec3(0.0f, 1.0f, 0.0f), glm::vec2(0.0f, 0.0f));
+        AddPrimitiveVertexMain(data, t1, glm::vec3(0.0f, 1.0f, 0.0f), glm::vec2(1.0f, 0.0f));
+    }
+
+    return new Mesh(
+        data.data(),
+        static_cast<int>(data.size() * sizeof(float))
+    );
+}
+
+static Mesh* CreateLoadedConeMesh(
+    int sectors
+)
+{
+    std::vector<float> data;
+
+    const float pi =
+        3.14159265359f;
+
+    float radius =
+        0.5f;
+
+    float halfHeight =
+        0.5f;
+
+    glm::vec3 top(0.0f, halfHeight, 0.0f);
+    glm::vec3 bottomCenter(0.0f, -halfHeight, 0.0f);
+
+    for (int i = 0; i < sectors; i++)
+    {
+        float u0 = (float)i / (float)sectors;
+        float u1 = (float)(i + 1) / (float)sectors;
+
+        float a0 = u0 * pi * 2.0f;
+        float a1 = u1 * pi * 2.0f;
+
+        glm::vec3 b0(std::cos(a0) * radius, -halfHeight, std::sin(a0) * radius);
+        glm::vec3 b1(std::cos(a1) * radius, -halfHeight, std::sin(a1) * radius);
+
+        glm::vec3 sideNormal =
+            glm::normalize(
+                glm::cross(
+                    b1 - b0,
+                    top - b0
+                )
+            );
+
+        AddPrimitiveVertexMain(data, b0, sideNormal, glm::vec2(u0, 0.0f));
+        AddPrimitiveVertexMain(data, b1, sideNormal, glm::vec2(u1, 0.0f));
+        AddPrimitiveVertexMain(data, top, sideNormal, glm::vec2(0.5f, 1.0f));
+
+        AddPrimitiveVertexMain(data, bottomCenter, glm::vec3(0.0f, -1.0f, 0.0f), glm::vec2(0.5f));
+        AddPrimitiveVertexMain(data, b0, glm::vec3(0.0f, -1.0f, 0.0f), glm::vec2(0.0f, 0.0f));
+        AddPrimitiveVertexMain(data, b1, glm::vec3(0.0f, -1.0f, 0.0f), glm::vec2(1.0f, 0.0f));
+    }
+
+    return new Mesh(
+        data.data(),
+        static_cast<int>(data.size() * sizeof(float))
+    );
+}
+
+static Mesh* GetLoadedProceduralMesh(
+    const std::string& meshType
+)
+{
+    static Mesh* sphereMesh = nullptr;
+    static Mesh* cylinderMesh = nullptr;
+    static Mesh* coneMesh = nullptr;
+
+    if (meshType == "Sphere")
+    {
+        if (sphereMesh == nullptr)
+            sphereMesh = CreateLoadedSphereMesh(24, 32);
+
+        return sphereMesh;
+    }
+
+    if (meshType == "Cylinder")
+    {
+        if (cylinderMesh == nullptr)
+            cylinderMesh = CreateLoadedCylinderMesh(32);
+
+        return cylinderMesh;
+    }
+
+    if (meshType == "Cone")
+    {
+        if (coneMesh == nullptr)
+            coneMesh = CreateLoadedConeMesh(32);
+
+        return coneMesh;
+    }
+
+    return nullptr;
+}
+
+static Model* GetLoadedEditorModel(
+    const std::string& modelPath,
+    const std::string& modelDirectory
+)
+{
+    if (modelPath.empty())
+        return nullptr;
+
+    static std::unordered_map<std::string, Model*> loadedModels;
+
+    auto it =
+        loadedModels.find(modelPath);
+
+    if (it != loadedModels.end())
+        return it->second;
+
+    Model* model =
+        new Model(
+            modelPath,
+            modelDirectory
+        );
+
+    loadedModels[modelPath] =
+        model;
+
+    return model;
+}
+
+static Material* CreateLoadedV2Material(
+    bool hasMaterial,
+    const std::string& texturePath,
+    const std::string& tintPart,
+    const std::string& ambientPart,
+    const std::string& diffusePart,
+    const std::string& specularPart,
+    const std::string& shininessPart,
+    const std::string& wireframePart
+)
+{
+    Material* material =
+        new Material(
+            nullptr
+        );
+
+    material->tint =
+        glm::vec3(1.0f);
+
+    material->ambient =
+        glm::vec3(0.35f);
+
+    material->diffuse =
+        glm::vec3(0.75f);
+
+    material->specular =
+        glm::vec3(0.04f);
+
+    material->shininess =
+        6.0f;
+
+    material->wireframe =
+        false;
+
+    if (hasMaterial)
+    {
+        material->tint =
+            ParseEditorVec3(
+                tintPart,
+                glm::vec3(1.0f)
+            );
+
+        material->ambient =
+            ParseEditorVec3(
+                ambientPart,
+                glm::vec3(0.35f)
+            );
+
+        material->diffuse =
+            ParseEditorVec3(
+                diffusePart,
+                glm::vec3(0.75f)
+            );
+
+        material->specular =
+            ParseEditorVec3(
+                specularPart,
+                glm::vec3(0.04f)
+            );
+
+        if (!shininessPart.empty())
+        {
+            material->shininess =
+                std::stof(
+                    shininessPart
+                );
+        }
+
+        material->wireframe =
+            wireframePart == "1";
+    }
+
+    material->texture =
+        GetLoadedEditorTexture(
+            texturePath
+        );
+
+    return material;
+}
 void LoadEditorObjects(
     Scene& scene,
     const std::string& filePath,
@@ -613,6 +1089,16 @@ void LoadEditorObjects(
 )
 {
     (void)material;
+    (void)woodenHouseModel;
+    (void)newHouseModel;
+    (void)pineTreeModel;
+    (void)commonTreeModel;
+    (void)rockModel;
+    (void)bushModel;
+    (void)woodLogModel;
+    (void)treeStumpModel;
+    (void)grassModel;
+
     std::ifstream file(
         filePath
     );
@@ -625,6 +1111,7 @@ void LoadEditorObjects(
 
         return;
     }
+
     for (auto it = scene.objects.begin(); it != scene.objects.end(); )
     {
         SceneObject* object =
@@ -635,7 +1122,7 @@ void LoadEditorObjects(
             IsEditorSavedObject(object)
             )
         {
-            delete object;
+         
 
             it =
                 scene.objects.erase(
@@ -647,6 +1134,10 @@ void LoadEditorObjects(
             ++it;
         }
     }
+
+    selectedObject =
+        nullptr;
+
     std::string line;
 
     while (std::getline(file, line))
@@ -654,149 +1145,189 @@ void LoadEditorObjects(
         if (line.empty())
             continue;
 
-        std::stringstream lineStream(
-            line
-        );
+        std::vector<std::string> parts =
+            SplitEditorSaveLine(
+                line
+            );
 
-        std::string typePart;
-        std::string namePart;
-        std::string positionPart;
-        std::string rotationPart;
-        std::string scalePart;
-        std::string colliderPart;
-
-        std::getline(lineStream, typePart, '|');
-        std::getline(lineStream, namePart, '|');
-        std::getline(lineStream, positionPart, '|');
-        std::getline(lineStream, rotationPart, '|');
-        std::getline(lineStream, scalePart, '|');
-        std::getline(lineStream, colliderPart, '|');
-        if (typePart == "Cube")
+        if (
+            parts.size() < 21 ||
+            parts[0] != "V2"
+            )
         {
             std::cout
-                << "Skipped old legacy Cube object: "
-                << namePart
+                << "Skipped old save line. Please save scene again using V2."
                 << std::endl;
 
             continue;
         }
+
+        std::string namePart =
+            parts[1];
+
+        std::string meshType =
+            parts[2];
+
+        std::string modelPath =
+            parts[3];
+
+        std::string modelDirectory =
+            parts[4];
+
+        std::string texturePath =
+            parts[5];
+
+        std::string gameplayType =
+            parts[6];
+
+        glm::vec3 position =
+            ParseEditorVec3(
+                parts[7]
+            );
+
+        glm::vec3 rotation =
+            ParseEditorVec3(
+                parts[8]
+            );
+
+        glm::vec3 scale =
+            ParseEditorVec3(
+                parts[9],
+                glm::vec3(1.0f)
+            );
+
+        bool visible =
+            parts[10] == "1";
+
+        bool isCollider =
+            parts[11] == "1";
+
+        float colliderRadius =
+            parts[12].empty()
+            ? 1.0f
+            : std::stof(parts[12]);
+
+        float boundingRadius =
+            parts[13].empty()
+            ? 50.0f
+            : std::stof(parts[13]);
+
+        bool hasMaterial =
+            parts[14] == "1";
+
+        Material* loadedMaterial =
+            CreateLoadedV2Material(
+                hasMaterial,
+                texturePath,
+                parts[15],
+                parts[16],
+                parts[17],
+                parts[18],
+                parts[19],
+                parts[20]
+            );
+
         SceneObject* object =
             nullptr;
 
-        Model* model =
-            GetModelFromEditorType(
-                typePart,
-                woodenHouseModel,
-                newHouseModel,
-                pineTreeModel,
-                commonTreeModel,
-                rockModel,
-                bushModel,
-                woodLogModel,
-                treeStumpModel,
-                grassModel
-            );
-
-        if (model != nullptr)
+        if (meshType == "Model")
         {
-            object =
-                new SceneObject(
-                    model,
-                    shader
+            Model* loadedModel =
+                GetLoadedEditorModel(
+                    modelPath,
+                    modelDirectory
                 );
+
+            if (loadedModel != nullptr)
+            {
+                object =
+                    new SceneObject(
+                        loadedModel,
+                        shader
+                    );
+
+                object->material =
+                    loadedMaterial;
+            }
         }
         else
         {
-            Material* loadedMaterial =
-                CreateLoadedCubeMaterial(
-                    typePart
+            Mesh* loadedMesh =
+                GetLoadedProceduralMesh(
+                    meshType
                 );
+
+            if (loadedMesh == nullptr)
+            {
+                loadedMesh =
+                    cubeMesh;
+            }
 
             object =
                 new SceneObject(
-                    cubeMesh,
+                    loadedMesh,
                     shader,
                     loadedMaterial
                 );
         }
 
+        if (object == nullptr)
+            continue;
+
         object->name =
             namePart;
 
-        std::stringstream positionStream(
-            positionPart
-        );
+        object->transform.position =
+            position;
 
-        positionStream
-            >> object->transform.position.x
-            >> object->transform.position.y
-            >> object->transform.position.z;
+        object->transform.rotation =
+            rotation;
 
-        std::stringstream rotationStream(
-            rotationPart
-        );
+        object->transform.scale =
+            scale;
 
-        rotationStream
-            >> object->transform.rotation.x
-            >> object->transform.rotation.y
-            >> object->transform.rotation.z;
-
-        std::stringstream scaleStream(
-            scalePart
-        );
-
-        scaleStream
-            >> object->transform.scale.x
-            >> object->transform.scale.y
-            >> object->transform.scale.z;
+        object->visible =
+            visible;
 
         object->isCollider =
-            colliderPart == "1";
-
-        object->boundingRadius =
-            80.0f;
+            isCollider;
 
         object->colliderRadius =
-            glm::max(
-                object->transform.scale.x,
-                object->transform.scale.z
-            ) * 0.8f;
-        if (typePart == "Campfire")
-        {
-            Light* campfireLight =
-                new Light();
+            colliderRadius;
 
-            campfireLight->name =
-                "Loaded Campfire Light";
+        object->boundingRadius =
+            boundingRadius;
 
-            campfireLight->type =
-                LightType::Point;
+        object->assetId =
+            namePart;
 
-            campfireLight->position =
-                object->transform.position +
-                glm::vec3(
-                    0.0f,
-                    1.25f,
-                    0.0f
-                );
+        object->assetType =
+            AssetType::Prop;
 
-            campfireLight->color =
-                GetTorchLightOnColor();
+        object->spawnSource =
+            SpawnSource::Manual;
 
-            scene.AddLight(
-                campfireLight
-            );
+        object->persistent =
+            true;
 
-            object->attachedLight =
-                campfireLight;
+        object->showInHierarchy =
+            true;
 
-            object->attachedLightOffset =
-                glm::vec3(
-                    0.0f,
-                    1.25f,
-                    0.0f
-                );
-        }
+        object->editorMeshType =
+            meshType;
+
+        object->editorModelPath =
+            modelPath;
+
+        object->editorModelDirectory =
+            modelDirectory;
+
+        object->editorTexturePath =
+            texturePath;
+
+        object->editorGameplayType =
+            gameplayType;
+
         scene.AddObject(
             object
         );
@@ -808,7 +1339,7 @@ void LoadEditorObjects(
     file.close();
 
     std::cout
-        << "Editor objects loaded with prefab types from "
+        << "Generic V2 editor scene loaded from "
         << filePath
         << std::endl;
 }

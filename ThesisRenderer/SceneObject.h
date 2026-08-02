@@ -52,6 +52,11 @@ public:
 
     bool showInHierarchy =
         true;
+    std::string editorMeshType = "Cube";
+    std::string editorModelPath = "";
+    std::string editorModelDirectory = "";
+    std::string editorTexturePath = "";
+    std::string editorGameplayType = "None";
     SceneObject(Mesh* m, Shader* s, Material* mat);
     ~SceneObject()
     {

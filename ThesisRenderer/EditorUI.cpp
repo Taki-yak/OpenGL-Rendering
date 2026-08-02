@@ -35,6 +35,29 @@ static glm::vec3 SnapEditorPositionToTerrain(
 
     return position;
 }
+static void SetEditorSaveMetadata(
+    SceneObject* object,
+    const std::string& meshType,
+    const std::string& gameplayType = "None",
+    const std::string& modelPath = "",
+    const std::string& modelDirectory = ""
+)
+{
+    if (object == nullptr)
+        return;
+
+    object->editorMeshType =
+        meshType;
+
+    object->editorGameplayType =
+        gameplayType;
+
+    object->editorModelPath =
+        modelPath;
+
+    object->editorModelDirectory =
+        modelDirectory;
+}
 static Material* CreateCampfireMaterial(
     const glm::vec3& tint,
     const glm::vec3& ambient,
@@ -157,7 +180,13 @@ static SceneObject* SpawnCampfire(
 
     campfireObject->boundingRadius =
         25.0f;
-
+    SetEditorSaveMetadata(
+        campfireObject,
+        "Model",
+        "None",
+        "Assets/Models/Environment/Campfire/campfire.obj",
+        "Assets/Models/Environment/Campfire/"
+    );
     campfireObject->assetId =
         "Campfire";
 
@@ -618,6 +647,8 @@ static void ApplyTexturePreset(
             texturePath
         );
 
+    object->editorTexturePath =
+        texturePath;
     object->material->tint =
         tint;
 
@@ -646,6 +677,160 @@ static void RemoveTextureFromObject(
 
     object->material->texture =
         nullptr;
+    object->editorTexturePath =
+        "";
+}
+static Material* CloneEditorMaterial(
+    Material* sourceMaterial
+)
+{
+    if (sourceMaterial == nullptr)
+    {
+        return new Material(
+            nullptr
+        );
+    }
+
+    Material* newMaterial =
+        new Material(
+            sourceMaterial->texture
+        );
+
+    newMaterial->tint =
+        sourceMaterial->tint;
+
+    newMaterial->ambient =
+        sourceMaterial->ambient;
+
+    newMaterial->diffuse =
+        sourceMaterial->diffuse;
+
+    newMaterial->specular =
+        sourceMaterial->specular;
+
+    newMaterial->shininess =
+        sourceMaterial->shininess;
+
+    newMaterial->wireframe =
+        sourceMaterial->wireframe;
+
+    return newMaterial;
+}
+
+static SceneObject* DuplicateSelectedEditorObject(
+    Scene& scene,
+    SceneObject*& selectedObject
+)
+{
+    if (selectedObject == nullptr)
+        return nullptr;
+
+    if (selectedObject->editorMeshType == "Model")
+    {
+        std::cout
+            << "Duplicate skipped: model object duplication will be added in V2."
+            << std::endl;
+
+        return nullptr;
+    }
+
+    if (selectedObject->mesh == nullptr)
+        return nullptr;
+
+    if (selectedObject->shader == nullptr)
+        return nullptr;
+
+    Material* duplicatedMaterial =
+        CloneEditorMaterial(
+            selectedObject->material
+        );
+
+    SceneObject* duplicatedObject =
+        new SceneObject(
+            selectedObject->mesh,
+            selectedObject->shader,
+            duplicatedMaterial
+        );
+
+    static int duplicateCounter =
+        1;
+
+    duplicatedObject->name =
+        selectedObject->name +
+        " Copy " +
+        std::to_string(
+            duplicateCounter++
+        );
+
+    duplicatedObject->transform.position =
+        selectedObject->transform.position +
+        glm::vec3(
+            1.5f,
+            0.0f,
+            1.5f
+        );
+
+    duplicatedObject->transform.rotation =
+        selectedObject->transform.rotation;
+
+    duplicatedObject->transform.scale =
+        selectedObject->transform.scale;
+
+    duplicatedObject->visible =
+        selectedObject->visible;
+
+    duplicatedObject->isCollider =
+        selectedObject->isCollider;
+
+    duplicatedObject->colliderRadius =
+        selectedObject->colliderRadius;
+
+    duplicatedObject->boundingRadius =
+        selectedObject->boundingRadius;
+
+    duplicatedObject->assetId =
+        selectedObject->assetId;
+
+    duplicatedObject->assetType =
+        selectedObject->assetType;
+
+    duplicatedObject->spawnSource =
+        SpawnSource::Manual;
+
+    duplicatedObject->persistent =
+        true;
+
+    duplicatedObject->showInHierarchy =
+        true;
+
+    duplicatedObject->editorMeshType =
+        selectedObject->editorMeshType;
+
+    duplicatedObject->editorModelPath =
+        selectedObject->editorModelPath;
+
+    duplicatedObject->editorModelDirectory =
+        selectedObject->editorModelDirectory;
+
+    duplicatedObject->editorTexturePath =
+        selectedObject->editorTexturePath;
+
+    duplicatedObject->editorGameplayType =
+        selectedObject->editorGameplayType;
+
+    scene.AddObject(
+        duplicatedObject
+    );
+
+    selectedObject =
+        duplicatedObject;
+
+    std::cout
+        << "Duplicated object: "
+        << duplicatedObject->name
+        << std::endl;
+
+    return duplicatedObject;
 }
 void EditorUI::DrawInspector(
     SceneObject* selectedObject
@@ -1919,7 +2104,13 @@ static SceneObject* SpawnProceduralPrimitive(
 
     object->boundingRadius =
         colliderRadius * 8.0f;
-
+    SetEditorSaveMetadata(
+        object,
+        objectName.find("Ball") != std::string::npos ? "Sphere" :
+        objectName.find("Cylinder") != std::string::npos ? "Cylinder" :
+        objectName.find("Cone") != std::string::npos ? "Cone" :
+        "Cube"
+    );
     object->assetId =
         objectName;
 
@@ -2025,7 +2216,9 @@ void EditorUI::DrawAssetBrowser(
         [&](const std::string& objectName,
             Model* model,
             glm::vec3 scale,
-            bool collider)
+            bool collider,
+            const std::string& modelPath = "",
+            const std::string& modelDirectory = "")
         {
             if (model == nullptr)
                 return;
@@ -2053,7 +2246,32 @@ void EditorUI::DrawAssetBrowser(
 
             object->transform.scale =
                 scale;
+            SetEditorSaveMetadata(
+                object,
+                "Model",
+                "None",
+                modelPath,
+                modelDirectory
+            );
 
+            object->assetId =
+                objectName;
+
+            object->assetType =
+                AssetType::Prop;
+
+            object->spawnSource =
+                SpawnSource::Manual;
+
+            object->persistent =
+                true;
+
+            object->showInHierarchy =
+                true;
+            SetEditorSaveMetadata(
+                object,
+                "Cube"
+            );
             object->isCollider =
                 collider;
 
@@ -2174,7 +2392,9 @@ void EditorUI::DrawAssetBrowser(
                     "Pine Tree",
                     pineTreeModel,
                     glm::vec3(1.4f),
-                    false
+                    false,
+                    "Assets/Models/Environment/PineTree/pine_tree.obj",
+                    "Assets/Models/Environment/PineTree/"
                 );
             }
 
@@ -2670,7 +2890,15 @@ void EditorUI::DrawToolbar(
 
         selectedObject = obj;
     }
+    ImGui::SameLine();
 
+    if (ImGui::Button("Duplicate##Toolbar"))
+    {
+        DuplicateSelectedEditorObject(
+            scene,
+            selectedObject
+        );
+    }
     ImGui::SameLine();
     if (ImGui::Button("Add Light"))
     {

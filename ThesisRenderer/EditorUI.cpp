@@ -2585,6 +2585,33 @@ void EditorUI::DrawAssetBrowser(
                     ""
                 );
             }
+            ImGui::SameLine();
+
+            if (ImGui::Button("Small Pine"))
+            {
+                SpawnModelObject(
+                    "Small Pine",
+                    pineTreeModel,
+                    glm::vec3(0.9f),
+                    false,
+                    "Assets/Models/Environment/NaturePack/PineTree_1.obj",
+                    ""
+                );
+            }
+
+            ImGui::SameLine();
+
+            if (ImGui::Button("Large Pine"))
+            {
+                SpawnModelObject(
+                    "Large Pine",
+                    pineTreeModel,
+                    glm::vec3(2.2f),
+                    true,
+                    "Assets/Models/Environment/NaturePack/PineTree_1.obj",
+                    ""
+                );
+            }
 
             ImGui::Separator();
 
@@ -2630,7 +2657,59 @@ void EditorUI::DrawAssetBrowser(
                     ""
                 );
             }
+            ImGui::SameLine();
 
+            if (ImGui::Button("Small Rock"))
+            {
+                SpawnModelObject(
+                    "Small Rock",
+                    rockModel,
+                    glm::vec3(0.7f),
+                    true,
+                    "Assets/Models/Environment/NaturePack/Rock_1.obj",
+                    ""
+                );
+            }
+
+            if (ImGui::Button("Large Rock"))
+            {
+                SpawnModelObject(
+                    "Large Rock",
+                    rockModel,
+                    glm::vec3(2.0f),
+                    true,
+                    "Assets/Models/Environment/NaturePack/Rock_1.obj",
+                    ""
+                );
+            }
+
+            ImGui::SameLine();
+
+            if (ImGui::Button("Big Bush"))
+            {
+                SpawnModelObject(
+                    "Big Bush",
+                    bushModel,
+                    glm::vec3(1.6f),
+                    false,
+                    "Assets/Models/Environment/NaturePack/Bush_1.obj",
+                    ""
+                );
+            }
+
+            ImGui::SameLine();
+
+            if (ImGui::Button("Tall Grass"))
+            {
+                SpawnModelObject(
+                    "Tall Grass",
+                    grassModel,
+                    glm::vec3(0.9f),
+                    false,
+                    "Assets/Models/Environment/NaturePack/Grass.obj",
+                    ""
+                );
+            }
             ImGui::Separator();
 
             ImGui::Text("Forest Props");
@@ -2660,7 +2739,33 @@ void EditorUI::DrawAssetBrowser(
                     ""
                 );
             }
+            ImGui::SameLine();
 
+            if (ImGui::Button("Large Log"))
+            {
+                SpawnModelObject(
+                    "Large Log",
+                    woodLogModel,
+                    glm::vec3(1.7f),
+                    true,
+                    "Assets/Models/Environment/NaturePack/WoodLog.obj",
+                    ""
+                );
+            }
+
+            ImGui::SameLine();
+
+            if (ImGui::Button("Large Stump"))
+            {
+                SpawnModelObject(
+                    "Large Stump",
+                    treeStumpModel,
+                    glm::vec3(1.6f),
+                    true,
+                    "Assets/Models/Environment/NaturePack/TreeStump.obj",
+                    ""
+                );
+            }
             ImGui::EndTabItem();
         }
        

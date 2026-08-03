@@ -11,6 +11,7 @@
 #include <iostream>
 #include <vector>
 #include <cmath>
+#include <cstdlib>
 #include "mesh.h"
 float GetObjectTerrainY(
     float x,
@@ -2314,6 +2315,183 @@ static SceneObject* SpawnProceduralPrimitive(
 
     return object;
 }
+static void PlaceCoinOnTerrain(
+    SceneObject* coin,
+    float heightOffset = 0.45f
+)
+{
+    if (coin == nullptr)
+        return;
+
+    coin->transform.position.y =
+        GetTerrainHeight(
+            coin->transform.position.x,
+            coin->transform.position.z
+        ) + heightOffset;
+}
+static SceneObject* SpawnCoinObject(
+    Scene& scene,
+    SceneObject*& selectedObject,
+    Camera& camera,
+    Shader* shader
+)
+{
+    Mesh* coinMesh =
+        GetProceduralPrimitiveMesh(
+            "Cylinder"
+        );
+
+    if (
+        coinMesh == nullptr ||
+        shader == nullptr
+        )
+    {
+        return nullptr;
+    }
+
+    Material* coinMaterial =
+        new Material(
+            nullptr
+        );
+
+    coinMaterial->tint =
+        glm::vec3(
+            1.0f,
+            0.82f,
+            0.12f
+        );
+
+    coinMaterial->ambient =
+        glm::vec3(
+            0.55f,
+            0.40f,
+            0.08f
+        );
+
+    coinMaterial->diffuse =
+        glm::vec3(
+            1.0f,
+            0.78f,
+            0.12f
+        );
+
+    coinMaterial->specular =
+        glm::vec3(
+            0.85f,
+            0.70f,
+            0.25f
+        );
+
+    coinMaterial->shininess =
+        48.0f;
+
+    SceneObject* coin =
+        new SceneObject(
+            coinMesh,
+            shader,
+            coinMaterial
+        );
+
+    coin->name =
+        "Coin";
+
+    glm::vec3 forward =
+        glm::vec3(
+            camera.Front.x,
+            0.0f,
+            camera.Front.z
+        );
+
+    if (glm::length(forward) < 0.001f)
+    {
+        forward =
+            glm::vec3(
+                0.0f,
+                0.0f,
+                -1.0f
+            );
+    }
+
+    forward =
+        glm::normalize(
+            forward
+        );
+
+    glm::vec3 spawnPosition =
+        camera.Position +
+        forward * 6.0f;
+
+    spawnPosition =
+        SnapEditorPositionToTerrain(
+            spawnPosition,
+            0.18f
+        );
+    coin->transform.position =
+        spawnPosition;
+    PlaceCoinOnTerrain(
+        coin,
+        0.18f
+    );
+    coin->transform.rotation =
+        glm::vec3(
+            0.0f,
+            0.0f,
+            0.0f
+        );
+
+    coin->transform.scale =
+        glm::vec3(
+            0.55f,
+            0.10f,
+            0.55f
+        );
+
+    coin->visible =
+        true;
+
+    coin->isCollider =
+        false;
+
+    coin->colliderRadius =
+        1.0f;
+
+    coin->boundingRadius =
+        10.0f;
+
+    SetEditorSaveMetadata(
+        coin,
+        "Cylinder",
+        "Coin"
+    );
+
+    coin->assetId =
+        "Coin";
+
+    coin->assetType =
+        AssetType::Prop;
+
+    coin->spawnSource =
+        SpawnSource::Manual;
+
+    coin->persistent =
+        true;
+
+    coin->showInHierarchy =
+        true;
+
+    scene.AddObject(
+        coin
+    );
+
+    selectedObject =
+        coin;
+
+    std::cout
+        << "Coin spawned."
+        << std::endl;
+
+    return coin;
+}
 void EditorUI::DrawAssetBrowser(
     Scene& scene,
     SceneObject*& selectedObject,
@@ -3468,12 +3646,126 @@ void EditorUI::DrawAssetBrowser(
 
         if (ImGui::BeginTabItem("Gameplay"))
         {
-            ImGui::Text("Gameplay tools are in the Player Tools window.");
-            ImGui::Text("Available tools:");
-            ImGui::BulletText("Place Player In Front Of Camera");
-            ImGui::BulletText("Set Spawn Here");
-            ImGui::BulletText("Respawn Player");
-            ImGui::BulletText("Select Player");
+            ImGui::Text("Gameplay Objects");
+
+            if (ImGui::Button("Coin"))
+            {
+                SpawnCoinObject(
+                    scene,
+                    selectedObject,
+                    camera,
+                    shader
+                );
+            }
+
+            ImGui::SameLine();
+
+            if (ImGui::Button("Coin x10"))
+            {
+                for (int i = 0; i < 10; i++)
+                {
+                    SceneObject* coin =
+                        SpawnCoinObject(
+                            scene,
+                            selectedObject,
+                            camera,
+                            shader
+                        );
+
+                    if (coin != nullptr)
+                    {
+                        coin->transform.position.x +=
+                            (float)(i % 5) * 1.8f;
+
+                        coin->transform.position.z +=
+                            (float)(i / 5) * 1.8f;
+
+                        PlaceCoinOnTerrain(
+                            coin,
+                            0.18f
+                        );
+
+                        coin->name =
+                            "Coin " +
+                            std::to_string(
+                                i + 1
+                            );
+                    }
+                }
+            }
+            ImGui::SameLine();
+
+            if (ImGui::Button("Random placed Coins"))
+            {
+                glm::vec3 forward =
+                    glm::vec3(
+                        camera.Front.x,
+                        0.0f,
+                        camera.Front.z
+                    );
+
+                if (glm::length(forward) < 0.001f)
+                {
+                    forward =
+                        glm::vec3(
+                            0.0f,
+                            0.0f,
+                            -1.0f
+                        );
+                }
+
+                forward =
+                    glm::normalize(
+                        forward
+                    );
+
+                glm::vec3 center =
+                    camera.Position +
+                    forward * 10.0f;
+
+                for (int i = 0; i < 15; i++)
+                {
+                    SceneObject* coin =
+                        SpawnCoinObject(
+                            scene,
+                            selectedObject,
+                            camera,
+                            shader
+                        );
+
+                    if (coin != nullptr)
+                    {
+                        float randomX =
+                            ((float)(rand() % 1000) / 1000.0f - 0.5f) * 18.0f;
+
+                        float randomZ =
+                            ((float)(rand() % 1000) / 1000.0f - 0.5f) * 18.0f;
+
+                        coin->transform.position.x =
+                            center.x + randomX;
+
+                        coin->transform.position.z =
+                            center.z + randomZ;
+
+                        PlaceCoinOnTerrain(
+                            coin,
+                            0.18f
+                        );
+
+                        coin->name =
+                            "Random Coin " +
+                            std::to_string(
+                                i + 1
+                            );
+                    }
+                }
+            }
+            ImGui::Separator();
+
+            ImGui::Text("Gameplay tools:");
+            ImGui::BulletText("Coin creates a collectible object.");
+            ImGui::BulletText("Use Duplicate to place more coins.");
+            ImGui::BulletText("Save/Load keeps coins using V2 metadata.");
 
             ImGui::EndTabItem();
         }
@@ -3505,8 +3797,23 @@ void EditorUI::DrawToolbar(
     {
         if (ImGui::Button("Play##ToolbarPlay"))
         {
-            appMode = AppMode::Play;
-            selectedObject = nullptr;
+            for (SceneObject* object : scene.objects)
+            {
+                if (object == nullptr)
+                    continue;
+
+                if (object->editorGameplayType == "Coin")
+                {
+                    object->visible =
+                        true;
+                }
+            }
+
+            appMode =
+                AppMode::Play;
+
+            selectedObject =
+                nullptr;
         }
     }
     else

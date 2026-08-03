@@ -82,9 +82,35 @@ bool useDistanceOptimization =
 true;
 bool useTorchFireFlicker =
 true;
+bool coinWinSoundPlayed =
+false;
 float tinyPropRenderDistance =
 30.0f;
+int coinTotalCount =
+0;
 
+int coinCollectedCount =
+0;
+
+bool coinHuntActive =
+false;
+
+bool coinHuntWon =
+false;
+
+bool coinHuntLost =
+false;
+bool coinLoseSoundPlayed =
+false;
+
+float coinCollectRadius =
+1.3f;
+
+float coinHuntTimeLimit =
+7.0f * 60.0f;
+
+float coinHuntTimeRemaining =
+7.0f * 60.0f;
 float smallPropRenderDistance =
 75.0f;
 
@@ -2689,7 +2715,287 @@ bool IsMediumPerformanceProp(
 
     return false;
 }
+bool IsCoinObject(
+    SceneObject* object
+)
+{
+    if (object == nullptr)
+        return false;
 
+    if (object->editorGameplayType == "Coin")
+        return true;
+
+    if (object->name.find("Coin") != std::string::npos)
+        return true;
+
+    return false;
+}
+
+SceneObject* FindPlayerObject(
+    Scene& scene
+)
+{
+    for (SceneObject* object : scene.objects)
+    {
+        if (object == nullptr)
+            continue;
+
+        if (object->name == "Player")
+            return object;
+    }
+
+    return nullptr;
+}
+
+void RecalculateCoinHuntState(
+    Scene& scene
+)
+{
+    coinTotalCount =
+        0;
+
+    coinCollectedCount =
+        0;
+
+    for (SceneObject* object : scene.objects)
+    {
+        if (!IsCoinObject(object))
+            continue;
+
+        coinTotalCount++;
+
+        if (!object->visible)
+        {
+            coinCollectedCount++;
+        }
+    }
+
+    coinHuntActive =
+        coinTotalCount > 0;
+}
+void UpdateCoinHunt(
+    Scene& scene,
+    AudioSystem& audioSystem,
+    float deltaTime
+)
+{
+    SceneObject* player =
+        FindPlayerObject(
+            scene
+        );
+
+    if (player == nullptr)
+        return;
+
+    coinTotalCount =
+        0;
+
+    coinCollectedCount =
+        0;
+
+    bool collectedCoinThisFrame =
+        false;
+
+    for (SceneObject* object : scene.objects)
+    {
+        if (!IsCoinObject(object))
+            continue;
+
+        coinTotalCount++;
+
+        if (!object->visible)
+        {
+            coinCollectedCount++;
+        }
+    }
+
+    coinHuntActive =
+        coinTotalCount > 0;
+
+    if (!coinHuntActive)
+        return;
+
+    if (
+        !coinHuntWon &&
+        !coinHuntLost
+        )
+    {
+        coinHuntTimeRemaining -=
+            deltaTime;
+
+        if (coinHuntTimeRemaining < 0.0f)
+        {
+            coinHuntTimeRemaining =
+                0.0f;
+        }
+    }
+
+    if (
+        !coinHuntWon &&
+        !coinHuntLost
+        )
+    {
+        for (SceneObject* object : scene.objects)
+        {
+            if (!IsCoinObject(object))
+                continue;
+
+            if (!object->visible)
+                continue;
+
+            glm::vec3 playerPosition =
+                player->transform.position;
+
+            glm::vec3 coinPosition =
+                object->transform.position;
+
+            float distance =
+                glm::distance(
+                    glm::vec3(
+                        playerPosition.x,
+                        0.0f,
+                        playerPosition.z
+                    ),
+                    glm::vec3(
+                        coinPosition.x,
+                        0.0f,
+                        coinPosition.z
+                    )
+                );
+
+            if (distance <= coinCollectRadius)
+            {
+                object->visible =
+                    false;
+
+                coinCollectedCount++;
+
+                collectedCoinThisFrame =
+                    true;
+
+                std::cout
+                    << "Coin collected: "
+                    << coinCollectedCount
+                    << " / "
+                    << coinTotalCount
+                    << std::endl;
+            }
+        }
+    }
+
+    if (collectedCoinThisFrame)
+    {
+        audioSystem.PlayFromStart(
+            "coin_collect",
+            0.90f
+        );
+    }
+
+    if (
+        coinTotalCount > 0 &&
+        coinCollectedCount >= coinTotalCount &&
+        !coinHuntWon &&
+        !coinHuntLost
+        )
+    {
+        coinHuntWon =
+            true;
+
+        if (!coinWinSoundPlayed)
+        {
+            audioSystem.PlayFromStart(
+                "coin_win",
+                0.95f
+            );
+
+            coinWinSoundPlayed =
+                true;
+        }
+
+        std::cout
+            << "Coin hunt completed!"
+            << std::endl;
+    }
+
+    if (
+        coinHuntTimeRemaining <= 0.0f &&
+        coinCollectedCount < coinTotalCount &&
+        !coinHuntWon &&
+        !coinHuntLost
+        )
+    {
+        coinHuntLost =
+            true;
+
+        if (!coinLoseSoundPlayed)
+        {
+            audioSystem.PlayFromStart(
+                "coin_lose",
+                0.95f
+            );
+
+            coinLoseSoundPlayed =
+                true;
+        }
+
+        std::cout
+            << "Coin hunt failed. Time is over."
+            << std::endl;
+    }
+}
+
+void DrawCoinHuntHUD()
+{
+    if (!coinHuntActive)
+        return;
+
+    ImGui::SetNextWindowPos(
+        ImVec2(
+            620.0f,
+            70.0f
+        ),
+        ImGuiCond_Always
+    );
+
+    ImGui::SetNextWindowSize(
+        ImVec2(
+            240.0f,
+            90.0f
+        ),
+        ImGuiCond_Always
+    );
+
+    ImGui::Begin(
+        "Coin Hunt HUD",
+        nullptr,
+        ImGuiWindowFlags_NoResize |
+        ImGuiWindowFlags_NoCollapse
+    );
+
+    ImGui::Text(
+        "Coins: %d / %d",
+        coinCollectedCount,
+        coinTotalCount
+    );
+
+    if (
+        coinTotalCount > 0 &&
+        coinCollectedCount >= coinTotalCount
+        )
+    {
+        ImGui::Text(
+            "All coins collected!"
+        );
+    }
+    else
+    {
+        ImGui::Text(
+            "Collect all coins."
+        );
+    }
+
+    ImGui::End();
+}
 bool ShouldSkipObjectByDistance(
     SceneObject* object,
     const glm::vec3& viewerPosition
@@ -3576,7 +3882,7 @@ int main()
     BuildProceduralTerrain(
         proceduralTerrainVertices,
         520.0f,
-        120
+        170
     );
 
     Mesh proceduralTerrainMesh(
@@ -5396,10 +5702,27 @@ int main()
         "Assets/Audio/run-grass.wav",
         true
     );
+    audioSystem.LoadSound(
+        "coin_collect",
+        "Assets/Audio/coin_collect.wav",
+        false
+    );
+
+    audioSystem.LoadSound(
+        "coin_win",
+        "Assets/Audio/coin_win.wav",
+        false
+    );
+    audioSystem.LoadSound(
+        "coin_lose",
+        "Assets/Audio/coin_lose.wav",
+        false
+    );
     audioSystem.Play(
         "forest_ambience",
         0.25f
     );
+
     while (!glfwWindowShouldClose(window))
     {
       
@@ -5428,7 +5751,39 @@ int main()
                     true;
             }
         }*/
+       if (
+           previousAppMode == AppMode::Editor &&
+           appMode == AppMode::Play
+           )
+       {
+           coinHuntWon =
+               false;
 
+           coinHuntLost =
+               false;
+
+           coinWinSoundPlayed =
+               false;
+
+           coinLoseSoundPlayed =
+               false;
+
+           coinHuntTimeRemaining =
+               coinHuntTimeLimit;
+
+           for (SceneObject* object : scene.objects)
+           {
+               if (IsCoinObject(object))
+               {
+                   object->visible =
+                       true;
+               }
+           }
+
+           RecalculateCoinHuntState(
+               scene
+           );
+       }
         previousAppMode =
             appMode;
        
@@ -5682,6 +6037,11 @@ appMode == AppMode::Play;
                 playerObject,
                 camera,
                 scene,
+                deltaTime
+            );
+            UpdateCoinHunt(
+                scene,
+                audioSystem,
                 deltaTime
             );
         }
@@ -5992,6 +6352,7 @@ appMode == AppMode::Play;
             interactionKeyPressed =
                 false;
         }
+
         // ================= GAMEPLAY HUD =================
 
         if (appMode == AppMode::Play)
@@ -6019,7 +6380,58 @@ appMode == AppMode::Play;
             );
 
             ImGui::Separator();
+            if (coinHuntActive)
+            {
+                int timeSeconds =
+                    (int)coinHuntTimeRemaining;
 
+                int minutes =
+                    timeSeconds / 60;
+
+                int seconds =
+                    timeSeconds % 60;
+
+                ImGui::Text(
+                    "Coin Hunt: %d / %d",
+                    coinCollectedCount,
+                    coinTotalCount
+                );
+
+                ImGui::Text(
+                    "Time: %02d:%02d",
+                    minutes,
+                    seconds
+                );
+
+                if (coinHuntWon)
+                {
+                    ImGui::Text(
+                        "State: WIN - All coins collected!"
+                    );
+                }
+                else if (coinHuntLost)
+                {
+                    ImGui::Text(
+                        "State: LOSE - Time is over!"
+                    );
+                }
+                else
+                {
+                    ImGui::Text(
+                        "State: Collect all coins."
+                    );
+                }
+
+                ImGui::Separator();
+            }
+            else
+            {
+                ImGui::Text(
+                    "Coin Hunt: No coins placed."
+                );
+
+                ImGui::Separator();
+            }
             if (!interactionHintText.empty())
             {
                 ImGui::Text(
@@ -6063,7 +6475,7 @@ appMode == AppMode::Play;
                     interactionResultText.c_str()
                 );
             }
-
+         
             ImGui::Text(
                 "Interactions: %d",
                 interactionCount
@@ -6162,6 +6574,7 @@ appMode == AppMode::Play;
         {
             lPressed = false;
         }
+
         static bool gPressed = false;
 
         /* if (glfwGetKey(window, GLFW_KEY_G) == GLFW_PRESS && !gPressed)
@@ -7220,6 +7633,7 @@ appMode == AppMode::Play;
                 BuildCampFromAssetBrowser,
                 BuildForestFromAssetBrowser
             );
+          
             // ================= PLAYER SPAWN TOOLS =================
         
 
@@ -7381,6 +7795,8 @@ appMode == AppMode::Play;
             }
 
             ImGui::End();
+
+
             // ================= SELECTED OBJECT PLACEMENT TOOLS =================
             ImGui::SetNextWindowPos(
                 ImVec2(

@@ -2492,6 +2492,324 @@ static SceneObject* SpawnCoinObject(
 
     return coin;
 }
+static SceneObject* SpawnTriggerZoneObject(
+    Scene& scene,
+    SceneObject*& selectedObject,
+    Camera& camera,
+    Mesh* cubeMesh,
+    Shader* shader
+)
+{
+    if (
+        cubeMesh == nullptr ||
+        shader == nullptr
+        )
+    {
+        return nullptr;
+    }
+
+    Material* triggerMaterial =
+        new Material(
+            nullptr
+        );
+
+    triggerMaterial->tint =
+        glm::vec3(
+            0.20f,
+            0.45f,
+            1.0f
+        );
+
+    triggerMaterial->ambient =
+        glm::vec3(
+            0.05f,
+            0.12f,
+            0.30f
+        );
+
+    triggerMaterial->diffuse =
+        glm::vec3(
+            0.20f,
+            0.45f,
+            1.0f
+        );
+
+    triggerMaterial->specular =
+        glm::vec3(
+            0.30f,
+            0.50f,
+            1.0f
+        );
+
+    triggerMaterial->shininess =
+        24.0f;
+
+    triggerMaterial->wireframe =
+        true;
+
+    SceneObject* trigger =
+        new SceneObject(
+            cubeMesh,
+            shader,
+            triggerMaterial
+        );
+
+    trigger->name =
+        "Trigger Zone";
+
+    glm::vec3 forward =
+        glm::vec3(
+            camera.Front.x,
+            0.0f,
+            camera.Front.z
+        );
+
+    if (glm::length(forward) < 0.001f)
+    {
+        forward =
+            glm::vec3(
+                0.0f,
+                0.0f,
+                -1.0f
+            );
+    }
+
+    forward =
+        glm::normalize(
+            forward
+        );
+
+    glm::vec3 spawnPosition =
+        camera.Position +
+        forward * 7.0f;
+
+    spawnPosition =
+        SnapEditorPositionToTerrain(
+            spawnPosition,
+            0.12f
+        );
+
+    trigger->transform.position =
+        spawnPosition;
+
+    trigger->transform.rotation =
+        glm::vec3(
+            0.0f
+        );
+
+    trigger->transform.scale =
+        glm::vec3(
+            6.0f,
+            0.15f,
+            6.0f
+        );
+
+    trigger->visible =
+        true;
+
+    trigger->isCollider =
+        false;
+
+    trigger->colliderRadius =
+        3.5f;
+
+    trigger->boundingRadius =
+        30.0f;
+
+    SetEditorSaveMetadata(
+        trigger,
+        "Cube",
+        "TriggerZone"
+    );
+
+    trigger->assetId =
+        "Trigger Zone";
+
+    trigger->assetType =
+        AssetType::Prop;
+
+    trigger->spawnSource =
+        SpawnSource::Manual;
+
+    trigger->persistent =
+        true;
+
+    trigger->showInHierarchy =
+        true;
+
+    scene.AddObject(
+        trigger
+    );
+
+    selectedObject =
+        trigger;
+
+    std::cout
+        << "Trigger Zone spawned."
+        << std::endl;
+
+    return trigger;
+}
+
+static SceneObject* SpawnMonsterSpawnObject(
+    Scene& scene,
+    SceneObject*& selectedObject,
+    Camera& camera,
+    Shader* shader
+)
+{
+    Mesh* monsterMesh =
+        GetProceduralPrimitiveMesh(
+            "Sphere"
+        );
+
+    if (
+        monsterMesh == nullptr ||
+        shader == nullptr
+        )
+    {
+        return nullptr;
+    }
+
+    Material* monsterMaterial =
+        new Material(
+            nullptr
+        );
+
+    monsterMaterial->tint =
+        glm::vec3(
+            0.65f,
+            0.05f,
+            0.05f
+        );
+
+    monsterMaterial->ambient =
+        glm::vec3(
+            0.20f,
+            0.02f,
+            0.02f
+        );
+
+    monsterMaterial->diffuse =
+        glm::vec3(
+            0.75f,
+            0.05f,
+            0.04f
+        );
+
+    monsterMaterial->specular =
+        glm::vec3(
+            0.25f,
+            0.05f,
+            0.05f
+        );
+
+    monsterMaterial->shininess =
+        18.0f;
+
+    SceneObject* monster =
+        new SceneObject(
+            monsterMesh,
+            shader,
+            monsterMaterial
+        );
+
+    monster->name =
+        "Monster Spawn";
+
+    glm::vec3 forward =
+        glm::vec3(
+            camera.Front.x,
+            0.0f,
+            camera.Front.z
+        );
+
+    if (glm::length(forward) < 0.001f)
+    {
+        forward =
+            glm::vec3(
+                0.0f,
+                0.0f,
+                -1.0f
+            );
+    }
+
+    forward =
+        glm::normalize(
+            forward
+        );
+
+    glm::vec3 spawnPosition =
+        camera.Position +
+        forward * 10.0f;
+
+    spawnPosition =
+        SnapEditorPositionToTerrain(
+            spawnPosition,
+            1.25f
+        );
+
+    monster->transform.position =
+        spawnPosition;
+
+    monster->transform.rotation =
+        glm::vec3(
+            0.0f
+        );
+
+    monster->transform.scale =
+        glm::vec3(
+            1.5f,
+            2.4f,
+            1.5f
+        );
+
+    monster->visible =
+        true;
+
+    monster->isCollider =
+        true;
+
+    monster->colliderRadius =
+        1.7f;
+
+    monster->boundingRadius =
+        25.0f;
+
+    SetEditorSaveMetadata(
+        monster,
+        "Sphere",
+        "MonsterSpawn"
+    );
+
+    monster->assetId =
+        "Monster Spawn";
+
+    monster->assetType =
+        AssetType::Prop;
+
+    monster->spawnSource =
+        SpawnSource::Manual;
+
+    monster->persistent =
+        true;
+
+    monster->showInHierarchy =
+        true;
+
+    scene.AddObject(
+        monster
+    );
+
+    selectedObject =
+        monster;
+
+    std::cout
+        << "Monster Spawn placed."
+        << std::endl;
+
+    return monster;
+}
 void EditorUI::DrawAssetBrowser(
     Scene& scene,
     SceneObject*& selectedObject,
@@ -3759,6 +4077,32 @@ void EditorUI::DrawAssetBrowser(
                             );
                     }
                 }
+            }
+            ImGui::Separator();
+
+            ImGui::Text("Trigger Event Objects");
+
+            if (ImGui::Button("Trigger Zone"))
+            {
+                SpawnTriggerZoneObject(
+                    scene,
+                    selectedObject,
+                    camera,
+                    cubeMesh,
+                    shader
+                );
+            }
+
+            ImGui::SameLine();
+
+            if (ImGui::Button("Monster Spawn"))
+            {
+                SpawnMonsterSpawnObject(
+                    scene,
+                    selectedObject,
+                    camera,
+                    shader
+                );
             }
             ImGui::Separator();
 

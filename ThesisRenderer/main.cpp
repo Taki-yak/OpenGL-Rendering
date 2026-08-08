@@ -88,7 +88,17 @@ float tinyPropRenderDistance =
 30.0f;
 int coinTotalCount =
 0;
+bool monsterEventActive =
+false;
 
+bool monsterEventSoundPlayed =
+false;
+
+float triggerZoneRadius =
+3.8f;
+
+std::string monsterEventText =
+"Monster Event: Waiting for trigger.";
 int coinCollectedCount =
 0;
 
@@ -2730,7 +2740,196 @@ bool IsCoinObject(
 
     return false;
 }
+SceneObject* FindPlayerObject(
+    Scene& scene
+);
+bool IsTriggerZoneObject(
+    SceneObject* object
+)
+{
+    if (object == nullptr)
+        return false;
 
+    if (object->editorGameplayType == "TriggerZone")
+        return true;
+
+    if (object->name.find("Trigger Zone") != std::string::npos)
+        return true;
+
+    return false;
+}
+
+bool IsMonsterSpawnObject(
+    SceneObject* object
+)
+{
+    if (object == nullptr)
+        return false;
+
+    if (object->editorGameplayType == "MonsterSpawn")
+        return true;
+
+    if (object->name.find("Monster Spawn") != std::string::npos)
+        return true;
+
+    return false;
+}
+
+void ResetMonsterEventForPlay(
+    Scene& scene
+)
+{
+    monsterEventActive =
+        false;
+
+    monsterEventSoundPlayed =
+        false;
+
+    monsterEventText =
+        "Monster Event: Find the trigger zone.";
+
+    for (SceneObject* object : scene.objects)
+    {
+        if (object == nullptr)
+            continue;
+
+        if (IsMonsterSpawnObject(object))
+        {
+            object->visible =
+                false;
+        }
+
+        if (IsTriggerZoneObject(object))
+        {
+            object->visible =
+                true;
+        }
+    }
+}
+
+void RestoreMonsterEventForEditor(
+    Scene& scene
+)
+{
+    for (SceneObject* object : scene.objects)
+    {
+        if (object == nullptr)
+            continue;
+
+        if (IsMonsterSpawnObject(object))
+        {
+            object->visible =
+                true;
+        }
+
+        if (IsTriggerZoneObject(object))
+        {
+            object->visible =
+                true;
+        }
+    }
+}
+
+void ActivateMonsterEvent(
+    Scene& scene,
+    AudioSystem& audioSystem
+)
+{
+    monsterEventActive =
+        true;
+
+    monsterEventText =
+        "Monster Event: Monster awakened!";
+
+    for (SceneObject* object : scene.objects)
+    {
+        if (object == nullptr)
+            continue;
+
+        if (IsMonsterSpawnObject(object))
+        {
+            object->visible =
+                true;
+        }
+    }
+
+    if (!monsterEventSoundPlayed)
+    {
+        audioSystem.PlayFromStart(
+            "interaction",
+            1.0f
+        );
+
+        monsterEventSoundPlayed =
+            true;
+    }
+
+    std::cout
+        << "Monster event activated."
+        << std::endl;
+}
+
+void UpdateMonsterTriggerEvent(
+    Scene& scene,
+    AudioSystem& audioSystem
+)
+{
+    if (monsterEventActive)
+        return;
+
+    SceneObject* player =
+        FindPlayerObject(
+            scene
+        );
+
+    if (player == nullptr)
+        return;
+
+    for (SceneObject* object : scene.objects)
+    {
+        if (!IsTriggerZoneObject(object))
+            continue;
+
+        glm::vec3 playerPosition =
+            player->transform.position;
+
+        glm::vec3 triggerPosition =
+            object->transform.position;
+
+        float distance =
+            glm::distance(
+                glm::vec3(
+                    playerPosition.x,
+                    0.0f,
+                    playerPosition.z
+                ),
+                glm::vec3(
+                    triggerPosition.x,
+                    0.0f,
+                    triggerPosition.z
+                )
+            );
+
+        float finalTriggerRadius =
+            glm::max(
+                triggerZoneRadius,
+                glm::max(
+                    object->transform.scale.x,
+                    object->transform.scale.z
+                ) * 0.65f
+            );
+
+        if (distance <= finalTriggerRadius)
+        {
+            ActivateMonsterEvent(
+                scene,
+                audioSystem
+            );
+
+            return;
+        }
+    }
+}
 SceneObject* FindPlayerObject(
     Scene& scene
 )
@@ -5779,8 +5978,20 @@ int main()
                        true;
                }
            }
-
+           ResetMonsterEventForPlay(
+               scene
+           );
            RecalculateCoinHuntState(
+               scene
+
+           );
+       }
+       if (
+           previousAppMode == AppMode::Play &&
+           appMode == AppMode::Editor
+           )
+       {
+           RestoreMonsterEventForEditor(
                scene
            );
        }
@@ -6043,6 +6254,10 @@ appMode == AppMode::Play;
                 scene,
                 audioSystem,
                 deltaTime
+            );
+            UpdateMonsterTriggerEvent(
+                scene,
+                audioSystem
             );
         }
        
@@ -6368,7 +6583,7 @@ appMode == AppMode::Play;
             ImGui::SetNextWindowSize(
                 ImVec2(
                     520.0f,
-                    120.0f
+                    240.0f
                 ),
                 ImGuiCond_Always
             );
@@ -6480,7 +6695,25 @@ appMode == AppMode::Play;
                 "Interactions: %d",
                 interactionCount
             );
+            ImGui::Text(
+                "%s",
+                monsterEventText.c_str()
+            );
 
+            if (monsterEventActive)
+            {
+                ImGui::Text(
+                    "State: Monster is visible."
+                );
+            }
+            else
+            {
+                ImGui::Text(
+                    "State: Waiting for player to enter trigger."
+                );
+            }
+
+            ImGui::Separator();
             ImGui::End();
         }
         if (glfwGetKey(window, GLFW_KEY_X) == GLFW_PRESS)

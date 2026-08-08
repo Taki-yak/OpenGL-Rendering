@@ -94,8 +94,23 @@ false;
 bool monsterEventSoundPlayed =
 false;
 
+bool monsterChaseMusicStarted =
+false;
+
+bool monsterPlayerCaught =
+false;
+
 float triggerZoneRadius =
 3.8f;
+
+float monsterChaseSpeed =
+6.5f;
+
+float monsterCatchRadius =
+1.6f;
+
+float monsterTerrainOffset =
+1.25f;
 
 std::string monsterEventText =
 "Monster Event: Waiting for trigger.";
@@ -2774,7 +2789,21 @@ bool IsMonsterSpawnObject(
 
     return false;
 }
+SceneObject* FindMonsterSpawnObject(
+    Scene& scene
+)
+{
+    for (SceneObject* object : scene.objects)
+    {
+        if (object == nullptr)
+            continue;
 
+        if (IsMonsterSpawnObject(object))
+            return object;
+    }
+
+    return nullptr;
+}
 void ResetMonsterEventForPlay(
     Scene& scene
 )
@@ -2783,6 +2812,12 @@ void ResetMonsterEventForPlay(
         false;
 
     monsterEventSoundPlayed =
+        false;
+
+    monsterChaseMusicStarted =
+        false;
+
+    monsterPlayerCaught =
         false;
 
     monsterEventText =
@@ -2838,6 +2873,9 @@ void ActivateMonsterEvent(
     monsterEventActive =
         true;
 
+    monsterPlayerCaught =
+        false;
+
     monsterEventText =
         "Monster Event: Monster awakened!";
 
@@ -2856,7 +2894,7 @@ void ActivateMonsterEvent(
     if (!monsterEventSoundPlayed)
     {
         audioSystem.PlayFromStart(
-            "interaction",
+            "monster_zone",
             1.0f
         );
 
@@ -2868,7 +2906,6 @@ void ActivateMonsterEvent(
         << "Monster event activated."
         << std::endl;
 }
-
 void UpdateMonsterTriggerEvent(
     Scene& scene,
     AudioSystem& audioSystem
@@ -2929,6 +2966,123 @@ void UpdateMonsterTriggerEvent(
             return;
         }
     }
+}
+void UpdateMonsterChaseEvent(
+    Scene& scene,
+    AudioSystem& audioSystem,
+    float deltaTime
+)
+{
+    if (!monsterEventActive)
+        return;
+
+    if (monsterPlayerCaught)
+        return;
+
+    SceneObject* player =
+        FindPlayerObject(
+            scene
+        );
+
+    SceneObject* monster =
+        FindMonsterSpawnObject(
+            scene
+        );
+
+    if (
+        player == nullptr ||
+        monster == nullptr
+        )
+    {
+        return;
+    }
+
+    monster->visible =
+        true;
+
+    if (!monsterChaseMusicStarted)
+    {
+        audioSystem.PlayFromStart(
+            "monster_chase",
+            0.85f
+        );
+
+        monsterChaseMusicStarted =
+            true;
+    }
+
+    glm::vec3 monsterPosition =
+        monster->transform.position;
+
+    glm::vec3 playerPosition =
+        player->transform.position;
+
+    glm::vec3 direction =
+        glm::vec3(
+            playerPosition.x - monsterPosition.x,
+            0.0f,
+            playerPosition.z - monsterPosition.z
+        );
+
+    float distance =
+        glm::length(
+            direction
+        );
+
+    if (distance <= monsterCatchRadius)
+    {
+        monsterPlayerCaught =
+            true;
+
+        monsterEventText =
+            "Monster Event: LOSE - Monster caught the player!";
+
+        audioSystem.Stop(
+            "monster_chase"
+        );
+
+        audioSystem.PlayFromStart(
+            "coin_lose",
+            1.0f
+        );
+
+        std::cout
+            << "Player lost. Monster caught the player."
+            << std::endl;
+
+        return;
+    }
+
+    if (distance < 0.001f)
+        return;
+
+    direction =
+        glm::normalize(
+            direction
+        );
+
+    monster->transform.position +=
+        direction *
+        monsterChaseSpeed *
+        deltaTime;
+
+    monster->transform.position.y =
+        GetTerrainHeight(
+            monster->transform.position.x,
+            monster->transform.position.z
+        ) +
+        monsterTerrainOffset;
+
+    monster->transform.rotation.y =
+        glm::degrees(
+            std::atan2(
+                direction.x,
+                direction.z
+            )
+        );
+
+    monsterEventText =
+        "Monster Event: Monster is chasing the player!";
 }
 SceneObject* FindPlayerObject(
     Scene& scene
@@ -5921,7 +6075,17 @@ int main()
         "forest_ambience",
         0.25f
     );
+    audioSystem.LoadSound(
+        "monster_zone",
+        "Assets/Audio/monster_zone.wav",
+        false
+    );
 
+    audioSystem.LoadSound(
+        "monster_chase",
+        "Assets/Audio/monster_chase.wav",
+        true
+    );
     while (!glfwWindowShouldClose(window))
     {
       
@@ -5981,6 +6145,9 @@ int main()
            ResetMonsterEventForPlay(
                scene
            );
+           audioSystem.Stop(
+               "monster_chase"
+           );
            RecalculateCoinHuntState(
                scene
 
@@ -5991,6 +6158,10 @@ int main()
            appMode == AppMode::Editor
            )
        {
+           audioSystem.Stop(
+               "monster_chase"
+           );
+
            RestoreMonsterEventForEditor(
                scene
            );
@@ -6258,6 +6429,11 @@ appMode == AppMode::Play;
             UpdateMonsterTriggerEvent(
                 scene,
                 audioSystem
+            );
+            UpdateMonsterChaseEvent(
+                scene,
+                audioSystem,
+                deltaTime
             );
         }
        
@@ -6700,16 +6876,22 @@ appMode == AppMode::Play;
                 monsterEventText.c_str()
             );
 
-            if (monsterEventActive)
+            if (monsterPlayerCaught)
             {
                 ImGui::Text(
-                    "State: Monster is visible."
+                    "Monster State: LOSE"
+                );
+            }
+            else if (monsterEventActive)
+            {
+                ImGui::Text(
+                    "Monster State: CHASING"
                 );
             }
             else
             {
                 ImGui::Text(
-                    "State: Waiting for player to enter trigger."
+                    "Monster State: WAITING"
                 );
             }
 

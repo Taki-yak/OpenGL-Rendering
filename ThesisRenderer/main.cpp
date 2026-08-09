@@ -110,7 +110,7 @@ float monsterCatchRadius =
 1.6f;
 
 float monsterTerrainOffset =
-1.25f;
+2.0f;
 
 std::string monsterEventText =
 "Monster Event: Waiting for trigger.";

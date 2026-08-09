@@ -13,6 +13,7 @@
 #include <cmath>
 #include <cstdlib>
 #include "mesh.h"
+#include <fstream>
 float GetObjectTerrainY(
     float x,
     float z,
@@ -59,6 +60,71 @@ static void SetEditorSaveMetadata(
     object->editorModelDirectory =
         modelDirectory;
 }
+static bool FileExists(
+    const std::string& path
+)
+{
+    std::ifstream file(
+        path.c_str()
+    );
+
+    return file.good();
+}
+
+static std::string ResolveAssetPath(
+    const std::string& relativePath
+)
+{
+    if (FileExists(relativePath))
+        return relativePath;
+
+    std::string path1 =
+        "../" + relativePath;
+
+    if (FileExists(path1))
+        return path1;
+
+    std::string path2 =
+        "../../" + relativePath;
+
+    if (FileExists(path2))
+        return path2;
+
+    std::string path3 =
+        "../../../" + relativePath;
+
+    if (FileExists(path3))
+        return path3;
+
+    std::string path4 =
+        "../../../../" + relativePath;
+
+    if (FileExists(path4))
+        return path4;
+
+    return relativePath;
+}
+
+static std::string GetDirectoryFromPath(
+    const std::string& path
+)
+{
+    size_t slashPosition =
+        path.find_last_of(
+            "/\\"
+        );
+
+    if (slashPosition == std::string::npos)
+    {
+        return "";
+    }
+
+    return path.substr(
+        0,
+        slashPosition + 1
+    );
+}
+
 static Material* CreateCampfireMaterial(
     const glm::vec3& tint,
     const glm::vec3& ambient,
@@ -2586,7 +2652,7 @@ static SceneObject* SpawnTriggerZoneObject(
     spawnPosition =
         SnapEditorPositionToTerrain(
             spawnPosition,
-            0.12f
+            0.2f
         );
 
     trigger->transform.position =
@@ -2658,60 +2724,80 @@ static SceneObject* SpawnMonsterSpawnObject(
     Shader* shader
 )
 {
-    Mesh* monsterMesh =
-        GetProceduralPrimitiveMesh(
-            "Sphere"
-        );
-
-    if (
-        monsterMesh == nullptr ||
-        shader == nullptr
-        )
+    if (shader == nullptr)
     {
         return nullptr;
     }
 
-    Material* monsterMaterial =
-        new Material(
-            nullptr
+    static Model* monsterModel =
+        nullptr;
+
+    static std::string loadedMonsterPath =
+        "";
+
+    std::string monsterRelativePath =
+        "Assets/Models/Environment/Campfire/monster_test.obj";
+
+    /*
+        TEST ORDER:
+
+        1. First test with:
+           Assets/Models/Environment/Campfire/campfire.obj
+
+        2. If that works, copy monster_test.obj into:
+           Assets/Models/Environment/Campfire/
+
+           Then change monsterRelativePath to:
+           Assets/Models/Environment/Campfire/monster_test.obj
+
+        3. If OBJ works, copy monster_test.fbx into:
+           Assets/Models/Environment/Campfire/
+
+           Then change monsterRelativePath to:
+           Assets/Models/Environment/Campfire/monster_test.fbx
+    */
+
+    std::string monsterPath =
+        ResolveAssetPath(
+            monsterRelativePath
         );
 
-    monsterMaterial->tint =
-        glm::vec3(
-            0.65f,
-            0.05f,
-            0.05f
+    std::string monsterDirectory =
+        GetDirectoryFromPath(
+            monsterPath
         );
 
-    monsterMaterial->ambient =
-        glm::vec3(
-            0.20f,
-            0.02f,
-            0.02f
-        );
+    std::cout
+        << "Trying to load monster test model: "
+        << monsterPath
+        << std::endl;
 
-    monsterMaterial->diffuse =
-        glm::vec3(
-            0.75f,
-            0.05f,
-            0.04f
-        );
+    std::cout
+        << "Monster test file exists: "
+        << FileExists(
+            monsterPath
+        )
+        << std::endl;
 
-    monsterMaterial->specular =
-        glm::vec3(
-            0.25f,
-            0.05f,
-            0.05f
-        );
+    if (
+        monsterModel == nullptr ||
+        loadedMonsterPath != monsterPath
+        )
+    {
+        monsterModel =
+            new Model(
+                monsterPath,
+                monsterDirectory
+            );
 
-    monsterMaterial->shininess =
-        18.0f;
+        loadedMonsterPath =
+            monsterPath;
+    }
 
     SceneObject* monster =
         new SceneObject(
-            monsterMesh,
-            shader,
-            monsterMaterial
+            monsterModel,
+            shader
         );
 
     monster->name =
@@ -2746,7 +2832,7 @@ static SceneObject* SpawnMonsterSpawnObject(
     spawnPosition =
         SnapEditorPositionToTerrain(
             spawnPosition,
-            1.25f
+            2.5f
         );
 
     monster->transform.position =
@@ -2754,14 +2840,14 @@ static SceneObject* SpawnMonsterSpawnObject(
 
     monster->transform.rotation =
         glm::vec3(
+            0.0f,
+            180.0f,
             0.0f
         );
 
     monster->transform.scale =
         glm::vec3(
-            1.5f,
-            2.4f,
-            1.5f
+            0.30f
         );
 
     monster->visible =
@@ -2774,12 +2860,14 @@ static SceneObject* SpawnMonsterSpawnObject(
         1.7f;
 
     monster->boundingRadius =
-        25.0f;
+        35.0f;
 
     SetEditorSaveMetadata(
         monster,
-        "Sphere",
-        "MonsterSpawn"
+        "Model",
+        "MonsterSpawn",
+        monsterRelativePath,
+        "Assets/Models/Environment/Campfire/"
     );
 
     monster->assetId =
@@ -2805,7 +2893,7 @@ static SceneObject* SpawnMonsterSpawnObject(
         monster;
 
     std::cout
-        << "Monster Spawn placed."
+        << "Monster test spawn placed."
         << std::endl;
 
     return monster;
@@ -2915,7 +3003,7 @@ void EditorUI::DrawAssetBrowser(
             object->transform.position =
                 SnapEditorPositionToTerrain(
                     spawnPosition,
-                    0.05f
+                    0.20f
                 );
 
             object->transform.scale =

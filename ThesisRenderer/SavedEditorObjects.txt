@@ -1,8 +1,5 @@
 V2|Ground|Cube||||None|0 -0.55 -10|0 0 0|120 0.1 120|0|0|1|1|1|0.25 0.45 0.2|0.3 0.3 0.3|1 1 1|0.5 0.5 0.5|32|0
-V2|Pine Tree|Model|Assets/Models/Environment/NaturePack/PineTree_1.obj|||None|-1.00375 5.66657 32.2039|0 0 0|1.4 1.4 1.4|1|0|1.12|50|1|1 1 1|0.35 0.35 0.35|0.75 0.75 0.75|0.04 0.04 0.04|6|0
-V2|Rock|Model|Assets/Models/Environment/NaturePack/Rock_1.obj|||None|5.13111 5.30429 25.2699|0 0 0|1.3 1.3 1.3|1|1|1.04|50|1|1 1 1|0.35 0.35 0.35|0.75 0.75 0.75|0.04 0.04 0.04|6|0
-V2|Bush|Model|Assets/Models/Environment/NaturePack/Bush_1.obj|||None|5.35853 5.49031 28.2741|0 0 0|1 1 1|1|0|0.8|50|1|1 1 1|0.35 0.35 0.35|0.75 0.75 0.75|0.04 0.04 0.04|6|0
-V2|Grass|Model|Assets/Models/Environment/NaturePack/Grass.obj|||None|3.85183 5.57533 30.2235|0 0 0|0.5 0.5 0.5|1|0|0.4|50|1|1 1 1|0.35 0.35 0.35|0.75 0.75 0.75|0.04 0.04 0.04|6|0
-V2|Wood Log|Model|Assets/Models/Environment/NaturePack/WoodLog.obj|||None|4.02302 5.56198 30.002|0 0 0|1 1 1|1|1|0.8|50|1|1 1 1|0.35 0.35 0.35|0.75 0.75 0.75|0.04 0.04 0.04|6|0
-V2|Tree Stump|Model|Assets/Models/Environment/NaturePack/TreeStump.obj|||None|3.45778 5.49648 29.5651|14.4581 -1.36642 0|1 1 1|1|1|0.8|50|1|1 1 1|0.35 0.35 0.35|0.75 0.75 0.75|0.04 0.04 0.04|6|0
-V2|Primitive Cylinder|Cylinder||||None|-13.8107 3.39201 5.18204|0 0 -48.457|1 1 1|1|1|1.2|9.6|1|0.55 0.55 0.52|0.2475 0.2475 0.234|0.55 0.55 0.52|0.08 0.08 0.08|12|0
+V2|Trigger Zone|Cube||||TriggerZone|-1.24917 5.12573 25.8051|0 0 0|6 0.15 6|1|0|3.5|30|1|0.2 0.45 1|0.05 0.12 0.3|0.2 0.45 1|0.3 0.5 1|24|1
+V2|Monster Spawn|Model|Assets/Models/Environment/Campfire/monster_test.obj|Assets/Models/Environment/Campfire/||MonsterSpawn|-23.5199 8.97484 29.3412|0 180 0|0.3 0.3 0.3|1|1|1.7|35|0|1 1 1|0.35 0.35 0.35|0.75 0.75 0.75|0.04 0.04 0.04|6|0
+V2|Music Gate|Cube||||MusicGate|50.5239 8.3498 56.3869|0 0 0|5.5 3 0.25|1|0|4|35|1|0.1 0.55 1|0.02 0.12 0.28|0.1 0.55 1|0.4 0.7 1|48|1
+V2|Music NPC|Model|Assets/Models/Charachters/Player/music_npc.fbx|Assets/Models/Charachters/Player/||MusicNPC|39.3003 18.3874 -3.68905|0 180 0|1 1 1|1|0|1.2|25|0|1 1 1|0.35 0.35 0.35|0.75 0.75 0.75|0.04 0.04 0.04|6|0

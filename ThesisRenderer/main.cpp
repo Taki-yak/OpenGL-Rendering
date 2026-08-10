@@ -174,7 +174,35 @@ false;
 bool runningFootstepPlaying =
 false;
 float nearbyInteractableDistance =-1.0f;
+bool musicRescueActive =
+    false;
 
+bool musicNpcChasingMonster =
+    false;
+
+bool musicRescueSoundStarted =
+    false;
+
+bool monsterDefeatedByMusic =
+    false;
+
+bool musicRescueWin =
+    false;
+
+float musicGateRadius =
+    4.5f;
+
+float musicNpcSpeed =
+    8.0f;
+
+float musicNpcCatchRadius =
+    2.4f;
+
+float musicNpcTerrainOffset =
+    0.15f;
+
+std::string musicRescueText =
+    "Music Rescue: Waiting for gate.";
 float interactionRadius =4.0f;
 SceneObject* nearbyInteractableObject =
 nullptr;
@@ -2804,6 +2832,357 @@ SceneObject* FindMonsterSpawnObject(
 
     return nullptr;
 }
+bool IsMusicGateObject(
+    SceneObject* object
+)
+{
+    if (object == nullptr)
+        return false;
+
+    if (object->editorGameplayType == "MusicGate")
+        return true;
+
+    if (object->name.find("Music Gate") != std::string::npos)
+        return true;
+
+    return false;
+}
+
+bool IsMusicNpcObject(
+    SceneObject* object
+)
+{
+    if (object == nullptr)
+        return false;
+
+    if (object->editorGameplayType == "MusicNPC")
+        return true;
+
+    if (object->name.find("Music NPC") != std::string::npos)
+        return true;
+
+    return false;
+}
+
+SceneObject* FindMusicNpcObject(
+    Scene& scene
+)
+{
+    for (SceneObject* object : scene.objects)
+    {
+        if (object == nullptr)
+            continue;
+
+        if (IsMusicNpcObject(object))
+            return object;
+    }
+
+    return nullptr;
+}
+
+void ResetMusicRescueForPlay(
+    Scene& scene
+)
+{
+    musicRescueActive =
+        false;
+
+    musicNpcChasingMonster =
+        false;
+
+    musicRescueSoundStarted =
+        false;
+
+    monsterDefeatedByMusic =
+        false;
+
+    musicRescueWin =
+        false;
+
+    musicRescueText =
+        "Music Rescue: Reach the Music Gate while escaping.";
+
+    for (SceneObject* object : scene.objects)
+    {
+        if (object == nullptr)
+            continue;
+
+        if (IsMusicNpcObject(object))
+        {
+            object->visible =
+                false;
+        }
+
+        if (IsMusicGateObject(object))
+        {
+            object->visible =
+                true;
+        }
+    }
+}
+
+void RestoreMusicRescueForEditor(
+    Scene& scene
+)
+{
+    for (SceneObject* object : scene.objects)
+    {
+        if (object == nullptr)
+            continue;
+
+        if (IsMusicNpcObject(object))
+        {
+            object->visible =
+                true;
+        }
+
+        if (IsMusicGateObject(object))
+        {
+            object->visible =
+                true;
+        }
+    }
+}
+
+void ActivateMusicRescueEvent(
+    Scene& scene,
+    AudioSystem& audioSystem
+)
+{
+    musicRescueActive =
+        true;
+
+    musicNpcChasingMonster =
+        true;
+
+    musicRescueText =
+        "Music Rescue: Music NPC activated!";
+
+    SceneObject* musicNpc =
+        FindMusicNpcObject(
+            scene
+        );
+
+    if (musicNpc != nullptr)
+    {
+        musicNpc->visible =
+            true;
+    }
+
+    if (!musicRescueSoundStarted)
+    {
+        audioSystem.Stop(
+            "monster_chase"
+        );
+
+        audioSystem.PlayFromStart(
+            "music_rescue",
+            0.90f
+        );
+
+        musicRescueSoundStarted =
+            true;
+    }
+
+    std::cout
+        << "Music rescue event activated."
+        << std::endl;
+}
+
+void UpdateMusicRescueEvent(
+    Scene& scene,
+    AudioSystem& audioSystem,
+    float deltaTime
+)
+{
+    if (monsterPlayerCaught)
+        return;
+
+    if (musicRescueWin)
+        return;
+
+    SceneObject* player =
+        FindPlayerObject(
+            scene
+        );
+
+    SceneObject* monster =
+        FindMonsterSpawnObject(
+            scene
+        );
+
+    SceneObject* musicNpc =
+        FindMusicNpcObject(
+            scene
+        );
+
+    if (player == nullptr)
+        return;
+
+    if (monster == nullptr)
+        return;
+
+    if (musicNpc == nullptr)
+    {
+        musicRescueText =
+            "Music Rescue: Place a Music NPC in the editor.";
+
+        return;
+    }
+
+    if (!monsterEventActive)
+    {
+        musicRescueText =
+            "Music Rescue: Waiting for monster chase.";
+
+        return;
+    }
+
+    if (!musicRescueActive)
+    {
+        for (SceneObject* object : scene.objects)
+        {
+            if (!IsMusicGateObject(object))
+                continue;
+
+            glm::vec3 playerPosition =
+                player->transform.position;
+
+            glm::vec3 gatePosition =
+                object->transform.position;
+
+            float distance =
+                glm::distance(
+                    glm::vec3(
+                        playerPosition.x,
+                        0.0f,
+                        playerPosition.z
+                    ),
+                    glm::vec3(
+                        gatePosition.x,
+                        0.0f,
+                        gatePosition.z
+                    )
+                );
+
+            float finalGateRadius =
+                glm::max(
+                    musicGateRadius,
+                    glm::max(
+                        object->transform.scale.x,
+                        object->transform.scale.z
+                    ) * 0.75f
+                );
+
+            if (distance <= finalGateRadius)
+            {
+                ActivateMusicRescueEvent(
+                    scene,
+                    audioSystem
+                );
+
+                break;
+            }
+        }
+    }
+
+    if (!musicNpcChasingMonster)
+        return;
+
+    if (!monster->visible)
+        return;
+
+    musicNpc->visible =
+        true;
+
+    glm::vec3 npcPosition =
+        musicNpc->transform.position;
+
+    glm::vec3 monsterPosition =
+        monster->transform.position;
+
+    glm::vec3 direction =
+        glm::vec3(
+            monsterPosition.x - npcPosition.x,
+            0.0f,
+            monsterPosition.z - npcPosition.z
+        );
+
+    float distanceToMonster =
+        glm::length(
+            direction
+        );
+
+    if (distanceToMonster <= musicNpcCatchRadius)
+    {
+        monster->visible =
+            false;
+
+        monsterDefeatedByMusic =
+            true;
+
+        musicRescueWin =
+            true;
+
+        musicNpcChasingMonster =
+            false;
+
+        monsterEventActive =
+            false;
+
+        monsterEventText =
+            "Monster Event: WIN - Monster defeated!";
+
+        musicRescueText =
+            "Music Rescue: WIN - Monster defeated by Music NPC!";
+
+        audioSystem.Stop(
+            "monster_chase"
+        );
+
+        audioSystem.PlayFromStart(
+            "coin_win",
+            1.0f
+        );
+
+        std::cout
+            << "Music rescue win. Monster defeated."
+            << std::endl;
+
+        return;
+    }
+
+    if (distanceToMonster < 0.001f)
+        return;
+
+    direction =
+        glm::normalize(
+            direction
+        );
+
+    musicNpc->transform.position +=
+        direction *
+        musicNpcSpeed *
+        deltaTime;
+
+    musicNpc->transform.position.y =
+        GetTerrainHeight(
+            musicNpc->transform.position.x,
+            musicNpc->transform.position.z
+        ) +
+        musicNpcTerrainOffset;
+
+    musicNpc->transform.rotation.y =
+        glm::degrees(
+            std::atan2(
+                direction.x,
+                direction.z
+            )
+        );
+
+    musicRescueText =
+        "Music Rescue: Music NPC is chasing the monster!";
+}
 void ResetMonsterEventForPlay(
     Scene& scene
 )
@@ -2819,7 +3198,21 @@ void ResetMonsterEventForPlay(
 
     monsterPlayerCaught =
         false;
+    if (
+        monsterDefeatedByMusic ||
+        musicRescueWin
+        )
+    {
+        return;
+    }
 
+    if (musicNpcChasingMonster)
+    {
+        monsterEventText =
+            "Monster Event: Monster distracted by Music NPC.";
+
+        return;
+    }
     monsterEventText =
         "Monster Event: Find the trigger zone.";
 
@@ -6086,6 +6479,11 @@ int main()
         "Assets/Audio/monster_chase.wav",
         true
     );
+    audioSystem.LoadSound(
+        "music_rescue",
+        "Assets/Audio/music_rescue.wav",
+        true
+    );
     while (!glfwWindowShouldClose(window))
     {
       
@@ -6145,6 +6543,13 @@ int main()
            ResetMonsterEventForPlay(
                scene
            );
+           ResetMusicRescueForPlay(
+               scene
+           );
+
+           audioSystem.Stop(
+               "music_rescue"
+           );
            audioSystem.Stop(
                "monster_chase"
            );
@@ -6162,7 +6567,15 @@ int main()
                "monster_chase"
            );
 
+           audioSystem.Stop(
+               "music_rescue"
+           );
+
            RestoreMonsterEventForEditor(
+               scene
+           );
+
+           RestoreMusicRescueForEditor(
                scene
            );
        }
@@ -6430,6 +6843,13 @@ appMode == AppMode::Play;
                 scene,
                 audioSystem
             );
+
+            UpdateMusicRescueEvent(
+                scene,
+                audioSystem,
+                deltaTime
+            );
+
             UpdateMonsterChaseEvent(
                 scene,
                 audioSystem,
@@ -6892,6 +7312,37 @@ appMode == AppMode::Play;
             {
                 ImGui::Text(
                     "Monster State: WAITING"
+                );
+            }
+
+            ImGui::Separator();
+            ImGui::Text(
+                "%s",
+                musicRescueText.c_str()
+            );
+
+            if (musicRescueWin)
+            {
+                ImGui::Text(
+                    "Music Rescue State: WIN"
+                );
+            }
+            else if (musicNpcChasingMonster)
+            {
+                ImGui::Text(
+                    "Music Rescue State: NPC CHASING MONSTER"
+                );
+            }
+            else if (musicRescueActive)
+            {
+                ImGui::Text(
+                    "Music Rescue State: ACTIVE"
+                );
+            }
+            else
+            {
+                ImGui::Text(
+                    "Music Rescue State: WAITING"
                 );
             }
 

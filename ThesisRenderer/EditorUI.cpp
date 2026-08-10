@@ -2898,6 +2898,340 @@ static SceneObject* SpawnMonsterSpawnObject(
 
     return monster;
 }
+static SceneObject* SpawnMusicGateObject(
+    Scene& scene,
+    SceneObject*& selectedObject,
+    Camera& camera,
+    Mesh* cubeMesh,
+    Shader* shader
+)
+{
+    if (
+        cubeMesh == nullptr ||
+        shader == nullptr
+        )
+    {
+        return nullptr;
+    }
+
+    Material* gateMaterial =
+        new Material(
+            nullptr
+        );
+
+    gateMaterial->tint =
+        glm::vec3(
+            0.10f,
+            0.55f,
+            1.0f
+        );
+
+    gateMaterial->ambient =
+        glm::vec3(
+            0.02f,
+            0.12f,
+            0.28f
+        );
+
+    gateMaterial->diffuse =
+        glm::vec3(
+            0.10f,
+            0.55f,
+            1.0f
+        );
+
+    gateMaterial->specular =
+        glm::vec3(
+            0.40f,
+            0.70f,
+            1.0f
+        );
+
+    gateMaterial->shininess =
+        48.0f;
+
+    gateMaterial->wireframe =
+        true;
+
+    SceneObject* gate =
+        new SceneObject(
+            cubeMesh,
+            shader,
+            gateMaterial
+        );
+
+    gate->name =
+        "Music Gate";
+
+    glm::vec3 forward =
+        glm::vec3(
+            camera.Front.x,
+            0.0f,
+            camera.Front.z
+        );
+
+    if (glm::length(forward) < 0.001f)
+    {
+        forward =
+            glm::vec3(
+                0.0f,
+                0.0f,
+                -1.0f
+            );
+    }
+
+    forward =
+        glm::normalize(
+            forward
+        );
+
+    glm::vec3 spawnPosition =
+        camera.Position +
+        forward * 8.0f;
+
+    spawnPosition =
+        SnapEditorPositionToTerrain(
+            spawnPosition,
+            1.6f
+        );
+
+    gate->transform.position =
+        spawnPosition;
+
+    gate->transform.rotation =
+        glm::vec3(
+            0.0f
+        );
+
+    gate->transform.scale =
+        glm::vec3(
+            5.5f,
+            3.0f,
+            0.25f
+        );
+
+    gate->visible =
+        true;
+
+    gate->isCollider =
+        false;
+
+    gate->colliderRadius =
+        4.0f;
+
+    gate->boundingRadius =
+        35.0f;
+
+    SetEditorSaveMetadata(
+        gate,
+        "Cube",
+        "MusicGate"
+    );
+
+    gate->assetId =
+        "Music Gate";
+
+    gate->assetType =
+        AssetType::Prop;
+
+    gate->spawnSource =
+        SpawnSource::Manual;
+
+    gate->persistent =
+        true;
+
+    gate->showInHierarchy =
+        true;
+
+    scene.AddObject(
+        gate
+    );
+
+    selectedObject =
+        gate;
+
+    std::cout
+        << "Music Gate spawned."
+        << std::endl;
+
+    return gate;
+}
+
+static SceneObject* SpawnMusicNpcObject(
+    Scene& scene,
+    SceneObject*& selectedObject,
+    Camera& camera,
+    Shader* shader
+)
+{
+    if (shader == nullptr)
+    {
+        return nullptr;
+    }
+
+    static Model* musicNpcModel =
+        nullptr;
+
+    static std::string loadedMusicNpcPath =
+        "";
+
+    std::string musicNpcRelativePath =
+        "Assets/Models/Charachters/Player/music_npc.fbx";
+
+    std::string musicNpcPath =
+        ResolveAssetPath(
+            musicNpcRelativePath
+        );
+
+    std::string musicNpcDirectory =
+        GetDirectoryFromPath(
+            musicNpcPath
+        );
+
+    std::cout
+        << "Trying to load Music NPC model: "
+        << musicNpcPath
+        << std::endl;
+
+    std::cout
+        << "Music NPC file exists: "
+        << FileExists(
+            musicNpcPath
+        )
+        << std::endl;
+
+    if (
+        musicNpcModel == nullptr ||
+        loadedMusicNpcPath != musicNpcPath
+        )
+    {
+        musicNpcModel =
+            new Model(
+                musicNpcPath,
+                musicNpcDirectory
+            );
+
+        loadedMusicNpcPath =
+            musicNpcPath;
+    }
+
+    SceneObject* musicNpc =
+        new SceneObject(
+            musicNpcModel,
+            shader
+        );
+
+    musicNpc->name =
+        "Music NPC";
+
+    glm::vec3 forward =
+        glm::vec3(
+            camera.Front.x,
+            0.0f,
+            camera.Front.z
+        );
+
+    if (glm::length(forward) < 0.001f)
+    {
+        forward =
+            glm::vec3(
+                0.0f,
+                0.0f,
+                -1.0f
+            );
+    }
+
+    forward =
+        glm::normalize(
+            forward
+        );
+
+    glm::vec3 right =
+        glm::normalize(
+            glm::cross(
+                forward,
+                glm::vec3(
+                    0.0f,
+                    1.0f,
+                    0.0f
+                )
+            )
+        );
+
+    glm::vec3 spawnPosition =
+        camera.Position +
+        forward * 7.0f +
+        right * 2.0f;
+
+    spawnPosition =
+        SnapEditorPositionToTerrain(
+            spawnPosition,
+            0.15f
+        );
+
+    musicNpc->transform.position =
+        spawnPosition;
+
+    musicNpc->transform.rotation =
+        glm::vec3(
+            0.0f,
+            180.0f,
+            0.0f
+        );
+
+    musicNpc->transform.scale =
+        glm::vec3(
+            1.0f
+        );
+
+    musicNpc->visible =
+        true;
+
+    musicNpc->isCollider =
+        false;
+
+    musicNpc->colliderRadius =
+        1.2f;
+
+    musicNpc->boundingRadius =
+        25.0f;
+
+    SetEditorSaveMetadata(
+        musicNpc,
+        "Model",
+        "MusicNPC",
+        musicNpcRelativePath,
+        "Assets/Models/Charachters/Player/"
+    );
+
+    musicNpc->assetId =
+        "Music NPC";
+
+    musicNpc->assetType =
+        AssetType::Prop;
+
+    musicNpc->spawnSource =
+        SpawnSource::Manual;
+
+    musicNpc->persistent =
+        true;
+
+    musicNpc->showInHierarchy =
+        true;
+
+    scene.AddObject(
+        musicNpc
+    );
+
+    selectedObject =
+        musicNpc;
+
+    std::cout
+        << "Music NPC spawned."
+        << std::endl;
+
+    return musicNpc;
+}
 void EditorUI::DrawAssetBrowser(
     Scene& scene,
     SceneObject*& selectedObject,
@@ -4186,6 +4520,32 @@ void EditorUI::DrawAssetBrowser(
             if (ImGui::Button("Monster Spawn"))
             {
                 SpawnMonsterSpawnObject(
+                    scene,
+                    selectedObject,
+                    camera,
+                    shader
+                );
+            }
+            ImGui::Separator();
+
+            ImGui::Text("Music Rescue Event");
+
+            if (ImGui::Button("Music Gate"))
+            {
+                SpawnMusicGateObject(
+                    scene,
+                    selectedObject,
+                    camera,
+                    cubeMesh,
+                    shader
+                );
+            }
+
+            ImGui::SameLine();
+
+            if (ImGui::Button("Music NPC"))
+            {
+                SpawnMusicNpcObject(
                     scene,
                     selectedObject,
                     camera,

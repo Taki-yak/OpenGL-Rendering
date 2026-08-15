@@ -3172,15 +3172,11 @@ void UpdateMusicRescueEvent(
         ) +
         musicNpcTerrainOffset;
 
-    musicNpc->transform.rotation.x =
-        90.0f;
-
-    musicNpc->transform.rotation.y =
-        glm::degrees(
-            std::atan2(
-                direction.x,
-                direction.z
-            )
+    musicNpc->transform.rotation =
+        glm::vec3(
+            90.0f,
+            180.0f,
+            0.0f
         );
 
     musicNpc->transform.rotation.z =

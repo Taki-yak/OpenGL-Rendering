@@ -3174,14 +3174,14 @@ static SceneObject* SpawnMusicNpcObject(
 
     musicNpc->transform.rotation =
         glm::vec3(
-            0.0f,
+            90.0f,
             180.0f,
             0.0f
         );
 
     musicNpc->transform.scale =
         glm::vec3(
-            1.0f
+            1.60f
         );
 
     musicNpc->visible =

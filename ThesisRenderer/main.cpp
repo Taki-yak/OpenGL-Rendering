@@ -2971,10 +2971,6 @@ void ActivateMusicRescueEvent(
 
     if (!musicRescueSoundStarted)
     {
-        audioSystem.Stop(
-            "monster_chase"
-        );
-
         audioSystem.PlayFromStart(
             "music_rescue",
             0.90f
@@ -3140,6 +3136,10 @@ void UpdateMusicRescueEvent(
             "monster_chase"
         );
 
+        audioSystem.Stop(
+            "music_rescue"
+        );
+
         audioSystem.PlayFromStart(
             "coin_win",
             1.0f
@@ -3172,6 +3172,9 @@ void UpdateMusicRescueEvent(
         ) +
         musicNpcTerrainOffset;
 
+    musicNpc->transform.rotation.x =
+        90.0f;
+
     musicNpc->transform.rotation.y =
         glm::degrees(
             std::atan2(
@@ -3179,6 +3182,9 @@ void UpdateMusicRescueEvent(
                 direction.z
             )
         );
+
+    musicNpc->transform.rotation.z =
+        0.0f;
 
     musicRescueText =
         "Music Rescue: Music NPC is chasing the monster!";
@@ -3432,6 +3438,10 @@ void UpdateMonsterChaseEvent(
 
         audioSystem.Stop(
             "monster_chase"
+        );
+
+        audioSystem.Stop(
+            "music_rescue"
         );
 
         audioSystem.PlayFromStart(

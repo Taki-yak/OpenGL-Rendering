@@ -3189,7 +3189,9 @@ void DrawRuntimeResultOverlay()
 {
     if (
         !monsterPlayerCaught &&
-        !musicRescueWin
+        !musicRescueWin &&
+        !coinHuntWon &&
+        !coinHuntLost
         )
     {
         return;
@@ -3270,6 +3272,90 @@ void DrawRuntimeResultOverlay()
 
         ImGui::Text(
             "The rescue event was completed successfully."
+        );
+    }
+    else if (coinHuntWon)
+    {
+        ImGui::TextColored(
+            ImVec4(
+                0.2f,
+                1.0f,
+                0.2f,
+                1.0f
+            ),
+            "=============================="
+        );
+
+        ImGui::TextColored(
+            ImVec4(
+                0.2f,
+                1.0f,
+                0.2f,
+                1.0f
+            ),
+            "        COIN HUNT COMPLETE"
+        );
+
+        ImGui::TextColored(
+            ImVec4(
+                0.2f,
+                1.0f,
+                0.2f,
+                1.0f
+            ),
+            "=============================="
+        );
+
+        ImGui::Separator();
+
+        ImGui::Text(
+            "All coins were collected before time ended."
+        );
+
+        ImGui::Text(
+            "Coin objective completed successfully."
+        );
+    }
+    else if (coinHuntLost)
+    {
+        ImGui::TextColored(
+            ImVec4(
+                1.0f,
+                0.2f,
+                0.2f,
+                1.0f
+            ),
+            "=============================="
+        );
+
+        ImGui::TextColored(
+            ImVec4(
+                1.0f,
+                0.2f,
+                0.2f,
+                1.0f
+            ),
+            "          TIME IS OVER"
+        );
+
+        ImGui::TextColored(
+            ImVec4(
+                1.0f,
+                0.2f,
+                0.2f,
+                1.0f
+            ),
+            "=============================="
+        );
+
+        ImGui::Separator();
+
+        ImGui::Text(
+            "The player did not collect all coins in time."
+        );
+
+        ImGui::Text(
+            "Try collecting the coins faster."
         );
     }
     else if (monsterPlayerCaught)
@@ -6973,7 +7059,9 @@ appMode == AppMode::Play;
         {
             if (
                 !monsterPlayerCaught &&
-                !musicRescueWin
+                !musicRescueWin &&
+                !coinHuntWon &&
+                !coinHuntLost
                 )
             {
                 thirdPersonController.Update(

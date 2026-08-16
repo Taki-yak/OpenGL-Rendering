@@ -60,6 +60,75 @@ static void SetEditorSaveMetadata(
     object->editorModelDirectory =
         modelDirectory;
 }
+static const char* GetAssetTypeName(
+    AssetType assetType
+)
+{
+    switch (assetType)
+    {
+    case AssetType::Terrain:
+        return "Terrain";
+
+    case AssetType::Player:
+        return "Player";
+
+    case AssetType::Tree:
+        return "Tree";
+
+    case AssetType::Rock:
+        return "Rock";
+
+    case AssetType::Grass:
+        return "Grass";
+
+    case AssetType::Flower:
+        return "Flower";
+
+    case AssetType::Bush:
+        return "Bush";
+
+    case AssetType::House:
+        return "House";
+
+    case AssetType::Mountain:
+        return "Mountain";
+
+    case AssetType::Fence:
+        return "Fence";
+
+    case AssetType::Prop:
+        return "Prop";
+
+    case AssetType::Light:
+        return "Light";
+
+    case AssetType::Gameplay:
+        return "Gameplay";
+
+    default:
+        return "Unknown";
+    }
+}
+
+static const char* GetSpawnSourceName(
+    SpawnSource spawnSource
+)
+{
+    switch (spawnSource)
+    {
+    case SpawnSource::Manual:
+        return "Manual";
+
+    case SpawnSource::Procedural:
+        return "Procedural";
+
+    case SpawnSource::LoadedScene:
+        return "Loaded Scene";
+
+    default:
+        return "Unknown";
+    }
+}
 static bool FileExists(
     const std::string& path
 )
@@ -983,6 +1052,62 @@ void EditorUI::DrawInspector(
             "Collider",
             &selectedObject->isCollider
         );
+
+        ImGui::Separator();
+
+        ImGui::Text("Editor Metadata");
+
+        ImGui::Text(
+            "Asset Type: %s",
+            GetAssetTypeName(
+                selectedObject->assetType
+            )
+        );
+
+        ImGui::Text(
+            "Spawn Source: %s",
+            GetSpawnSourceName(
+                selectedObject->spawnSource
+            )
+        );
+
+        ImGui::Text(
+            "Mesh Type: %s",
+            selectedObject->editorMeshType.c_str()
+        );
+
+        ImGui::Text(
+            "Gameplay Type: %s",
+            selectedObject->editorGameplayType.c_str()
+        );
+
+        ImGui::Text(
+            "Persistent: %s",
+            selectedObject->persistent ? "Yes" : "No"
+        );
+
+        ImGui::Text(
+            "Show In Hierarchy: %s",
+            selectedObject->showInHierarchy ? "Yes" : "No"
+        );
+
+        if (!selectedObject->editorModelPath.empty())
+        {
+            ImGui::TextWrapped(
+                "Model Path: %s",
+                selectedObject->editorModelPath.c_str()
+            );
+        }
+
+        if (!selectedObject->editorTexturePath.empty())
+        {
+            ImGui::TextWrapped(
+                "Texture Path: %s",
+                selectedObject->editorTexturePath.c_str()
+            );
+        }
+
+        ImGui::Separator();
         ImGui::Separator();
       
 
@@ -1377,8 +1502,8 @@ void EditorUI::DrawLightInspector(
 
     ImGui::SetNextWindowSize(
         ImVec2(
-            300.0f,
-            260.0f
+            360.0f,
+            520.0f
         ),
         ImGuiCond_Once
     );
@@ -4812,7 +4937,47 @@ void EditorUI::DrawToolbar(
             );
         }
     }
-   
+    ImGui::SameLine();
+
+    ImGui::Text("|");
+
+    ImGui::SameLine();
+    if (appMode == AppMode::Play)
+    {
+        ImGui::TextColored(
+            ImVec4(
+                0.2f,
+                1.0f,
+                0.2f,
+                1.0f
+            ),
+            "MODE: PLAY"
+        );
+
+        ImGui::SameLine();
+
+        ImGui::Text(
+            "Runtime gameplay active"
+        );
+    }
+    else
+    {
+        ImGui::TextColored(
+            ImVec4(
+                0.3f,
+                0.7f,
+                1.0f,
+                1.0f
+            ),
+            "MODE: EDITOR"
+        );
+
+        ImGui::SameLine();
+
+        ImGui::Text(
+            "Scene editing active"
+        );
+    }
     ImGui::End();
 }
 void EditorUI::DrawCrosshair()

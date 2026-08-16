@@ -3185,6 +3185,144 @@ void UpdateMusicRescueEvent(
     musicRescueText =
         "Music Rescue: Music NPC is chasing the monster!";
 }
+void DrawRuntimeResultOverlay()
+{
+    if (
+        !monsterPlayerCaught &&
+        !musicRescueWin
+        )
+    {
+        return;
+    }
+
+    ImGuiIO& io =
+        ImGui::GetIO();
+
+    ImGui::SetNextWindowPos(
+        ImVec2(
+            io.DisplaySize.x * 0.5f - 260.0f,
+            io.DisplaySize.y * 0.5f - 95.0f
+        ),
+        ImGuiCond_Always
+    );
+
+    ImGui::SetNextWindowSize(
+        ImVec2(
+            520.0f,
+            190.0f
+        ),
+        ImGuiCond_Always
+    );
+
+    ImGuiWindowFlags flags =
+        ImGuiWindowFlags_NoTitleBar |
+        ImGuiWindowFlags_NoResize |
+        ImGuiWindowFlags_NoMove |
+        ImGuiWindowFlags_NoCollapse |
+        ImGuiWindowFlags_NoSavedSettings;
+
+    ImGui::Begin(
+        "Runtime Result Overlay",
+        nullptr,
+        flags
+    );
+
+    ImGui::Spacing();
+    ImGui::Spacing();
+
+    if (musicRescueWin)
+    {
+        ImGui::TextColored(
+            ImVec4(
+                0.2f,
+                1.0f,
+                0.2f,
+                1.0f
+            ),
+            "=============================="
+        );
+
+        ImGui::TextColored(
+            ImVec4(
+                0.2f,
+                1.0f,
+                0.2f,
+                1.0f
+            ),
+            "              YOU WIN"
+        );
+
+        ImGui::TextColored(
+            ImVec4(
+                0.2f,
+                1.0f,
+                0.2f,
+                1.0f
+            ),
+            "=============================="
+        );
+
+        ImGui::Separator();
+
+        ImGui::Text(
+            "Monster defeated by Music NPC."
+        );
+
+        ImGui::Text(
+            "The rescue event was completed successfully."
+        );
+    }
+    else if (monsterPlayerCaught)
+    {
+        ImGui::TextColored(
+            ImVec4(
+                1.0f,
+                0.2f,
+                0.2f,
+                1.0f
+            ),
+            "=============================="
+        );
+
+        ImGui::TextColored(
+            ImVec4(
+                1.0f,
+                0.2f,
+                0.2f,
+                1.0f
+            ),
+            "             YOU LOSE"
+        );
+
+        ImGui::TextColored(
+            ImVec4(
+                1.0f,
+                0.2f,
+                0.2f,
+                1.0f
+            ),
+            "=============================="
+        );
+
+        ImGui::Separator();
+
+        ImGui::Text(
+            "Monster caught the player."
+        );
+
+        ImGui::Text(
+            "Try reaching the Music Gate faster."
+        );
+    }
+
+    ImGui::Separator();
+
+    ImGui::Text(
+        "Press Stop to return to Editor Mode."
+    );
+
+    ImGui::End();
+}
 void ResetMonsterEventForPlay(
     Scene& scene
 )
@@ -6833,18 +6971,30 @@ appMode == AppMode::Play;
         }
         else
         {
-            thirdPersonController.Update(
-                window,
-                playerObject,
-                camera,
-                scene,
-                deltaTime
-            );
-            UpdateCoinHunt(
-                scene,
-                audioSystem,
-                deltaTime
-            );
+            if (
+                !monsterPlayerCaught &&
+                !musicRescueWin
+                )
+            {
+                thirdPersonController.Update(
+                    window,
+                    playerObject,
+                    camera,
+                    scene,
+                    deltaTime
+                );
+            }
+            if (
+                !monsterPlayerCaught &&
+                !musicRescueWin
+                )
+            {
+                UpdateCoinHunt(
+                    scene,
+                    audioSystem,
+                    deltaTime
+                );
+            }
             UpdateMonsterTriggerEvent(
                 scene,
                 audioSystem
@@ -7354,6 +7504,10 @@ appMode == AppMode::Play;
 
             ImGui::Separator();
             ImGui::End();
+        }
+        if (appMode == AppMode::Play)
+        {
+            DrawRuntimeResultOverlay();
         }
         if (glfwGetKey(window, GLFW_KEY_X) == GLFW_PRESS)
             rotationAxis = glm::vec3(1.0f, 0.0f, 0.0f);

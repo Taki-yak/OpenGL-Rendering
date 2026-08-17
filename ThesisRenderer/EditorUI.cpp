@@ -476,6 +476,232 @@ static void DrawPrimitiveShapeControls(
         selectedObject
     );
 }
+static void DrawAdvancedObjectShapingControls(
+    SceneObject* selectedObject
+)
+{
+    if (selectedObject == nullptr)
+        return;
+
+    if (selectedObject->name == "Player")
+        return;
+
+    if (selectedObject->name == "Procedural Terrain")
+        return;
+
+    ImGui::Separator();
+
+    ImGui::Text("Advanced Object Shaping");
+
+    ImGui::TextWrapped(
+        "Universal shaping controls for editor objects. "
+        "Use this for walls, floors, pillars, platforms, primitives, and props."
+    );
+
+    glm::vec3 position =
+        selectedObject->transform.position;
+
+    if (
+        ImGui::DragFloat3(
+            "Position X/Y/Z##AdvancedPosition",
+            &position.x,
+            0.10f,
+            -500.0f,
+            500.0f
+        )
+        )
+    {
+        selectedObject->transform.position =
+            position;
+    }
+
+    glm::vec3 scale =
+        selectedObject->transform.scale;
+
+    if (
+        ImGui::DragFloat3(
+            "Size X/Y/Z##AdvancedScale",
+            &scale.x,
+            0.05f,
+            0.05f,
+            80.0f
+        )
+        )
+    {
+        if (scale.x < 0.05f)
+            scale.x = 0.05f;
+
+        if (scale.y < 0.05f)
+            scale.y = 0.05f;
+
+        if (scale.z < 0.05f)
+            scale.z = 0.05f;
+
+        selectedObject->transform.scale =
+            scale;
+    }
+
+    float uniformSize =
+        (
+            selectedObject->transform.scale.x +
+            selectedObject->transform.scale.y +
+            selectedObject->transform.scale.z
+            ) / 3.0f;
+
+    if (
+        ImGui::DragFloat(
+            "Uniform Size##AdvancedUniformSize",
+            &uniformSize,
+            0.05f,
+            0.05f,
+            80.0f
+        )
+        )
+    {
+        selectedObject->transform.scale =
+            glm::vec3(
+                uniformSize
+            );
+    }
+
+    glm::vec3 rotation =
+        selectedObject->transform.rotation;
+
+    if (
+        ImGui::DragFloat3(
+            "Rotation X/Y/Z##AdvancedRotation",
+            &rotation.x,
+            1.0f,
+            -360.0f,
+            360.0f
+        )
+        )
+    {
+        selectedObject->transform.rotation =
+            rotation;
+    }
+
+    ImGui::Text("Quick Rotation");
+
+    if (ImGui::Button("Y +45"))
+    {
+        selectedObject->transform.rotation.y +=
+            45.0f;
+    }
+
+    ImGui::SameLine();
+
+    if (ImGui::Button("Y -45"))
+    {
+        selectedObject->transform.rotation.y -=
+            45.0f;
+    }
+
+    ImGui::SameLine();
+
+    if (ImGui::Button("Y +90"))
+    {
+        selectedObject->transform.rotation.y +=
+            90.0f;
+    }
+
+    ImGui::SameLine();
+
+    if (ImGui::Button("Reset Rot"))
+    {
+        selectedObject->transform.rotation =
+            glm::vec3(
+                0.0f
+            );
+    }
+
+    ImGui::Text("Building Presets");
+
+    if (ImGui::Button("Wall Shape"))
+    {
+        selectedObject->transform.scale =
+            glm::vec3(
+                6.0f,
+                2.8f,
+                0.35f
+            );
+    }
+
+    ImGui::SameLine();
+
+    if (ImGui::Button("Thin Wall"))
+    {
+        selectedObject->transform.scale =
+            glm::vec3(
+                6.0f,
+                2.4f,
+                0.18f
+            );
+    }
+
+    if (ImGui::Button("Floor Shape"))
+    {
+        selectedObject->transform.scale =
+            glm::vec3(
+                6.0f,
+                0.15f,
+                6.0f
+            );
+    }
+
+    ImGui::SameLine();
+
+    if (ImGui::Button("Platform"))
+    {
+        selectedObject->transform.scale =
+            glm::vec3(
+                5.0f,
+                0.35f,
+                5.0f
+            );
+    }
+
+    if (ImGui::Button("Pillar Shape"))
+    {
+        selectedObject->transform.scale =
+            glm::vec3(
+                0.65f,
+                4.5f,
+                0.65f
+            );
+    }
+
+    ImGui::SameLine();
+
+    if (ImGui::Button("Beam Shape"))
+    {
+        selectedObject->transform.scale =
+            glm::vec3(
+                5.5f,
+                0.35f,
+                0.35f
+            );
+    }
+
+    if (ImGui::Button("Reset Scale"))
+    {
+        selectedObject->transform.scale =
+            glm::vec3(
+                1.0f
+            );
+    }
+
+    ImGui::SameLine();
+
+    if (ImGui::Button("Snap To Terrain"))
+    {
+        selectedObject->transform.position =
+            SnapEditorPositionToTerrain(
+                selectedObject->transform.position,
+                0.10f
+            );
+    }
+}
 static bool FileExists(
     const std::string& path
 )
@@ -1454,6 +1680,9 @@ void EditorUI::DrawInspector(
             );
         }
         DrawPrimitiveShapeControls(
+            selectedObject
+        );
+        DrawAdvancedObjectShapingControls(
             selectedObject
         );
         ImGui::Separator();

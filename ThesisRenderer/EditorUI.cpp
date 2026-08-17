@@ -198,16 +198,18 @@ static void DrawPrimitiveShapeControls(
 {
     if (!IsPrimitiveShapeObject(selectedObject))
         return;
-
     ImGui::Separator();
 
-    ImGui::Text("Primitive Shape Controls");
+    if (!ImGui::CollapsingHeader("Primitive Shape Controls"))
+    {
+        return;
+    }
 
     ImGui::TextWrapped(
-        "These controls reshape procedural primitives using transform scale. "
-        "The result is saved by the editor save/load system."
+        "Special controls for procedural primitives only: Ball, Cylinder, and Cone."
     );
 
+    ImGui::Spacing();
     glm::vec3 currentScale =
         selectedObject->transform.scale;
 
@@ -491,13 +493,16 @@ static void DrawAdvancedObjectShapingControls(
 
     ImGui::Separator();
 
-    ImGui::Text("Advanced Object Shaping");
+    if (!ImGui::CollapsingHeader("Advanced Object Shaping"))
+    {
+        return;
+    }
 
     ImGui::TextWrapped(
-        "Universal shaping controls for editor objects. "
-        "Use this for walls, floors, pillars, platforms, primitives, and props."
+        "Universal shaping controls for editor objects: walls, floors, pillars, platforms, primitives, and props."
     );
 
+    ImGui::Spacing();
     glm::vec3 position =
         selectedObject->transform.position;
 
@@ -1627,7 +1632,8 @@ void EditorUI::DrawInspector(
         );
 
         ImGui::Separator();
-
+        if (ImGui::CollapsingHeader("Editor Metadata"))
+        {
         ImGui::Text("Editor Metadata");
 
         ImGui::Text(
@@ -1679,10 +1685,13 @@ void EditorUI::DrawInspector(
                 selectedObject->editorTexturePath.c_str()
             );
         }
-        DrawPrimitiveShapeControls(
+
+        }
+        DrawAdvancedObjectShapingControls(
             selectedObject
         );
-        DrawAdvancedObjectShapingControls(
+
+        DrawPrimitiveShapeControls(
             selectedObject
         );
         ImGui::Separator();

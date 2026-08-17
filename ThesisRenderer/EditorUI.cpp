@@ -3542,6 +3542,230 @@ static SceneObject* SpawnMusicNpcObject(
 
     return musicNpc;
 }
+static void BuildDemoScene(
+    Scene& scene,
+    SceneObject*& selectedObject,
+    Camera& camera,
+    Mesh* cubeMesh,
+    Shader* shader
+)
+{
+    if (
+        cubeMesh == nullptr ||
+        shader == nullptr
+        )
+    {
+        return;
+    }
+
+    glm::vec3 forward =
+        glm::vec3(
+            camera.Front.x,
+            0.0f,
+            camera.Front.z
+        );
+
+    if (glm::length(forward) < 0.001f)
+    {
+        forward =
+            glm::vec3(
+                0.0f,
+                0.0f,
+                -1.0f
+            );
+    }
+
+    forward =
+        glm::normalize(
+            forward
+        );
+
+    glm::vec3 right =
+        glm::normalize(
+            glm::cross(
+                forward,
+                glm::vec3(
+                    0.0f,
+                    1.0f,
+                    0.0f
+                )
+            )
+        );
+
+    glm::vec3 basePosition =
+        camera.Position +
+        forward * 10.0f;
+
+    basePosition =
+        SnapEditorPositionToTerrain(
+            basePosition,
+            0.0f
+        );
+
+    // ================= TRIGGER ZONE =================
+    SceneObject* trigger =
+        SpawnTriggerZoneObject(
+            scene,
+            selectedObject,
+            camera,
+            cubeMesh,
+            shader
+        );
+
+    if (trigger != nullptr)
+    {
+        trigger->name =
+            "Demo Trigger Zone";
+
+        trigger->transform.position =
+            SnapEditorPositionToTerrain(
+                basePosition,
+                0.12f
+            );
+
+        trigger->transform.scale =
+            glm::vec3(
+                6.0f,
+                0.15f,
+                6.0f
+            );
+
+        trigger->editorGameplayType =
+            "TriggerZone";
+    }
+
+    // ================= MONSTER SPAWN =================
+    SceneObject* monster =
+        SpawnMonsterSpawnObject(
+            scene,
+            selectedObject,
+            camera,
+            shader
+        );
+
+    if (monster != nullptr)
+    {
+        monster->name =
+            "Demo Monster Spawn";
+
+        monster->transform.position =
+            SnapEditorPositionToTerrain(
+                basePosition +
+                forward * 18.0f,
+                2.0f
+            );
+
+        monster->editorGameplayType =
+            "MonsterSpawn";
+    }
+
+    // ================= MUSIC GATE =================
+    SceneObject* musicGate =
+        SpawnMusicGateObject(
+            scene,
+            selectedObject,
+            camera,
+            cubeMesh,
+            shader
+        );
+
+    if (musicGate != nullptr)
+    {
+        musicGate->name =
+            "Music Gate";
+
+        musicGate->transform.position =
+            SnapEditorPositionToTerrain(
+                basePosition +
+                right * 14.0f +
+                forward * 6.0f,
+                1.70f
+            );
+
+        musicGate->editorGameplayType =
+            "MusicGate";
+    }
+
+    // ================= MUSIC NPC =================
+    SceneObject* musicNpc =
+        SpawnMusicNpcObject(
+            scene,
+            selectedObject,
+            camera,
+            shader
+        );
+
+    if (musicNpc != nullptr)
+    {
+        musicNpc->name =
+            "Demo Music NPC";
+
+        musicNpc->transform.position =
+            SnapEditorPositionToTerrain(
+                basePosition +
+                right * 17.0f +
+                forward * 6.0f,
+                0.15f
+            );
+
+        musicNpc->transform.rotation =
+            glm::vec3(
+                90.0f,
+                180.0f,
+                0.0f
+            );
+
+        musicNpc->editorGameplayType =
+            "MusicNPC";
+    }
+
+    // ================= COINS =================
+    for (int i = 0; i < 10; i++)
+    {
+        SceneObject* coin =
+            SpawnCoinObject(
+                scene,
+                selectedObject,
+                camera,
+                shader
+            );
+
+        if (coin != nullptr)
+        {
+            float row =
+                (float)(i / 5);
+
+            float column =
+                (float)(i % 5);
+
+            coin->name =
+                "Demo Coin " +
+                std::to_string(
+                    i + 1
+                );
+
+            coin->transform.position =
+                basePosition +
+                forward * (4.0f + row * 3.0f) +
+                right * ((column - 2.0f) * 2.2f);
+
+            PlaceCoinOnTerrain(
+                coin,
+                0.18f
+            );
+
+            coin->editorGameplayType =
+                "Coin";
+        }
+    }
+
+    selectedObject =
+        musicGate;
+
+    std::cout
+        << "Demo scene built successfully."
+        << std::endl;
+}
 void EditorUI::DrawAssetBrowser(
     Scene& scene,
     SceneObject*& selectedObject,
@@ -4839,7 +5063,20 @@ void EditorUI::DrawAssetBrowser(
             ImGui::Separator();
 
             ImGui::Text("Music Rescue Event");
+            ImGui::Separator();
 
+            ImGui::Text("Thesis Demo Tools");
+
+            if (ImGui::Button("Build Demo Scene"))
+            {
+                BuildDemoScene(
+                    scene,
+                    selectedObject,
+                    camera,
+                    cubeMesh,
+                    shader
+                );
+            }
             if (ImGui::Button("Music Gate"))
             {
                 SpawnMusicGateObject(

@@ -3023,6 +3023,123 @@ static SceneObject* SpawnMonsterSpawnObject(
 
     return monster;
 }
+static Material* CreateMusicGateMaterial(
+    const glm::vec3& color,
+    bool wireframe
+)
+{
+    Material* material =
+        new Material(
+            nullptr
+        );
+
+    material->tint =
+        color;
+
+    material->ambient =
+        color * 0.45f;
+
+    material->diffuse =
+        color;
+
+    material->specular =
+        glm::vec3(
+            0.45f,
+            0.75f,
+            1.0f
+        );
+
+    material->shininess =
+        64.0f;
+
+    material->wireframe =
+        wireframe;
+
+    return material;
+}
+
+static SceneObject* CreateMusicGateVisualPiece(
+    Scene& scene,
+    Mesh* cubeMesh,
+    Shader* shader,
+    const std::string& name,
+    const glm::vec3& position,
+    const glm::vec3& scale,
+    const glm::vec3& color,
+    bool wireframe
+)
+{
+    if (
+        cubeMesh == nullptr ||
+        shader == nullptr
+        )
+    {
+        return nullptr;
+    }
+
+    SceneObject* piece =
+        new SceneObject(
+            cubeMesh,
+            shader,
+            CreateMusicGateMaterial(
+                color,
+                wireframe
+            )
+        );
+
+    piece->name =
+        name;
+
+    piece->transform.position =
+        position;
+
+    piece->transform.rotation =
+        glm::vec3(
+            0.0f
+        );
+
+    piece->transform.scale =
+        scale;
+
+    piece->visible =
+        true;
+
+    piece->isCollider =
+        false;
+
+    piece->colliderRadius =
+        1.0f;
+
+    piece->boundingRadius =
+        40.0f;
+
+    SetEditorSaveMetadata(
+        piece,
+        "Cube",
+        "None"
+    );
+
+    piece->assetId =
+        name;
+
+    piece->assetType =
+        AssetType::Prop;
+
+    piece->spawnSource =
+        SpawnSource::Manual;
+
+    piece->persistent =
+        true;
+
+    piece->showInHierarchy =
+        true;
+
+    scene.AddObject(
+        piece
+    );
+
+    return piece;
+}
 static SceneObject* SpawnMusicGateObject(
     Scene& scene,
     SceneObject*& selectedObject,
@@ -3038,55 +3155,6 @@ static SceneObject* SpawnMusicGateObject(
     {
         return nullptr;
     }
-
-    Material* gateMaterial =
-        new Material(
-            nullptr
-        );
-
-    gateMaterial->tint =
-        glm::vec3(
-            0.10f,
-            0.55f,
-            1.0f
-        );
-
-    gateMaterial->ambient =
-        glm::vec3(
-            0.02f,
-            0.12f,
-            0.28f
-        );
-
-    gateMaterial->diffuse =
-        glm::vec3(
-            0.10f,
-            0.55f,
-            1.0f
-        );
-
-    gateMaterial->specular =
-        glm::vec3(
-            0.40f,
-            0.70f,
-            1.0f
-        );
-
-    gateMaterial->shininess =
-        48.0f;
-
-    gateMaterial->wireframe =
-        true;
-
-    SceneObject* gate =
-        new SceneObject(
-            cubeMesh,
-            shader,
-            gateMaterial
-        );
-
-    gate->name =
-        "Music Gate";
 
     glm::vec3 forward =
         glm::vec3(
@@ -3110,18 +3178,70 @@ static SceneObject* SpawnMusicGateObject(
             forward
         );
 
+    glm::vec3 right =
+        glm::normalize(
+            glm::cross(
+                forward,
+                glm::vec3(
+                    0.0f,
+                    1.0f,
+                    0.0f
+                )
+            )
+        );
+
     glm::vec3 spawnPosition =
         camera.Position +
         forward * 8.0f;
 
-    spawnPosition =
+    glm::vec3 groundPosition =
         SnapEditorPositionToTerrain(
             spawnPosition,
-            1.6f
+            0.10f
         );
 
+    glm::vec3 gateCenter =
+        SnapEditorPositionToTerrain(
+            spawnPosition,
+            1.70f
+        );
+
+    glm::vec3 portalBlue =
+        glm::vec3(
+            0.10f,
+            0.55f,
+            1.0f
+        );
+
+    glm::vec3 portalDarkBlue =
+        glm::vec3(
+            0.02f,
+            0.14f,
+            0.35f
+        );
+
+    glm::vec3 portalGlow =
+        glm::vec3(
+            0.25f,
+            0.85f,
+            1.0f
+        );
+
+    SceneObject* gate =
+        new SceneObject(
+            cubeMesh,
+            shader,
+            CreateMusicGateMaterial(
+                portalGlow,
+                true
+            )
+        );
+
+    gate->name =
+        "Music Gate";
+
     gate->transform.position =
-        spawnPosition;
+        gateCenter;
 
     gate->transform.rotation =
         glm::vec3(
@@ -3130,9 +3250,9 @@ static SceneObject* SpawnMusicGateObject(
 
     gate->transform.scale =
         glm::vec3(
-            5.5f,
-            3.0f,
-            0.25f
+            6.2f,
+            3.4f,
+            0.35f
         );
 
     gate->visible =
@@ -3142,10 +3262,10 @@ static SceneObject* SpawnMusicGateObject(
         false;
 
     gate->colliderRadius =
-        4.0f;
+        4.5f;
 
     gate->boundingRadius =
-        35.0f;
+        45.0f;
 
     SetEditorSaveMetadata(
         gate,
@@ -3157,7 +3277,7 @@ static SceneObject* SpawnMusicGateObject(
         "Music Gate";
 
     gate->assetType =
-        AssetType::Prop;
+        AssetType::Gameplay;
 
     gate->spawnSource =
         SpawnSource::Manual;
@@ -3172,11 +3292,76 @@ static SceneObject* SpawnMusicGateObject(
         gate
     );
 
+    CreateMusicGateVisualPiece(
+        scene,
+        cubeMesh,
+        shader,
+        "Rescue Portal Left Pillar",
+        gateCenter - right * 3.0f,
+        glm::vec3(
+            0.35f,
+            3.4f,
+            0.35f
+        ),
+        portalBlue,
+        false
+    );
+
+    CreateMusicGateVisualPiece(
+        scene,
+        cubeMesh,
+        shader,
+        "Rescue Portal Right Pillar",
+        gateCenter + right * 3.0f,
+        glm::vec3(
+            0.35f,
+            3.4f,
+            0.35f
+        ),
+        portalBlue,
+        false
+    );
+
+    CreateMusicGateVisualPiece(
+        scene,
+        cubeMesh,
+        shader,
+        "Rescue Portal Top Beam",
+        gateCenter +
+        glm::vec3(
+            0.0f,
+            1.75f,
+            0.0f
+        ),
+        glm::vec3(
+            6.4f,
+            0.35f,
+            0.35f
+        ),
+        portalGlow,
+        false
+    );
+
+    CreateMusicGateVisualPiece(
+        scene,
+        cubeMesh,
+        shader,
+        "Rescue Portal Base Platform",
+        groundPosition,
+        glm::vec3(
+            6.8f,
+            0.12f,
+            2.0f
+        ),
+        portalDarkBlue,
+        false
+    );
+
     selectedObject =
         gate;
 
     std::cout
-        << "Music Gate spawned."
+        << "Music Gate rescue portal spawned."
         << std::endl;
 
     return gate;

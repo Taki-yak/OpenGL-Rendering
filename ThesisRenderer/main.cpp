@@ -2842,7 +2842,7 @@ bool IsMusicGateObject(
     if (object->editorGameplayType == "MusicGate")
         return true;
 
-    if (object->name.find("Music Gate") != std::string::npos)
+    if (object->name == "Music Gate")
         return true;
 
     return false;

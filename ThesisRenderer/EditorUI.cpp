@@ -129,6 +129,353 @@ static const char* GetSpawnSourceName(
         return "Unknown";
     }
 }
+static bool IsPrimitiveShapeObject(
+    SceneObject* object
+)
+{
+    if (object == nullptr)
+        return false;
+
+    if (object->editorMeshType == "Sphere")
+        return true;
+
+    if (object->editorMeshType == "Cylinder")
+        return true;
+
+    if (object->editorMeshType == "Cone")
+        return true;
+
+    return false;
+}
+
+static void SetPrimitiveShapeScale(
+    SceneObject* object,
+    float x,
+    float y,
+    float z
+)
+{
+    if (object == nullptr)
+        return;
+
+    if (x < 0.05f)
+        x = 0.05f;
+
+    if (y < 0.05f)
+        y = 0.05f;
+
+    if (z < 0.05f)
+        z = 0.05f;
+
+    object->transform.scale =
+        glm::vec3(
+            x,
+            y,
+            z
+        );
+}
+
+static void ClampPrimitiveShapeScale(
+    SceneObject* object
+)
+{
+    if (object == nullptr)
+        return;
+
+    if (object->transform.scale.x < 0.05f)
+        object->transform.scale.x = 0.05f;
+
+    if (object->transform.scale.y < 0.05f)
+        object->transform.scale.y = 0.05f;
+
+    if (object->transform.scale.z < 0.05f)
+        object->transform.scale.z = 0.05f;
+}
+
+static void DrawPrimitiveShapeControls(
+    SceneObject* selectedObject
+)
+{
+    if (!IsPrimitiveShapeObject(selectedObject))
+        return;
+
+    ImGui::Separator();
+
+    ImGui::Text("Primitive Shape Controls");
+
+    ImGui::TextWrapped(
+        "These controls reshape procedural primitives using transform scale. "
+        "The result is saved by the editor save/load system."
+    );
+
+    glm::vec3 currentScale =
+        selectedObject->transform.scale;
+
+    if (selectedObject->editorMeshType == "Sphere")
+    {
+        ImGui::Text("Selected Primitive: Ball / Sphere");
+
+        float radius =
+            (
+                currentScale.x +
+                currentScale.y +
+                currentScale.z
+                ) / 3.0f;
+
+        if (
+            ImGui::DragFloat(
+                "Radius##SphereRadius",
+                &radius,
+                0.05f,
+                0.05f,
+                20.0f
+            )
+            )
+        {
+            SetPrimitiveShapeScale(
+                selectedObject,
+                radius,
+                radius,
+                radius
+            );
+        }
+
+        float stretch[3] =
+        {
+            selectedObject->transform.scale.x,
+            selectedObject->transform.scale.y,
+            selectedObject->transform.scale.z
+        };
+
+        if (
+            ImGui::DragFloat3(
+                "Stretch X/Y/Z##SphereStretch",
+                stretch,
+                0.05f,
+                0.05f,
+                20.0f
+            )
+            )
+        {
+            SetPrimitiveShapeScale(
+                selectedObject,
+                stretch[0],
+                stretch[1],
+                stretch[2]
+            );
+        }
+
+        if (ImGui::Button("Perfect Ball"))
+        {
+            SetPrimitiveShapeScale(
+                selectedObject,
+                1.5f,
+                1.5f,
+                1.5f
+            );
+        }
+
+        ImGui::SameLine();
+
+        if (ImGui::Button("Squash Ball"))
+        {
+            SetPrimitiveShapeScale(
+                selectedObject,
+                2.2f,
+                0.7f,
+                2.2f
+            );
+        }
+
+        if (ImGui::Button("Tall Ball"))
+        {
+            SetPrimitiveShapeScale(
+                selectedObject,
+                1.2f,
+                3.0f,
+                1.2f
+            );
+        }
+
+        ImGui::SameLine();
+
+        if (ImGui::Button("Flat Disc Ball"))
+        {
+            SetPrimitiveShapeScale(
+                selectedObject,
+                3.0f,
+                0.25f,
+                3.0f
+            );
+        }
+    }
+    else if (selectedObject->editorMeshType == "Cylinder")
+    {
+        ImGui::Text("Selected Primitive: Cylinder");
+
+        float radius =
+            (
+                selectedObject->transform.scale.x +
+                selectedObject->transform.scale.z
+                ) * 0.5f;
+
+        float height =
+            selectedObject->transform.scale.y;
+
+        if (
+            ImGui::DragFloat(
+                "Radius##CylinderRadius",
+                &radius,
+                0.05f,
+                0.05f,
+                20.0f
+            )
+            )
+        {
+            SetPrimitiveShapeScale(
+                selectedObject,
+                radius,
+                selectedObject->transform.scale.y,
+                radius
+            );
+        }
+
+        if (
+            ImGui::DragFloat(
+                "Height##CylinderHeight",
+                &height,
+                0.05f,
+                0.05f,
+                30.0f
+            )
+            )
+        {
+            SetPrimitiveShapeScale(
+                selectedObject,
+                selectedObject->transform.scale.x,
+                height,
+                selectedObject->transform.scale.z
+            );
+        }
+
+        if (ImGui::Button("Pillar"))
+        {
+            SetPrimitiveShapeScale(
+                selectedObject,
+                0.8f,
+                4.0f,
+                0.8f
+            );
+        }
+
+        ImGui::SameLine();
+
+        if (ImGui::Button("Wide Platform"))
+        {
+            SetPrimitiveShapeScale(
+                selectedObject,
+                3.5f,
+                0.35f,
+                3.5f
+            );
+        }
+
+        if (ImGui::Button("Barrel Shape"))
+        {
+            SetPrimitiveShapeScale(
+                selectedObject,
+                1.4f,
+                1.8f,
+                1.4f
+            );
+        }
+    }
+    else if (selectedObject->editorMeshType == "Cone")
+    {
+        ImGui::Text("Selected Primitive: Cone");
+
+        float radius =
+            (
+                selectedObject->transform.scale.x +
+                selectedObject->transform.scale.z
+                ) * 0.5f;
+
+        float height =
+            selectedObject->transform.scale.y;
+
+        if (
+            ImGui::DragFloat(
+                "Radius##ConeRadius",
+                &radius,
+                0.05f,
+                0.05f,
+                20.0f
+            )
+            )
+        {
+            SetPrimitiveShapeScale(
+                selectedObject,
+                radius,
+                selectedObject->transform.scale.y,
+                radius
+            );
+        }
+
+        if (
+            ImGui::DragFloat(
+                "Height##ConeHeight",
+                &height,
+                0.05f,
+                0.05f,
+                30.0f
+            )
+            )
+        {
+            SetPrimitiveShapeScale(
+                selectedObject,
+                selectedObject->transform.scale.x,
+                height,
+                selectedObject->transform.scale.z
+            );
+        }
+
+        if (ImGui::Button("Spike"))
+        {
+            SetPrimitiveShapeScale(
+                selectedObject,
+                0.55f,
+                4.5f,
+                0.55f
+            );
+        }
+
+        ImGui::SameLine();
+
+        if (ImGui::Button("Wide Cone"))
+        {
+            SetPrimitiveShapeScale(
+                selectedObject,
+                2.8f,
+                1.4f,
+                2.8f
+            );
+        }
+
+        if (ImGui::Button("Roof Cone"))
+        {
+            SetPrimitiveShapeScale(
+                selectedObject,
+                3.0f,
+                1.6f,
+                3.0f
+            );
+        }
+    }
+
+    ClampPrimitiveShapeScale(
+        selectedObject
+    );
+}
 static bool FileExists(
     const std::string& path
 )
@@ -1106,7 +1453,9 @@ void EditorUI::DrawInspector(
                 selectedObject->editorTexturePath.c_str()
             );
         }
-
+        DrawPrimitiveShapeControls(
+            selectedObject
+        );
         ImGui::Separator();
         ImGui::Separator();
       

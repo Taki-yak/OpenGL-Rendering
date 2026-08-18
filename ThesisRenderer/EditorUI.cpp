@@ -1576,6 +1576,9 @@ static SceneObject* DuplicateSelectedEditorObject(
 
     return duplicatedObject;
 }
+static void DrawPrimitiveMeshDetailControls(
+    SceneObject* selectedObject
+);
 void EditorUI::DrawInspector(
     SceneObject* selectedObject
 )
@@ -1692,6 +1695,9 @@ void EditorUI::DrawInspector(
         );
 
         DrawPrimitiveShapeControls(
+            selectedObject
+        );
+        DrawPrimitiveMeshDetailControls(
             selectedObject
         );
         ImGui::Separator();
@@ -2955,7 +2961,297 @@ static Mesh* GetProceduralPrimitiveMesh(
 
     return nullptr;
 }
+struct PrimitiveMeshDetailState
+{
+    int sphereRings = 24;
+    int sphereSectors = 32;
+    int cylinderSides = 32;
+    int coneSides = 32;
+};
 
+static std::unordered_map<SceneObject*, PrimitiveMeshDetailState>
+primitiveMeshDetailStates;
+
+static int ClampPrimitiveMeshInt(
+    int value,
+    int minValue,
+    int maxValue
+)
+{
+    if (value < minValue)
+        return minValue;
+
+    if (value > maxValue)
+        return maxValue;
+
+    return value;
+}
+
+static PrimitiveMeshDetailState& GetPrimitiveMeshDetailState(
+    SceneObject* object
+)
+{
+    return primitiveMeshDetailStates[
+        object
+    ];
+}
+
+static void ApplyPrimitiveMeshDetail(
+    SceneObject* selectedObject
+)
+{
+    if (!IsPrimitiveShapeObject(selectedObject))
+        return;
+
+    PrimitiveMeshDetailState& state =
+        GetPrimitiveMeshDetailState(
+            selectedObject
+        );
+
+    state.sphereRings =
+        ClampPrimitiveMeshInt(
+            state.sphereRings,
+            4,
+            64
+        );
+
+    state.sphereSectors =
+        ClampPrimitiveMeshInt(
+            state.sphereSectors,
+            6,
+            96
+        );
+
+    state.cylinderSides =
+        ClampPrimitiveMeshInt(
+            state.cylinderSides,
+            3,
+            96
+        );
+
+    state.coneSides =
+        ClampPrimitiveMeshInt(
+            state.coneSides,
+            3,
+            96
+        );
+
+    Mesh* newMesh =
+        nullptr;
+
+    if (selectedObject->editorMeshType == "Sphere")
+    {
+        newMesh =
+            CreateProceduralSphereMesh(
+                state.sphereRings,
+                state.sphereSectors
+            );
+    }
+    else if (selectedObject->editorMeshType == "Cylinder")
+    {
+        newMesh =
+            CreateProceduralCylinderMesh(
+                state.cylinderSides
+            );
+    }
+    else if (selectedObject->editorMeshType == "Cone")
+    {
+        newMesh =
+            CreateProceduralConeMesh(
+                state.coneSides
+            );
+    }
+
+    if (newMesh == nullptr)
+        return;
+
+    // Do not delete the old mesh here.
+    // Some meshes are shared between many objects.
+    selectedObject->mesh =
+        newMesh;
+
+    selectedObject->boundingRadius =
+        50.0f;
+}
+
+static void DrawPrimitiveMeshDetailControls(
+    SceneObject* selectedObject
+)
+{
+    if (!IsPrimitiveShapeObject(selectedObject))
+        return;
+
+    ImGui::Separator();
+
+    if (!ImGui::CollapsingHeader("Primitive Mesh Detail V2"))
+    {
+        return;
+    }
+
+    ImGui::TextWrapped(
+        "Regenerate the actual procedural mesh detail. "
+        "Use low values for low-poly style and high values for smooth shapes."
+    );
+
+    ImGui::Spacing();
+
+    PrimitiveMeshDetailState& state =
+        GetPrimitiveMeshDetailState(
+            selectedObject
+        );
+
+    bool changed =
+        false;
+
+    if (selectedObject->editorMeshType == "Sphere")
+    {
+        ImGui::Text("Mesh Type: Sphere / Ball");
+
+        changed |=
+            ImGui::SliderInt(
+                "Rings##SphereRings",
+                &state.sphereRings,
+                4,
+                64
+            );
+
+        changed |=
+            ImGui::SliderInt(
+                "Sectors##SphereSectors",
+                &state.sphereSectors,
+                6,
+                96
+            );
+
+        if (ImGui::Button("Low Poly Sphere"))
+        {
+            state.sphereRings =
+                8;
+
+            state.sphereSectors =
+                12;
+
+            ApplyPrimitiveMeshDetail(
+                selectedObject
+            );
+        }
+
+        ImGui::SameLine();
+
+        if (ImGui::Button("Smooth Sphere"))
+        {
+            state.sphereRings =
+                32;
+
+            state.sphereSectors =
+                48;
+
+            ApplyPrimitiveMeshDetail(
+                selectedObject
+            );
+        }
+    }
+    else if (selectedObject->editorMeshType == "Cylinder")
+    {
+        ImGui::Text("Mesh Type: Cylinder");
+
+        changed |=
+            ImGui::SliderInt(
+                "Sides##CylinderSides",
+                &state.cylinderSides,
+                3,
+                96
+            );
+
+        if (ImGui::Button("Triangle Column"))
+        {
+            state.cylinderSides =
+                3;
+
+            ApplyPrimitiveMeshDetail(
+                selectedObject
+            );
+        }
+
+        ImGui::SameLine();
+
+        if (ImGui::Button("Hex Column"))
+        {
+            state.cylinderSides =
+                6;
+
+            ApplyPrimitiveMeshDetail(
+                selectedObject
+            );
+        }
+
+        if (ImGui::Button("Smooth Cylinder"))
+        {
+            state.cylinderSides =
+                48;
+
+            ApplyPrimitiveMeshDetail(
+                selectedObject
+            );
+        }
+    }
+    else if (selectedObject->editorMeshType == "Cone")
+    {
+        ImGui::Text("Mesh Type: Cone");
+
+        changed |=
+            ImGui::SliderInt(
+                "Sides##ConeSides",
+                &state.coneSides,
+                3,
+                96
+            );
+
+        if (ImGui::Button("Pyramid Cone"))
+        {
+            state.coneSides =
+                4;
+
+            ApplyPrimitiveMeshDetail(
+                selectedObject
+            );
+        }
+
+        ImGui::SameLine();
+
+        if (ImGui::Button("Low Poly Cone"))
+        {
+            state.coneSides =
+                8;
+
+            ApplyPrimitiveMeshDetail(
+                selectedObject
+            );
+        }
+
+        if (ImGui::Button("Smooth Cone"))
+        {
+            state.coneSides =
+                48;
+
+            ApplyPrimitiveMeshDetail(
+                selectedObject
+            );
+        }
+    }
+
+    ImGui::Spacing();
+
+    if (
+        changed ||
+        ImGui::Button("Regenerate Mesh")
+        )
+    {
+        ApplyPrimitiveMeshDetail(
+            selectedObject
+        );
+    }
+}
 static SceneObject* SpawnProceduralPrimitive(
     Scene& scene,
     SceneObject*& selectedObject,

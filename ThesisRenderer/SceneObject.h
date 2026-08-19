@@ -57,6 +57,7 @@ public:
     std::string editorModelDirectory = "";
     std::string editorTexturePath = "";
     std::string editorGameplayType = "None";
+    std::string editorPrimitiveDetail = "";
     SceneObject(Mesh* m, Shader* s, Material* mat);
     ~SceneObject()
     {

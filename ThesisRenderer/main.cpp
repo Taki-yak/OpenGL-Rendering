@@ -406,7 +406,7 @@ void SaveEditorObjects(
             false;
 
         file
-            << "V2" << "|"
+            << "V3" << "|"
 
             // identity
             << object->name << "|"
@@ -415,6 +415,7 @@ void SaveEditorObjects(
             << object->editorModelDirectory << "|"
             << object->editorTexturePath << "|"
             << object->editorGameplayType << "|"
+            << object->editorPrimitiveDetail << "|"
 
             // transform
             << object->transform.position.x << " "
@@ -1040,8 +1041,134 @@ static Mesh* GetLoadedProceduralMesh(
     }
 
     return nullptr;
+}static int ClampLoadedPrimitiveInt(
+    int value,
+    int minValue,
+    int maxValue
+)
+{
+    if (value < minValue)
+        return minValue;
+
+    if (value > maxValue)
+        return maxValue;
+
+    return value;
 }
 
+static bool ParseLoadedPrimitiveDetail(
+    const std::string& detail,
+    int& sphereRings,
+    int& sphereSectors,
+    int& cylinderSides,
+    int& coneSides
+)
+{
+    if (detail.empty())
+        return false;
+
+    std::stringstream stream(
+        detail
+    );
+
+    if (
+        !(
+            stream
+            >> sphereRings
+            >> sphereSectors
+            >> cylinderSides
+            >> coneSides
+            )
+        )
+    {
+        return false;
+    }
+
+    sphereRings =
+        ClampLoadedPrimitiveInt(
+            sphereRings,
+            4,
+            64
+        );
+
+    sphereSectors =
+        ClampLoadedPrimitiveInt(
+            sphereSectors,
+            6,
+            96
+        );
+
+    cylinderSides =
+        ClampLoadedPrimitiveInt(
+            cylinderSides,
+            3,
+            96
+        );
+
+    coneSides =
+        ClampLoadedPrimitiveInt(
+            coneSides,
+            3,
+            96
+        );
+
+    return true;
+}
+
+static Mesh* CreateLoadedPrimitiveMeshFromDetail(
+    const std::string& meshType,
+    const std::string& primitiveDetail
+)
+{
+    int sphereRings =
+        24;
+
+    int sphereSectors =
+        32;
+
+    int cylinderSides =
+        32;
+
+    int coneSides =
+        32;
+
+    if (
+        !ParseLoadedPrimitiveDetail(
+            primitiveDetail,
+            sphereRings,
+            sphereSectors,
+            cylinderSides,
+            coneSides
+        )
+        )
+    {
+        return nullptr;
+    }
+
+    if (meshType == "Sphere")
+    {
+        return CreateLoadedSphereMesh(
+            sphereRings,
+            sphereSectors
+        );
+    }
+
+    if (meshType == "Cylinder")
+    {
+        return CreateLoadedCylinderMesh(
+            cylinderSides
+        );
+    }
+
+    if (meshType == "Cone")
+    {
+        return CreateLoadedConeMesh(
+            coneSides
+        );
+    }
+
+    return nullptr;
+}
 static Model* GetLoadedEditorModel(
     const std::string& modelPath,
     const std::string& modelDirectory
@@ -1229,17 +1356,27 @@ void LoadEditorObjects(
                 line
             );
 
+        bool isV2Save =
+            parts[0] == "V2";
+
+        bool isV3Save =
+            parts[0] == "V3";
+
         if (
-            parts.size() < 21 ||
-            parts[0] != "V2"
+            (!isV2Save && !isV3Save) ||
+            (isV2Save && parts.size() < 21) ||
+            (isV3Save && parts.size() < 22)
             )
         {
             std::cout
-                << "Skipped old save line. Please save scene again using V2."
+                << "Skipped unsupported save line."
                 << std::endl;
 
             continue;
         }
+
+        int dataOffset =
+            isV3Save ? 1 : 0;
 
         std::string namePart =
             parts[1];
@@ -1259,56 +1396,68 @@ void LoadEditorObjects(
         std::string gameplayType =
             parts[6];
 
+        std::string primitiveDetail =
+            "";
+
+        if (isV3Save)
+        {
+            primitiveDetail =
+                parts[7];
+        }
+
         glm::vec3 position =
             ParseEditorVec3(
-                parts[7]
+                parts[7 + dataOffset]
             );
 
         glm::vec3 rotation =
             ParseEditorVec3(
-                parts[8]
+                parts[8 + dataOffset]
             );
 
         glm::vec3 scale =
             ParseEditorVec3(
-                parts[9],
+                parts[9 + dataOffset],
                 glm::vec3(1.0f)
             );
 
         bool visible =
-            parts[10] == "1";
+            parts[10 + dataOffset] == "1";
 
         bool isCollider =
-            parts[11] == "1";
+            parts[11 + dataOffset] == "1";
 
         float colliderRadius =
-            parts[12].empty()
+            parts[12 + dataOffset].empty()
             ? 1.0f
-            : std::stof(parts[12]);
+            : std::stof(
+                parts[12 + dataOffset]
+            );
 
         float boundingRadius =
-            parts[13].empty()
+            parts[13 + dataOffset].empty()
             ? 50.0f
-            : std::stof(parts[13]);
+            : std::stof(
+                parts[13 + dataOffset]
+            );
 
         bool hasMaterial =
-            parts[14] == "1";
+            parts[14 + dataOffset] == "1";
 
         Material* loadedMaterial =
             CreateLoadedV2Material(
                 hasMaterial,
                 texturePath,
-                parts[15],
-                parts[16],
-                parts[17],
-                parts[18],
-                parts[19],
-                parts[20]
+                parts[15 + dataOffset],
+                parts[16 + dataOffset],
+                parts[17 + dataOffset],
+                parts[18 + dataOffset],
+                parts[19 + dataOffset],
+                parts[20 + dataOffset]
             );
 
         SceneObject* object =
             nullptr;
-
         if (meshType == "Model")
         {
             Model* loadedModel =
@@ -1332,9 +1481,18 @@ void LoadEditorObjects(
         else
         {
             Mesh* loadedMesh =
-                GetLoadedProceduralMesh(
-                    meshType
+                CreateLoadedPrimitiveMeshFromDetail(
+                    meshType,
+                    primitiveDetail
                 );
+
+            if (loadedMesh == nullptr)
+            {
+                loadedMesh =
+                    GetLoadedProceduralMesh(
+                        meshType
+                    );
+            }
 
             if (loadedMesh == nullptr)
             {
@@ -1406,6 +1564,8 @@ void LoadEditorObjects(
 
         object->editorGameplayType =
             gameplayType;
+        object->editorPrimitiveDetail =
+            primitiveDetail;
 
         scene.AddObject(
             object

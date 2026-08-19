@@ -14,6 +14,7 @@
 #include <cstdlib>
 #include "mesh.h"
 #include <fstream>
+#include <sstream>
 float GetObjectTerrainY(
     float x,
     float z,
@@ -2987,13 +2988,71 @@ static int ClampPrimitiveMeshInt(
     return value;
 }
 
+static void LoadPrimitiveDetailStateFromObject(
+    SceneObject* object,
+    PrimitiveMeshDetailState& state
+)
+{
+    if (object == nullptr)
+        return;
+
+    if (object->editorPrimitiveDetail.empty())
+        return;
+
+    std::stringstream stream(
+        object->editorPrimitiveDetail
+    );
+
+    stream
+        >> state.sphereRings
+        >> state.sphereSectors
+        >> state.cylinderSides
+        >> state.coneSides;
+}
+
+static void SavePrimitiveDetailStateToObject(
+    SceneObject* object,
+    PrimitiveMeshDetailState& state
+)
+{
+    if (object == nullptr)
+        return;
+
+    object->editorPrimitiveDetail =
+        std::to_string(state.sphereRings) + " " +
+        std::to_string(state.sphereSectors) + " " +
+        std::to_string(state.cylinderSides) + " " +
+        std::to_string(state.coneSides);
+}
+
 static PrimitiveMeshDetailState& GetPrimitiveMeshDetailState(
     SceneObject* object
 )
 {
-    return primitiveMeshDetailStates[
-        object
-    ];
+    auto it =
+        primitiveMeshDetailStates.find(
+            object
+        );
+
+    if (it != primitiveMeshDetailStates.end())
+    {
+        return it->second;
+    }
+
+    PrimitiveMeshDetailState state;
+
+    LoadPrimitiveDetailStateFromObject(
+        object,
+        state
+    );
+
+    auto result =
+        primitiveMeshDetailStates.emplace(
+            object,
+            state
+        );
+
+    return result.first->second;
 }
 
 static void ApplyPrimitiveMeshDetail(
@@ -3035,7 +3094,10 @@ static void ApplyPrimitiveMeshDetail(
             3,
             96
         );
-
+    SavePrimitiveDetailStateToObject(
+        selectedObject,
+        state
+    );
     Mesh* newMesh =
         nullptr;
 

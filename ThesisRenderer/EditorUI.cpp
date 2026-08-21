@@ -3025,6 +3025,242 @@ static Mesh* CreateProceduralStairsMesh(
             )
     );
 }
+static Mesh* CreateProceduralRingMesh(
+    int majorSegments,
+    int minorSegments
+)
+{
+    if (majorSegments < 6)
+        majorSegments = 6;
+
+    if (majorSegments > 96)
+        majorSegments = 96;
+
+    if (minorSegments < 4)
+        minorSegments = 4;
+
+    if (minorSegments > 48)
+        minorSegments = 48;
+
+    std::vector<float> data;
+
+    const float pi =
+        3.14159265359f;
+
+    float majorRadius =
+        0.35f;
+
+    float minorRadius =
+        0.14f;
+
+    for (int i = 0; i < majorSegments; i++)
+    {
+        float u0 =
+            (float)i / (float)majorSegments * pi * 2.0f;
+
+        float u1 =
+            (float)(i + 1) / (float)majorSegments * pi * 2.0f;
+
+        for (int j = 0; j < minorSegments; j++)
+        {
+            float v0 =
+                (float)j / (float)minorSegments * pi * 2.0f;
+
+            float v1 =
+                (float)(j + 1) / (float)minorSegments * pi * 2.0f;
+
+            glm::vec3 p00 =
+                glm::vec3(
+                    (majorRadius + minorRadius * std::cos(v0)) * std::cos(u0),
+                    minorRadius * std::sin(v0),
+                    (majorRadius + minorRadius * std::cos(v0)) * std::sin(u0)
+                );
+
+            glm::vec3 p01 =
+                glm::vec3(
+                    (majorRadius + minorRadius * std::cos(v1)) * std::cos(u0),
+                    minorRadius * std::sin(v1),
+                    (majorRadius + minorRadius * std::cos(v1)) * std::sin(u0)
+                );
+
+            glm::vec3 p10 =
+                glm::vec3(
+                    (majorRadius + minorRadius * std::cos(v0)) * std::cos(u1),
+                    minorRadius * std::sin(v0),
+                    (majorRadius + minorRadius * std::cos(v0)) * std::sin(u1)
+                );
+
+            glm::vec3 p11 =
+                glm::vec3(
+                    (majorRadius + minorRadius * std::cos(v1)) * std::cos(u1),
+                    minorRadius * std::sin(v1),
+                    (majorRadius + minorRadius * std::cos(v1)) * std::sin(u1)
+                );
+
+            glm::vec3 n00 =
+                glm::normalize(
+                    glm::vec3(
+                        std::cos(v0) * std::cos(u0),
+                        std::sin(v0),
+                        std::cos(v0) * std::sin(u0)
+                    )
+                );
+
+            glm::vec3 n01 =
+                glm::normalize(
+                    glm::vec3(
+                        std::cos(v1) * std::cos(u0),
+                        std::sin(v1),
+                        std::cos(v1) * std::sin(u0)
+                    )
+                );
+
+            glm::vec3 n10 =
+                glm::normalize(
+                    glm::vec3(
+                        std::cos(v0) * std::cos(u1),
+                        std::sin(v0),
+                        std::cos(v0) * std::sin(u1)
+                    )
+                );
+
+            glm::vec3 n11 =
+                glm::normalize(
+                    glm::vec3(
+                        std::cos(v1) * std::cos(u1),
+                        std::sin(v1),
+                        std::cos(v1) * std::sin(u1)
+                    )
+                );
+
+            AddPrimitiveVertex(data, p00, n00, glm::vec2(0.0f, 0.0f));
+            AddPrimitiveVertex(data, p10, n10, glm::vec2(1.0f, 0.0f));
+            AddPrimitiveVertex(data, p01, n01, glm::vec2(0.0f, 1.0f));
+
+            AddPrimitiveVertex(data, p01, n01, glm::vec2(0.0f, 1.0f));
+            AddPrimitiveVertex(data, p10, n10, glm::vec2(1.0f, 0.0f));
+            AddPrimitiveVertex(data, p11, n11, glm::vec2(1.0f, 1.0f));
+        }
+    }
+
+    return new Mesh(
+        data.data(),
+        static_cast<int>(
+            data.size() * sizeof(float)
+            )
+    );
+}
+
+static Mesh* CreateProceduralPipeMesh(
+    int sectors
+)
+{
+    if (sectors < 6)
+        sectors = 6;
+
+    if (sectors > 96)
+        sectors = 96;
+
+    std::vector<float> data;
+
+    const float pi =
+        3.14159265359f;
+
+    float outerRadius =
+        0.5f;
+
+    float innerRadius =
+        0.28f;
+
+    float halfHeight =
+        0.5f;
+
+    for (int i = 0; i < sectors; i++)
+    {
+        float u0 =
+            (float)i / (float)sectors;
+
+        float u1 =
+            (float)(i + 1) / (float)sectors;
+
+        float a0 =
+            u0 * pi * 2.0f;
+
+        float a1 =
+            u1 * pi * 2.0f;
+
+        glm::vec3 ob0(std::cos(a0) * outerRadius, -halfHeight, std::sin(a0) * outerRadius);
+        glm::vec3 ob1(std::cos(a1) * outerRadius, -halfHeight, std::sin(a1) * outerRadius);
+        glm::vec3 ot0(std::cos(a0) * outerRadius, halfHeight, std::sin(a0) * outerRadius);
+        glm::vec3 ot1(std::cos(a1) * outerRadius, halfHeight, std::sin(a1) * outerRadius);
+
+        glm::vec3 ib0(std::cos(a0) * innerRadius, -halfHeight, std::sin(a0) * innerRadius);
+        glm::vec3 ib1(std::cos(a1) * innerRadius, -halfHeight, std::sin(a1) * innerRadius);
+        glm::vec3 it0(std::cos(a0) * innerRadius, halfHeight, std::sin(a0) * innerRadius);
+        glm::vec3 it1(std::cos(a1) * innerRadius, halfHeight, std::sin(a1) * innerRadius);
+
+        glm::vec3 n0 =
+            glm::normalize(
+                glm::vec3(
+                    std::cos(a0),
+                    0.0f,
+                    std::sin(a0)
+                )
+            );
+
+        glm::vec3 n1 =
+            glm::normalize(
+                glm::vec3(
+                    std::cos(a1),
+                    0.0f,
+                    std::sin(a1)
+                )
+            );
+
+        // Outer wall
+        AddPrimitiveVertex(data, ob0, n0, glm::vec2(u0, 0.0f));
+        AddPrimitiveVertex(data, ob1, n1, glm::vec2(u1, 0.0f));
+        AddPrimitiveVertex(data, ot0, n0, glm::vec2(u0, 1.0f));
+
+        AddPrimitiveVertex(data, ot0, n0, glm::vec2(u0, 1.0f));
+        AddPrimitiveVertex(data, ob1, n1, glm::vec2(u1, 0.0f));
+        AddPrimitiveVertex(data, ot1, n1, glm::vec2(u1, 1.0f));
+
+        // Inner wall
+        AddPrimitiveVertex(data, ib1, -n1, glm::vec2(u1, 0.0f));
+        AddPrimitiveVertex(data, ib0, -n0, glm::vec2(u0, 0.0f));
+        AddPrimitiveVertex(data, it0, -n0, glm::vec2(u0, 1.0f));
+
+        AddPrimitiveVertex(data, ib1, -n1, glm::vec2(u1, 0.0f));
+        AddPrimitiveVertex(data, it0, -n0, glm::vec2(u0, 1.0f));
+        AddPrimitiveVertex(data, it1, -n1, glm::vec2(u1, 1.0f));
+
+        // Top ring face
+        AddPrimitiveVertex(data, it0, glm::vec3(0.0f, 1.0f, 0.0f), glm::vec2(0.0f, 0.0f));
+        AddPrimitiveVertex(data, ot0, glm::vec3(0.0f, 1.0f, 0.0f), glm::vec2(1.0f, 0.0f));
+        AddPrimitiveVertex(data, ot1, glm::vec3(0.0f, 1.0f, 0.0f), glm::vec2(1.0f, 1.0f));
+
+        AddPrimitiveVertex(data, it0, glm::vec3(0.0f, 1.0f, 0.0f), glm::vec2(0.0f, 0.0f));
+        AddPrimitiveVertex(data, ot1, glm::vec3(0.0f, 1.0f, 0.0f), glm::vec2(1.0f, 1.0f));
+        AddPrimitiveVertex(data, it1, glm::vec3(0.0f, 1.0f, 0.0f), glm::vec2(0.0f, 1.0f));
+
+        // Bottom ring face
+        AddPrimitiveVertex(data, ib0, glm::vec3(0.0f, -1.0f, 0.0f), glm::vec2(0.0f, 0.0f));
+        AddPrimitiveVertex(data, ib1, glm::vec3(0.0f, -1.0f, 0.0f), glm::vec2(0.0f, 1.0f));
+        AddPrimitiveVertex(data, ob1, glm::vec3(0.0f, -1.0f, 0.0f), glm::vec2(1.0f, 1.0f));
+
+        AddPrimitiveVertex(data, ib0, glm::vec3(0.0f, -1.0f, 0.0f), glm::vec2(0.0f, 0.0f));
+        AddPrimitiveVertex(data, ob1, glm::vec3(0.0f, -1.0f, 0.0f), glm::vec2(1.0f, 1.0f));
+        AddPrimitiveVertex(data, ob0, glm::vec3(0.0f, -1.0f, 0.0f), glm::vec2(1.0f, 0.0f));
+    }
+
+    return new Mesh(
+        data.data(),
+        static_cast<int>(
+            data.size() * sizeof(float)
+            )
+    );
+}
 static Mesh* GetProceduralPrimitiveMesh(
     const std::string& primitiveType
 )
@@ -3697,6 +3933,272 @@ static SceneObject* SpawnStairsObject(
         stairs;
 
     return stairs;
+}
+static SceneObject* SpawnRingObject(
+    Scene& scene,
+    SceneObject*& selectedObject,
+    Camera& camera,
+    Shader* shader
+)
+{
+    if (shader == nullptr)
+        return nullptr;
+
+    static Mesh* ringMesh =
+        nullptr;
+
+    if (ringMesh == nullptr)
+    {
+        ringMesh =
+            CreateProceduralRingMesh(
+                32,
+                12
+            );
+    }
+
+    Material* material =
+        new Material(
+            nullptr
+        );
+
+    material->tint =
+        glm::vec3(
+            0.75f,
+            0.62f,
+            0.25f
+        );
+
+    material->ambient =
+        glm::vec3(
+            0.35f,
+            0.28f,
+            0.12f
+        );
+
+    material->diffuse =
+        glm::vec3(
+            0.85f,
+            0.70f,
+            0.30f
+        );
+
+    material->specular =
+        glm::vec3(
+            0.30f,
+            0.25f,
+            0.10f
+        );
+
+    material->shininess =
+        32.0f;
+
+    SceneObject* ring =
+        new SceneObject(
+            ringMesh,
+            shader,
+            material
+        );
+
+    ring->name =
+        "Procedural Ring";
+
+    glm::vec3 spawnPosition =
+        camera.Position +
+        camera.Front * 6.0f;
+
+    ring->transform.position =
+        SnapEditorPositionToTerrain(
+            spawnPosition,
+            1.0f
+        );
+
+    ring->transform.rotation =
+        glm::vec3(
+            90.0f,
+            0.0f,
+            0.0f
+        );
+
+    ring->transform.scale =
+        glm::vec3(
+            2.0f,
+            2.0f,
+            2.0f
+        );
+
+    ring->visible =
+        true;
+
+    ring->isCollider =
+        false;
+
+    ring->colliderRadius =
+        2.0f;
+
+    ring->boundingRadius =
+        50.0f;
+
+    SetEditorSaveMetadata(
+        ring,
+        "Ring",
+        "None"
+    );
+
+    ring->assetId =
+        "Procedural Ring";
+
+    ring->assetType =
+        AssetType::Prop;
+
+    ring->spawnSource =
+        SpawnSource::Manual;
+
+    ring->persistent =
+        true;
+
+    ring->showInHierarchy =
+        true;
+
+    scene.AddObject(
+        ring
+    );
+
+    selectedObject =
+        ring;
+
+    return ring;
+}
+
+static SceneObject* SpawnPipeObject(
+    Scene& scene,
+    SceneObject*& selectedObject,
+    Camera& camera,
+    Shader* shader
+)
+{
+    if (shader == nullptr)
+        return nullptr;
+
+    static Mesh* pipeMesh =
+        nullptr;
+
+    if (pipeMesh == nullptr)
+    {
+        pipeMesh =
+            CreateProceduralPipeMesh(
+                32
+            );
+    }
+
+    Material* material =
+        new Material(
+            nullptr
+        );
+
+    material->tint =
+        glm::vec3(
+            0.42f,
+            0.42f,
+            0.45f
+        );
+
+    material->ambient =
+        glm::vec3(
+            0.25f,
+            0.25f,
+            0.27f
+        );
+
+    material->diffuse =
+        glm::vec3(
+            0.65f,
+            0.65f,
+            0.68f
+        );
+
+    material->specular =
+        glm::vec3(
+            0.25f,
+            0.25f,
+            0.28f
+        );
+
+    material->shininess =
+        20.0f;
+
+    SceneObject* pipe =
+        new SceneObject(
+            pipeMesh,
+            shader,
+            material
+        );
+
+    pipe->name =
+        "Procedural Pipe";
+
+    glm::vec3 spawnPosition =
+        camera.Position +
+        camera.Front * 6.0f;
+
+    pipe->transform.position =
+        SnapEditorPositionToTerrain(
+            spawnPosition,
+            0.60f
+        );
+
+    pipe->transform.rotation =
+        glm::vec3(
+            0.0f
+        );
+
+    pipe->transform.scale =
+        glm::vec3(
+            1.5f,
+            2.5f,
+            1.5f
+        );
+
+    pipe->visible =
+        true;
+
+    pipe->isCollider =
+        true;
+
+    pipe->colliderRadius =
+        2.0f;
+
+    pipe->boundingRadius =
+        50.0f;
+
+    SetEditorSaveMetadata(
+        pipe,
+        "Pipe",
+        "None"
+    );
+
+    pipe->assetId =
+        "Procedural Pipe";
+
+    pipe->assetType =
+        AssetType::Prop;
+
+    pipe->spawnSource =
+        SpawnSource::Manual;
+
+    pipe->persistent =
+        true;
+
+    pipe->showInHierarchy =
+        true;
+
+    scene.AddObject(
+        pipe
+    );
+
+    selectedObject =
+        pipe;
+
+    return pipe;
 }
 static SceneObject* CreateArchPiece(
     Scene& scene,
@@ -6262,6 +6764,27 @@ void EditorUI::DrawAssetBrowser(
                     selectedObject,
                     camera,
                     cubeMesh,
+                    shader
+                );
+            }
+            if (ImGui::Button("Ring"))
+            {
+                SpawnRingObject(
+                    scene,
+                    selectedObject,
+                    camera,
+                    shader
+                );
+            }
+
+            ImGui::SameLine();
+
+            if (ImGui::Button("Pipe"))
+            {
+                SpawnPipeObject(
+                    scene,
+                    selectedObject,
+                    camera,
                     shader
                 );
             }

@@ -1007,7 +1007,113 @@ static Mesh* CreateLoadedConeMesh(
         static_cast<int>(data.size() * sizeof(float))
     );
 }
+static void AddLoadedBoxToMesh(
+    std::vector<float>& data,
+    const glm::vec3& minPoint,
+    const glm::vec3& maxPoint
+)
+{
+    glm::vec3 p000(minPoint.x, minPoint.y, minPoint.z);
+    glm::vec3 p001(minPoint.x, minPoint.y, maxPoint.z);
+    glm::vec3 p010(minPoint.x, maxPoint.y, minPoint.z);
+    glm::vec3 p011(minPoint.x, maxPoint.y, maxPoint.z);
 
+    glm::vec3 p100(maxPoint.x, minPoint.y, minPoint.z);
+    glm::vec3 p101(maxPoint.x, minPoint.y, maxPoint.z);
+    glm::vec3 p110(maxPoint.x, maxPoint.y, minPoint.z);
+    glm::vec3 p111(maxPoint.x, maxPoint.y, maxPoint.z);
+
+    AddPrimitiveVertexMain(data, p001, glm::vec3(0.0f, 0.0f, 1.0f), glm::vec2(0.0f, 0.0f));
+    AddPrimitiveVertexMain(data, p101, glm::vec3(0.0f, 0.0f, 1.0f), glm::vec2(1.0f, 0.0f));
+    AddPrimitiveVertexMain(data, p111, glm::vec3(0.0f, 0.0f, 1.0f), glm::vec2(1.0f, 1.0f));
+    AddPrimitiveVertexMain(data, p001, glm::vec3(0.0f, 0.0f, 1.0f), glm::vec2(0.0f, 0.0f));
+    AddPrimitiveVertexMain(data, p111, glm::vec3(0.0f, 0.0f, 1.0f), glm::vec2(1.0f, 1.0f));
+    AddPrimitiveVertexMain(data, p011, glm::vec3(0.0f, 0.0f, 1.0f), glm::vec2(0.0f, 1.0f));
+
+    AddPrimitiveVertexMain(data, p100, glm::vec3(0.0f, 0.0f, -1.0f), glm::vec2(0.0f, 0.0f));
+    AddPrimitiveVertexMain(data, p000, glm::vec3(0.0f, 0.0f, -1.0f), glm::vec2(1.0f, 0.0f));
+    AddPrimitiveVertexMain(data, p010, glm::vec3(0.0f, 0.0f, -1.0f), glm::vec2(1.0f, 1.0f));
+    AddPrimitiveVertexMain(data, p100, glm::vec3(0.0f, 0.0f, -1.0f), glm::vec2(0.0f, 0.0f));
+    AddPrimitiveVertexMain(data, p010, glm::vec3(0.0f, 0.0f, -1.0f), glm::vec2(1.0f, 1.0f));
+    AddPrimitiveVertexMain(data, p110, glm::vec3(0.0f, 0.0f, -1.0f), glm::vec2(0.0f, 1.0f));
+
+    AddPrimitiveVertexMain(data, p000, glm::vec3(-1.0f, 0.0f, 0.0f), glm::vec2(0.0f, 0.0f));
+    AddPrimitiveVertexMain(data, p001, glm::vec3(-1.0f, 0.0f, 0.0f), glm::vec2(1.0f, 0.0f));
+    AddPrimitiveVertexMain(data, p011, glm::vec3(-1.0f, 0.0f, 0.0f), glm::vec2(1.0f, 1.0f));
+    AddPrimitiveVertexMain(data, p000, glm::vec3(-1.0f, 0.0f, 0.0f), glm::vec2(0.0f, 0.0f));
+    AddPrimitiveVertexMain(data, p011, glm::vec3(-1.0f, 0.0f, 0.0f), glm::vec2(1.0f, 1.0f));
+    AddPrimitiveVertexMain(data, p010, glm::vec3(-1.0f, 0.0f, 0.0f), glm::vec2(0.0f, 1.0f));
+
+    AddPrimitiveVertexMain(data, p101, glm::vec3(1.0f, 0.0f, 0.0f), glm::vec2(0.0f, 0.0f));
+    AddPrimitiveVertexMain(data, p100, glm::vec3(1.0f, 0.0f, 0.0f), glm::vec2(1.0f, 0.0f));
+    AddPrimitiveVertexMain(data, p110, glm::vec3(1.0f, 0.0f, 0.0f), glm::vec2(1.0f, 1.0f));
+    AddPrimitiveVertexMain(data, p101, glm::vec3(1.0f, 0.0f, 0.0f), glm::vec2(0.0f, 0.0f));
+    AddPrimitiveVertexMain(data, p110, glm::vec3(1.0f, 0.0f, 0.0f), glm::vec2(1.0f, 1.0f));
+    AddPrimitiveVertexMain(data, p111, glm::vec3(1.0f, 0.0f, 0.0f), glm::vec2(0.0f, 1.0f));
+
+    AddPrimitiveVertexMain(data, p010, glm::vec3(0.0f, 1.0f, 0.0f), glm::vec2(0.0f, 0.0f));
+    AddPrimitiveVertexMain(data, p011, glm::vec3(0.0f, 1.0f, 0.0f), glm::vec2(1.0f, 0.0f));
+    AddPrimitiveVertexMain(data, p111, glm::vec3(0.0f, 1.0f, 0.0f), glm::vec2(1.0f, 1.0f));
+    AddPrimitiveVertexMain(data, p010, glm::vec3(0.0f, 1.0f, 0.0f), glm::vec2(0.0f, 0.0f));
+    AddPrimitiveVertexMain(data, p111, glm::vec3(0.0f, 1.0f, 0.0f), glm::vec2(1.0f, 1.0f));
+    AddPrimitiveVertexMain(data, p110, glm::vec3(0.0f, 1.0f, 0.0f), glm::vec2(0.0f, 1.0f));
+
+    AddPrimitiveVertexMain(data, p000, glm::vec3(0.0f, -1.0f, 0.0f), glm::vec2(0.0f, 0.0f));
+    AddPrimitiveVertexMain(data, p100, glm::vec3(0.0f, -1.0f, 0.0f), glm::vec2(1.0f, 0.0f));
+    AddPrimitiveVertexMain(data, p101, glm::vec3(0.0f, -1.0f, 0.0f), glm::vec2(1.0f, 1.0f));
+    AddPrimitiveVertexMain(data, p000, glm::vec3(0.0f, -1.0f, 0.0f), glm::vec2(0.0f, 0.0f));
+    AddPrimitiveVertexMain(data, p101, glm::vec3(0.0f, -1.0f, 0.0f), glm::vec2(1.0f, 1.0f));
+    AddPrimitiveVertexMain(data, p001, glm::vec3(0.0f, -1.0f, 0.0f), glm::vec2(0.0f, 1.0f));
+}
+
+static Mesh* CreateLoadedStairsMesh(
+    int steps
+)
+{
+    if (steps < 2)
+        steps = 2;
+
+    if (steps > 12)
+        steps = 12;
+
+    std::vector<float> data;
+
+    float stepDepth =
+        1.0f / (float)steps;
+
+    for (int i = 0; i < steps; i++)
+    {
+        float zMin =
+            -0.5f + stepDepth * (float)i;
+
+        float zMax =
+            -0.5f + stepDepth * (float)(i + 1);
+
+        float height =
+            -0.5f + ((float)(i + 1) / (float)steps);
+
+        AddLoadedBoxToMesh(
+            data,
+            glm::vec3(
+                -0.5f,
+                -0.5f,
+                zMin
+            ),
+            glm::vec3(
+                0.5f,
+                height,
+                zMax
+            )
+        );
+    }
+
+    return new Mesh(
+        data.data(),
+        static_cast<int>(
+            data.size() * sizeof(float)
+            )
+    );
+}
 static Mesh* GetLoadedProceduralMesh(
     const std::string& meshType
 )
@@ -1015,7 +1121,7 @@ static Mesh* GetLoadedProceduralMesh(
     static Mesh* sphereMesh = nullptr;
     static Mesh* cylinderMesh = nullptr;
     static Mesh* coneMesh = nullptr;
-
+    static Mesh* stairsMesh = nullptr;
     if (meshType == "Sphere")
     {
         if (sphereMesh == nullptr)
@@ -1039,7 +1145,16 @@ static Mesh* GetLoadedProceduralMesh(
 
         return coneMesh;
     }
+    if (meshType == "Stairs")
+    {
+        if (stairsMesh == nullptr)
+            stairsMesh =
+            CreateLoadedStairsMesh(
+                5
+            );
 
+        return stairsMesh;
+    }
     return nullptr;
 }static int ClampLoadedPrimitiveInt(
     int value,

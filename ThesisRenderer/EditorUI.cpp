@@ -2906,7 +2906,125 @@ static Mesh* CreateProceduralConeMesh(
             )
     );
 }
+static void AddBoxToPrimitiveMesh(
+    std::vector<float>& data,
+    const glm::vec3& minPoint,
+    const glm::vec3& maxPoint
+)
+{
+    glm::vec3 p000(minPoint.x, minPoint.y, minPoint.z);
+    glm::vec3 p001(minPoint.x, minPoint.y, maxPoint.z);
+    glm::vec3 p010(minPoint.x, maxPoint.y, minPoint.z);
+    glm::vec3 p011(minPoint.x, maxPoint.y, maxPoint.z);
 
+    glm::vec3 p100(maxPoint.x, minPoint.y, minPoint.z);
+    glm::vec3 p101(maxPoint.x, minPoint.y, maxPoint.z);
+    glm::vec3 p110(maxPoint.x, maxPoint.y, minPoint.z);
+    glm::vec3 p111(maxPoint.x, maxPoint.y, maxPoint.z);
+
+    // Front
+    AddPrimitiveVertex(data, p001, glm::vec3(0.0f, 0.0f, 1.0f), glm::vec2(0.0f, 0.0f));
+    AddPrimitiveVertex(data, p101, glm::vec3(0.0f, 0.0f, 1.0f), glm::vec2(1.0f, 0.0f));
+    AddPrimitiveVertex(data, p111, glm::vec3(0.0f, 0.0f, 1.0f), glm::vec2(1.0f, 1.0f));
+
+    AddPrimitiveVertex(data, p001, glm::vec3(0.0f, 0.0f, 1.0f), glm::vec2(0.0f, 0.0f));
+    AddPrimitiveVertex(data, p111, glm::vec3(0.0f, 0.0f, 1.0f), glm::vec2(1.0f, 1.0f));
+    AddPrimitiveVertex(data, p011, glm::vec3(0.0f, 0.0f, 1.0f), glm::vec2(0.0f, 1.0f));
+
+    // Back
+    AddPrimitiveVertex(data, p100, glm::vec3(0.0f, 0.0f, -1.0f), glm::vec2(0.0f, 0.0f));
+    AddPrimitiveVertex(data, p000, glm::vec3(0.0f, 0.0f, -1.0f), glm::vec2(1.0f, 0.0f));
+    AddPrimitiveVertex(data, p010, glm::vec3(0.0f, 0.0f, -1.0f), glm::vec2(1.0f, 1.0f));
+
+    AddPrimitiveVertex(data, p100, glm::vec3(0.0f, 0.0f, -1.0f), glm::vec2(0.0f, 0.0f));
+    AddPrimitiveVertex(data, p010, glm::vec3(0.0f, 0.0f, -1.0f), glm::vec2(1.0f, 1.0f));
+    AddPrimitiveVertex(data, p110, glm::vec3(0.0f, 0.0f, -1.0f), glm::vec2(0.0f, 1.0f));
+
+    // Left
+    AddPrimitiveVertex(data, p000, glm::vec3(-1.0f, 0.0f, 0.0f), glm::vec2(0.0f, 0.0f));
+    AddPrimitiveVertex(data, p001, glm::vec3(-1.0f, 0.0f, 0.0f), glm::vec2(1.0f, 0.0f));
+    AddPrimitiveVertex(data, p011, glm::vec3(-1.0f, 0.0f, 0.0f), glm::vec2(1.0f, 1.0f));
+
+    AddPrimitiveVertex(data, p000, glm::vec3(-1.0f, 0.0f, 0.0f), glm::vec2(0.0f, 0.0f));
+    AddPrimitiveVertex(data, p011, glm::vec3(-1.0f, 0.0f, 0.0f), glm::vec2(1.0f, 1.0f));
+    AddPrimitiveVertex(data, p010, glm::vec3(-1.0f, 0.0f, 0.0f), glm::vec2(0.0f, 1.0f));
+
+    // Right
+    AddPrimitiveVertex(data, p101, glm::vec3(1.0f, 0.0f, 0.0f), glm::vec2(0.0f, 0.0f));
+    AddPrimitiveVertex(data, p100, glm::vec3(1.0f, 0.0f, 0.0f), glm::vec2(1.0f, 0.0f));
+    AddPrimitiveVertex(data, p110, glm::vec3(1.0f, 0.0f, 0.0f), glm::vec2(1.0f, 1.0f));
+
+    AddPrimitiveVertex(data, p101, glm::vec3(1.0f, 0.0f, 0.0f), glm::vec2(0.0f, 0.0f));
+    AddPrimitiveVertex(data, p110, glm::vec3(1.0f, 0.0f, 0.0f), glm::vec2(1.0f, 1.0f));
+    AddPrimitiveVertex(data, p111, glm::vec3(1.0f, 0.0f, 0.0f), glm::vec2(0.0f, 1.0f));
+
+    // Top
+    AddPrimitiveVertex(data, p010, glm::vec3(0.0f, 1.0f, 0.0f), glm::vec2(0.0f, 0.0f));
+    AddPrimitiveVertex(data, p011, glm::vec3(0.0f, 1.0f, 0.0f), glm::vec2(1.0f, 0.0f));
+    AddPrimitiveVertex(data, p111, glm::vec3(0.0f, 1.0f, 0.0f), glm::vec2(1.0f, 1.0f));
+
+    AddPrimitiveVertex(data, p010, glm::vec3(0.0f, 1.0f, 0.0f), glm::vec2(0.0f, 0.0f));
+    AddPrimitiveVertex(data, p111, glm::vec3(0.0f, 1.0f, 0.0f), glm::vec2(1.0f, 1.0f));
+    AddPrimitiveVertex(data, p110, glm::vec3(0.0f, 1.0f, 0.0f), glm::vec2(0.0f, 1.0f));
+
+    // Bottom
+    AddPrimitiveVertex(data, p000, glm::vec3(0.0f, -1.0f, 0.0f), glm::vec2(0.0f, 0.0f));
+    AddPrimitiveVertex(data, p100, glm::vec3(0.0f, -1.0f, 0.0f), glm::vec2(1.0f, 0.0f));
+    AddPrimitiveVertex(data, p101, glm::vec3(0.0f, -1.0f, 0.0f), glm::vec2(1.0f, 1.0f));
+
+    AddPrimitiveVertex(data, p000, glm::vec3(0.0f, -1.0f, 0.0f), glm::vec2(0.0f, 0.0f));
+    AddPrimitiveVertex(data, p101, glm::vec3(0.0f, -1.0f, 0.0f), glm::vec2(1.0f, 1.0f));
+    AddPrimitiveVertex(data, p001, glm::vec3(0.0f, -1.0f, 0.0f), glm::vec2(0.0f, 1.0f));
+}
+
+static Mesh* CreateProceduralStairsMesh(
+    int steps
+)
+{
+    if (steps < 2)
+        steps = 2;
+
+    if (steps > 12)
+        steps = 12;
+
+    std::vector<float> data;
+
+    float stepDepth =
+        1.0f / (float)steps;
+
+    for (int i = 0; i < steps; i++)
+    {
+        float zMin =
+            -0.5f + stepDepth * (float)i;
+
+        float zMax =
+            -0.5f + stepDepth * (float)(i + 1);
+
+        float height =
+            -0.5f + ((float)(i + 1) / (float)steps);
+
+        AddBoxToPrimitiveMesh(
+            data,
+            glm::vec3(
+                -0.5f,
+                -0.5f,
+                zMin
+            ),
+            glm::vec3(
+                0.5f,
+                height,
+                zMax
+            )
+        );
+    }
+
+    return new Mesh(
+        data.data(),
+        static_cast<int>(
+            data.size() * sizeof(float)
+            )
+    );
+}
 static Mesh* GetProceduralPrimitiveMesh(
     const std::string& primitiveType
 )
@@ -3450,6 +3568,352 @@ static SceneObject* SpawnProceduralPrimitive(
         object;
 
     return object;
+}
+static SceneObject* SpawnStairsObject(
+    Scene& scene,
+    SceneObject*& selectedObject,
+    Camera& camera,
+    Shader* shader
+)
+{
+    if (shader == nullptr)
+        return nullptr;
+
+    static Mesh* stairsMesh =
+        nullptr;
+
+    if (stairsMesh == nullptr)
+    {
+        stairsMesh =
+            CreateProceduralStairsMesh(
+                5
+            );
+    }
+
+    Material* stairsMaterial =
+        new Material(
+            nullptr
+        );
+
+    stairsMaterial->tint =
+        glm::vec3(
+            0.55f,
+            0.50f,
+            0.44f
+        );
+
+    stairsMaterial->ambient =
+        glm::vec3(
+            0.32f,
+            0.30f,
+            0.27f
+        );
+
+    stairsMaterial->diffuse =
+        glm::vec3(
+            0.75f,
+            0.70f,
+            0.62f
+        );
+
+    stairsMaterial->specular =
+        glm::vec3(
+            0.04f
+        );
+
+    stairsMaterial->shininess =
+        6.0f;
+
+    SceneObject* stairs =
+        new SceneObject(
+            stairsMesh,
+            shader,
+            stairsMaterial
+        );
+
+    stairs->name =
+        "Procedural Stairs";
+
+    glm::vec3 spawnPosition =
+        camera.Position +
+        camera.Front * 6.0f;
+
+    stairs->transform.position =
+        SnapEditorPositionToTerrain(
+            spawnPosition,
+            0.50f
+        );
+
+    stairs->transform.rotation =
+        glm::vec3(
+            0.0f
+        );
+
+    stairs->transform.scale =
+        glm::vec3(
+            4.0f,
+            2.0f,
+            4.0f
+        );
+
+    stairs->visible =
+        true;
+
+    stairs->isCollider =
+        true;
+
+    stairs->colliderRadius =
+        4.0f;
+
+    stairs->boundingRadius =
+        50.0f;
+
+    SetEditorSaveMetadata(
+        stairs,
+        "Stairs",
+        "None"
+    );
+
+    stairs->assetId =
+        "Procedural Stairs";
+
+    stairs->assetType =
+        AssetType::Prop;
+
+    stairs->spawnSource =
+        SpawnSource::Manual;
+
+    stairs->persistent =
+        true;
+
+    stairs->showInHierarchy =
+        true;
+
+    scene.AddObject(
+        stairs
+    );
+
+    selectedObject =
+        stairs;
+
+    return stairs;
+}
+static SceneObject* CreateArchPiece(
+    Scene& scene,
+    Mesh* cubeMesh,
+    Shader* shader,
+    const std::string& name,
+    const glm::vec3& position,
+    const glm::vec3& scale
+)
+{
+    if (
+        cubeMesh == nullptr ||
+        shader == nullptr
+        )
+    {
+        return nullptr;
+    }
+
+    Material* material =
+        new Material(
+            nullptr
+        );
+
+    material->tint =
+        glm::vec3(
+            0.46f,
+            0.43f,
+            0.38f
+        );
+
+    material->ambient =
+        glm::vec3(
+            0.30f,
+            0.28f,
+            0.25f
+        );
+
+    material->diffuse =
+        glm::vec3(
+            0.70f,
+            0.66f,
+            0.58f
+        );
+
+    material->specular =
+        glm::vec3(
+            0.04f
+        );
+
+    material->shininess =
+        5.0f;
+
+    SceneObject* piece =
+        new SceneObject(
+            cubeMesh,
+            shader,
+            material
+        );
+
+    piece->name =
+        name;
+
+    piece->transform.position =
+        position;
+
+    piece->transform.rotation =
+        glm::vec3(
+            0.0f
+        );
+
+    piece->transform.scale =
+        scale;
+
+    piece->visible =
+        true;
+
+    piece->isCollider =
+        true;
+
+    piece->colliderRadius =
+        2.0f;
+
+    piece->boundingRadius =
+        40.0f;
+
+    SetEditorSaveMetadata(
+        piece,
+        "Cube",
+        "None"
+    );
+
+    piece->assetId =
+        name;
+
+    piece->assetType =
+        AssetType::Prop;
+
+    piece->spawnSource =
+        SpawnSource::Manual;
+
+    piece->persistent =
+        true;
+
+    piece->showInHierarchy =
+        true;
+
+    scene.AddObject(
+        piece
+    );
+
+    return piece;
+}
+
+static SceneObject* SpawnArchObject(
+    Scene& scene,
+    SceneObject*& selectedObject,
+    Camera& camera,
+    Mesh* cubeMesh,
+    Shader* shader
+)
+{
+    if (
+        cubeMesh == nullptr ||
+        shader == nullptr
+        )
+    {
+        return nullptr;
+    }
+
+    glm::vec3 forward =
+        glm::vec3(
+            camera.Front.x,
+            0.0f,
+            camera.Front.z
+        );
+
+    if (glm::length(forward) < 0.001f)
+    {
+        forward =
+            glm::vec3(
+                0.0f,
+                0.0f,
+                -1.0f
+            );
+    }
+
+    forward =
+        glm::normalize(
+            forward
+        );
+
+    glm::vec3 basePosition =
+        camera.Position +
+        forward * 7.0f;
+
+    glm::vec3 center =
+        SnapEditorPositionToTerrain(
+            basePosition,
+            1.50f
+        );
+
+    SceneObject* leftPillar =
+        CreateArchPiece(
+            scene,
+            cubeMesh,
+            shader,
+            "Arch Left Pillar",
+            center + glm::vec3(
+                -2.0f,
+                0.0f,
+                0.0f
+            ),
+            glm::vec3(
+                0.45f,
+                3.0f,
+                0.55f
+            )
+        );
+
+    CreateArchPiece(
+        scene,
+        cubeMesh,
+        shader,
+        "Arch Right Pillar",
+        center + glm::vec3(
+            2.0f,
+            0.0f,
+            0.0f
+        ),
+        glm::vec3(
+            0.45f,
+            3.0f,
+            0.55f
+        )
+    );
+
+    CreateArchPiece(
+        scene,
+        cubeMesh,
+        shader,
+        "Arch Top Beam",
+        center + glm::vec3(
+            0.0f,
+            1.55f,
+            0.0f
+        ),
+        glm::vec3(
+            4.5f,
+            0.45f,
+            0.55f
+        )
+    );
+
+    selectedObject =
+        leftPillar;
+
+    return leftPillar;
 }
 static void PlaceCoinOnTerrain(
     SceneObject* coin,
@@ -5779,7 +6243,28 @@ void EditorUI::DrawAssetBrowser(
                 );
             }
             ImGui::Separator();
+            if (ImGui::Button("Stairs"))
+            {
+                SpawnStairsObject(
+                    scene,
+                    selectedObject,
+                    camera,
+                    shader
+                );
+            }
 
+            ImGui::SameLine();
+
+            if (ImGui::Button("Arch"))
+            {
+                SpawnArchObject(
+                    scene,
+                    selectedObject,
+                    camera,
+                    cubeMesh,
+                    shader
+                );
+            }
             ImGui::Text("Outdoor Pieces");
 
             if (ImGui::Button("Path Tile"))

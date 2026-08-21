@@ -3261,6 +3261,431 @@ static Mesh* CreateProceduralPipeMesh(
             )
     );
 }
+static void AddTriangleToPrimitiveMesh(
+    std::vector<float>& data,
+    const glm::vec3& a,
+    const glm::vec3& b,
+    const glm::vec3& c
+)
+{
+    glm::vec3 normal =
+        glm::normalize(
+            glm::cross(
+                b - a,
+                c - a
+            )
+        );
+
+    AddPrimitiveVertex(data, a, normal, glm::vec2(0.0f, 0.0f));
+    AddPrimitiveVertex(data, b, normal, glm::vec2(1.0f, 0.0f));
+    AddPrimitiveVertex(data, c, normal, glm::vec2(0.5f, 1.0f));
+}
+
+static void AddQuadToPrimitiveMesh(
+    std::vector<float>& data,
+    const glm::vec3& a,
+    const glm::vec3& b,
+    const glm::vec3& c,
+    const glm::vec3& d
+)
+{
+    AddTriangleToPrimitiveMesh(
+        data,
+        a,
+        b,
+        c
+    );
+
+    AddTriangleToPrimitiveMesh(
+        data,
+        a,
+        c,
+        d
+    );
+}
+
+static Mesh* CreateProceduralCapsuleMesh(
+    int rings,
+    int sectors
+)
+{
+    if (rings < 4)
+        rings = 4;
+
+    if (rings > 32)
+        rings = 32;
+
+    if (sectors < 8)
+        sectors = 8;
+
+    if (sectors > 96)
+        sectors = 96;
+
+    std::vector<float> data;
+
+    const float pi =
+        3.14159265359f;
+
+    float radius =
+        0.28f;
+
+    float halfBody =
+        0.25f;
+
+    // Cylinder body
+    for (int i = 0; i < sectors; i++)
+    {
+        float u0 =
+            (float)i / (float)sectors;
+
+        float u1 =
+            (float)(i + 1) / (float)sectors;
+
+        float a0 =
+            u0 * pi * 2.0f;
+
+        float a1 =
+            u1 * pi * 2.0f;
+
+        glm::vec3 b0(
+            std::cos(a0) * radius,
+            -halfBody,
+            std::sin(a0) * radius
+        );
+
+        glm::vec3 b1(
+            std::cos(a1) * radius,
+            -halfBody,
+            std::sin(a1) * radius
+        );
+
+        glm::vec3 t0(
+            std::cos(a0) * radius,
+            halfBody,
+            std::sin(a0) * radius
+        );
+
+        glm::vec3 t1(
+            std::cos(a1) * radius,
+            halfBody,
+            std::sin(a1) * radius
+        );
+
+        glm::vec3 n0 =
+            glm::normalize(
+                glm::vec3(
+                    std::cos(a0),
+                    0.0f,
+                    std::sin(a0)
+                )
+            );
+
+        glm::vec3 n1 =
+            glm::normalize(
+                glm::vec3(
+                    std::cos(a1),
+                    0.0f,
+                    std::sin(a1)
+                )
+            );
+
+        AddPrimitiveVertex(data, b0, n0, glm::vec2(u0, 0.0f));
+        AddPrimitiveVertex(data, b1, n1, glm::vec2(u1, 0.0f));
+        AddPrimitiveVertex(data, t0, n0, glm::vec2(u0, 1.0f));
+
+        AddPrimitiveVertex(data, t0, n0, glm::vec2(u0, 1.0f));
+        AddPrimitiveVertex(data, b1, n1, glm::vec2(u1, 0.0f));
+        AddPrimitiveVertex(data, t1, n1, glm::vec2(u1, 1.0f));
+    }
+
+    // Top hemisphere
+    for (int r = 0; r < rings; r++)
+    {
+        float v0 =
+            (float)r / (float)rings;
+
+        float v1 =
+            (float)(r + 1) / (float)rings;
+
+        float phi0 =
+            v0 * pi * 0.5f;
+
+        float phi1 =
+            v1 * pi * 0.5f;
+
+        for (int s = 0; s < sectors; s++)
+        {
+            float u0 =
+                (float)s / (float)sectors;
+
+            float u1 =
+                (float)(s + 1) / (float)sectors;
+
+            float theta0 =
+                u0 * pi * 2.0f;
+
+            float theta1 =
+                u1 * pi * 2.0f;
+
+            glm::vec3 n00(
+                std::sin(phi0) * std::cos(theta0),
+                std::cos(phi0),
+                std::sin(phi0) * std::sin(theta0)
+            );
+
+            glm::vec3 n01(
+                std::sin(phi0) * std::cos(theta1),
+                std::cos(phi0),
+                std::sin(phi0) * std::sin(theta1)
+            );
+
+            glm::vec3 n10(
+                std::sin(phi1) * std::cos(theta0),
+                std::cos(phi1),
+                std::sin(phi1) * std::sin(theta0)
+            );
+
+            glm::vec3 n11(
+                std::sin(phi1) * std::cos(theta1),
+                std::cos(phi1),
+                std::sin(phi1) * std::sin(theta1)
+            );
+
+            glm::vec3 p00 =
+                n00 * radius +
+                glm::vec3(
+                    0.0f,
+                    halfBody,
+                    0.0f
+                );
+
+            glm::vec3 p01 =
+                n01 * radius +
+                glm::vec3(
+                    0.0f,
+                    halfBody,
+                    0.0f
+                );
+
+            glm::vec3 p10 =
+                n10 * radius +
+                glm::vec3(
+                    0.0f,
+                    halfBody,
+                    0.0f
+                );
+
+            glm::vec3 p11 =
+                n11 * radius +
+                glm::vec3(
+                    0.0f,
+                    halfBody,
+                    0.0f
+                );
+
+            AddPrimitiveVertex(data, p00, glm::normalize(n00), glm::vec2(u0, v0));
+            AddPrimitiveVertex(data, p10, glm::normalize(n10), glm::vec2(u0, v1));
+            AddPrimitiveVertex(data, p01, glm::normalize(n01), glm::vec2(u1, v0));
+
+            AddPrimitiveVertex(data, p01, glm::normalize(n01), glm::vec2(u1, v0));
+            AddPrimitiveVertex(data, p10, glm::normalize(n10), glm::vec2(u0, v1));
+            AddPrimitiveVertex(data, p11, glm::normalize(n11), glm::vec2(u1, v1));
+        }
+    }
+
+    // Bottom hemisphere
+    for (int r = 0; r < rings; r++)
+    {
+        float v0 =
+            (float)r / (float)rings;
+
+        float v1 =
+            (float)(r + 1) / (float)rings;
+
+        float phi0 =
+            v0 * pi * 0.5f;
+
+        float phi1 =
+            v1 * pi * 0.5f;
+
+        for (int s = 0; s < sectors; s++)
+        {
+            float u0 =
+                (float)s / (float)sectors;
+
+            float u1 =
+                (float)(s + 1) / (float)sectors;
+
+            float theta0 =
+                u0 * pi * 2.0f;
+
+            float theta1 =
+                u1 * pi * 2.0f;
+
+            glm::vec3 n00(
+                std::sin(phi0) * std::cos(theta0),
+                -std::cos(phi0),
+                std::sin(phi0) * std::sin(theta0)
+            );
+
+            glm::vec3 n01(
+                std::sin(phi0) * std::cos(theta1),
+                -std::cos(phi0),
+                std::sin(phi0) * std::sin(theta1)
+            );
+
+            glm::vec3 n10(
+                std::sin(phi1) * std::cos(theta0),
+                -std::cos(phi1),
+                std::sin(phi1) * std::sin(theta0)
+            );
+
+            glm::vec3 n11(
+                std::sin(phi1) * std::cos(theta1),
+                -std::cos(phi1),
+                std::sin(phi1) * std::sin(theta1)
+            );
+
+            glm::vec3 p00 =
+                n00 * radius +
+                glm::vec3(
+                    0.0f,
+                    -halfBody,
+                    0.0f
+                );
+
+            glm::vec3 p01 =
+                n01 * radius +
+                glm::vec3(
+                    0.0f,
+                    -halfBody,
+                    0.0f
+                );
+
+            glm::vec3 p10 =
+                n10 * radius +
+                glm::vec3(
+                    0.0f,
+                    -halfBody,
+                    0.0f
+                );
+
+            glm::vec3 p11 =
+                n11 * radius +
+                glm::vec3(
+                    0.0f,
+                    -halfBody,
+                    0.0f
+                );
+
+            AddPrimitiveVertex(data, p00, glm::normalize(n00), glm::vec2(u0, v0));
+            AddPrimitiveVertex(data, p01, glm::normalize(n01), glm::vec2(u1, v0));
+            AddPrimitiveVertex(data, p10, glm::normalize(n10), glm::vec2(u0, v1));
+
+            AddPrimitiveVertex(data, p01, glm::normalize(n01), glm::vec2(u1, v0));
+            AddPrimitiveVertex(data, p11, glm::normalize(n11), glm::vec2(u1, v1));
+            AddPrimitiveVertex(data, p10, glm::normalize(n10), glm::vec2(u0, v1));
+        }
+    }
+
+    return new Mesh(
+        data.data(),
+        static_cast<int>(
+            data.size() * sizeof(float)
+            )
+    );
+}
+
+static Mesh* CreateProceduralRoofWedgeMesh()
+{
+    std::vector<float> data;
+
+    glm::vec3 a(
+        -0.5f,
+        -0.5f,
+        -0.5f
+    );
+
+    glm::vec3 b(
+        0.5f,
+        -0.5f,
+        -0.5f
+    );
+
+    glm::vec3 c(
+        0.5f,
+        -0.5f,
+        0.5f
+    );
+
+    glm::vec3 d(
+        -0.5f,
+        -0.5f,
+        0.5f
+    );
+
+    glm::vec3 e(
+        -0.5f,
+        0.5f,
+        0.0f
+    );
+
+    glm::vec3 f(
+        0.5f,
+        0.5f,
+        0.0f
+    );
+
+    // Bottom
+    AddQuadToPrimitiveMesh(
+        data,
+        a,
+        b,
+        c,
+        d
+    );
+
+    // Back slope
+    AddQuadToPrimitiveMesh(
+        data,
+        a,
+        e,
+        f,
+        b
+    );
+
+    // Front slope
+    AddQuadToPrimitiveMesh(
+        data,
+        d,
+        c,
+        f,
+        e
+    );
+
+    // Left triangle
+    AddTriangleToPrimitiveMesh(
+        data,
+        a,
+        d,
+        e
+    );
+
+    // Right triangle
+    AddTriangleToPrimitiveMesh(
+        data,
+        b,
+        f,
+        c
+    );
+
+    return new Mesh(
+        data.data(),
+        static_cast<int>(
+            data.size() * sizeof(float)
+            )
+    );
+}
 static Mesh* GetProceduralPrimitiveMesh(
     const std::string& primitiveType
 )
@@ -4199,6 +4624,266 @@ static SceneObject* SpawnPipeObject(
         pipe;
 
     return pipe;
+}
+static SceneObject* SpawnCapsuleObject(
+    Scene& scene,
+    SceneObject*& selectedObject,
+    Camera& camera,
+    Shader* shader
+)
+{
+    if (shader == nullptr)
+        return nullptr;
+
+    static Mesh* capsuleMesh =
+        nullptr;
+
+    if (capsuleMesh == nullptr)
+    {
+        capsuleMesh =
+            CreateProceduralCapsuleMesh(
+                12,
+                32
+            );
+    }
+
+    Material* material =
+        new Material(
+            nullptr
+        );
+
+    material->tint =
+        glm::vec3(
+            0.40f,
+            0.62f,
+            0.85f
+        );
+
+    material->ambient =
+        glm::vec3(
+            0.18f,
+            0.28f,
+            0.40f
+        );
+
+    material->diffuse =
+        glm::vec3(
+            0.55f,
+            0.75f,
+            0.95f
+        );
+
+    material->specular =
+        glm::vec3(
+            0.20f,
+            0.30f,
+            0.40f
+        );
+
+    material->shininess =
+        24.0f;
+
+    SceneObject* capsule =
+        new SceneObject(
+            capsuleMesh,
+            shader,
+            material
+        );
+
+    capsule->name =
+        "Procedural Capsule";
+
+    glm::vec3 spawnPosition =
+        camera.Position +
+        camera.Front * 6.0f;
+
+    capsule->transform.position =
+        SnapEditorPositionToTerrain(
+            spawnPosition,
+            1.0f
+        );
+
+    capsule->transform.rotation =
+        glm::vec3(
+            0.0f
+        );
+
+    capsule->transform.scale =
+        glm::vec3(
+            1.4f,
+            2.5f,
+            1.4f
+        );
+
+    capsule->visible =
+        true;
+
+    capsule->isCollider =
+        true;
+
+    capsule->colliderRadius =
+        1.5f;
+
+    capsule->boundingRadius =
+        50.0f;
+
+    SetEditorSaveMetadata(
+        capsule,
+        "Capsule",
+        "None"
+    );
+
+    capsule->assetId =
+        "Procedural Capsule";
+
+    capsule->assetType =
+        AssetType::Prop;
+
+    capsule->spawnSource =
+        SpawnSource::Manual;
+
+    capsule->persistent =
+        true;
+
+    capsule->showInHierarchy =
+        true;
+
+    scene.AddObject(
+        capsule
+    );
+
+    selectedObject =
+        capsule;
+
+    return capsule;
+}
+
+static SceneObject* SpawnRoofWedgeObject(
+    Scene& scene,
+    SceneObject*& selectedObject,
+    Camera& camera,
+    Shader* shader
+)
+{
+    if (shader == nullptr)
+        return nullptr;
+
+    static Mesh* roofWedgeMesh =
+        nullptr;
+
+    if (roofWedgeMesh == nullptr)
+    {
+        roofWedgeMesh =
+            CreateProceduralRoofWedgeMesh();
+    }
+
+    Material* material =
+        new Material(
+            nullptr
+        );
+
+    material->tint =
+        glm::vec3(
+            0.50f,
+            0.18f,
+            0.10f
+        );
+
+    material->ambient =
+        glm::vec3(
+            0.25f,
+            0.10f,
+            0.06f
+        );
+
+    material->diffuse =
+        glm::vec3(
+            0.70f,
+            0.28f,
+            0.16f
+        );
+
+    material->specular =
+        glm::vec3(
+            0.05f
+        );
+
+    material->shininess =
+        6.0f;
+
+    SceneObject* roof =
+        new SceneObject(
+            roofWedgeMesh,
+            shader,
+            material
+        );
+
+    roof->name =
+        "Procedural Roof Wedge";
+
+    glm::vec3 spawnPosition =
+        camera.Position +
+        camera.Front * 6.0f;
+
+    roof->transform.position =
+        SnapEditorPositionToTerrain(
+            spawnPosition,
+            1.0f
+        );
+
+    roof->transform.rotation =
+        glm::vec3(
+            0.0f
+        );
+
+    roof->transform.scale =
+        glm::vec3(
+            5.0f,
+            1.8f,
+            4.0f
+        );
+
+    roof->visible =
+        true;
+
+    roof->isCollider =
+        true;
+
+    roof->colliderRadius =
+        4.0f;
+
+    roof->boundingRadius =
+        50.0f;
+
+    SetEditorSaveMetadata(
+        roof,
+        "RoofWedge",
+        "None"
+    );
+
+    roof->assetId =
+        "Procedural Roof Wedge";
+
+    roof->assetType =
+        AssetType::Prop;
+
+    roof->spawnSource =
+        SpawnSource::Manual;
+
+    roof->persistent =
+        true;
+
+    roof->showInHierarchy =
+        true;
+
+    scene.AddObject(
+        roof
+    );
+
+    selectedObject =
+        roof;
+
+    return roof;
 }
 static SceneObject* CreateArchPiece(
     Scene& scene,
@@ -6782,6 +7467,27 @@ void EditorUI::DrawAssetBrowser(
             if (ImGui::Button("Pipe"))
             {
                 SpawnPipeObject(
+                    scene,
+                    selectedObject,
+                    camera,
+                    shader
+                );
+            }
+            if (ImGui::Button("Capsule"))
+            {
+                SpawnCapsuleObject(
+                    scene,
+                    selectedObject,
+                    camera,
+                    shader
+                );
+            }
+
+            ImGui::SameLine();
+
+            if (ImGui::Button("Roof Wedge"))
+            {
+                SpawnRoofWedgeObject(
                     scene,
                     selectedObject,
                     camera,

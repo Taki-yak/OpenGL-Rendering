@@ -210,7 +210,7 @@ const char* mainMenuGithubUrl =
 "https://github.com/Taki-yak";
 
 const char* mainMenuEmailUrl =
-"takiyakhlef49@gmail.com";
+"https://www.linkedin.com/in/taki-eddine-yakhlef-586730293/";
 bool useTorchFireFlicker =
 true;
 bool coinWinSoundPlayed =
@@ -2508,7 +2508,7 @@ MainMenuAction DrawMainMenuScreen(
 
     MainMenuAction action =
         MainMenuAction::None;
-
+  
     if (
         DrawMainMenuButton(
             "MainMenu_Play",
@@ -2523,11 +2523,13 @@ MainMenuAction DrawMainMenuScreen(
         action =
             MainMenuAction::Play;
     }
+
     if (ImGui::IsItemHovered())
     {
         mainMenuHoveredButton =
             0;
     }
+
     if (
         DrawMainMenuButton(
             "MainMenu_Editor",
@@ -2542,11 +2544,14 @@ MainMenuAction DrawMainMenuScreen(
         action =
             MainMenuAction::Editor;
     }
+
     if (ImGui::IsItemHovered())
     {
         mainMenuHoveredButton =
-            0;
+            1;
     }
+
+    
     if (
         DrawMainMenuButton(
             "MainMenu_Exit",
@@ -2560,6 +2565,12 @@ MainMenuAction DrawMainMenuScreen(
     {
         action =
             MainMenuAction::Exit;
+    }
+
+    if (ImGui::IsItemHovered())
+    {
+        mainMenuHoveredButton =
+            2;
     }
     float linkButtonWidth =
         io.DisplaySize.x * 0.055f;
@@ -8189,9 +8200,7 @@ int main()
            audioSystem.Stop(
                "monster_chase"
            );
-           audioSystem.Stop(
-               "forest_ambience"
-           );
+         
 
            mainMenuMusicPlaying =
                false;

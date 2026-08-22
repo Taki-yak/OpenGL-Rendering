@@ -315,7 +315,11 @@ float musicNpcSpeed =
 
 float musicNpcCatchRadius =
     2.4f;
+int mainMenuHoveredButton =
+-1;
 
+int previousMainMenuHoveredButton =
+-1;
 float musicNpcTerrainOffset =
     0.15f;
 
@@ -2257,49 +2261,16 @@ bool DrawMainMenuButton(
             minPoint,
             maxPoint,
             hoverColor,
-            8.0f
+            6.0f
         );
 
         drawList->AddRect(
             minPoint,
             maxPoint,
             borderColor,
-            8.0f,
+            6.0f,
             0,
-            3.0f
-        );
-
-        float fontSize =
-            ImGui::GetFontSize() * 1.20f;
-
-        ImVec2 textSize =
-            ImGui::CalcTextSize(
-                label
-            );
-
-        textSize.x *=
-            1.20f;
-
-        textSize.y *=
-            1.20f;
-
-        ImVec2 textPosition =
-            ImVec2(
-                position.x + size.x * 0.50f - textSize.x * 0.50f,
-                position.y + size.y * 0.50f - textSize.y * 0.50f
-            );
-
-        drawList->AddText(
-            nullptr,
-            fontSize,
-            textPosition,
-            IM_COL32(
-                255,
-                255,
-                255,
-                255
-            ),
-            label
+            2.0f
         );
     }
 
@@ -2311,7 +2282,8 @@ MainMenuAction DrawMainMenuScreen(
 {
     ImGuiIO& io =
         ImGui::GetIO();
-
+    mainMenuHoveredButton =
+        -1;
     ImGui::SetNextWindowPos(
         ImVec2(
             0.0f,
@@ -2379,30 +2351,30 @@ MainMenuAction DrawMainMenuScreen(
     }
 
     float buttonWidth =
-        io.DisplaySize.x * 0.275f;
+        io.DisplaySize.x * 0.320f;
 
     float buttonHeight =
-        io.DisplaySize.y * 0.092f;
+        io.DisplaySize.y * 0.105f;
 
     float buttonX =
-        io.DisplaySize.x * 0.362f;
+        io.DisplaySize.x * 0.360f;
 
     ImVec2 playPosition =
         ImVec2(
             buttonX,
-            io.DisplaySize.y * 0.405f
+            io.DisplaySize.y * 0.410f
         );
 
     ImVec2 editorPosition =
         ImVec2(
             buttonX,
-            io.DisplaySize.y * 0.532f
+            io.DisplaySize.y * 0.565f
         );
 
     ImVec2 exitPosition =
         ImVec2(
             buttonX,
-            io.DisplaySize.y * 0.664f
+            io.DisplaySize.y * 0.700f
         );
 
     ImVec2 buttonSize =
@@ -2413,18 +2385,18 @@ MainMenuAction DrawMainMenuScreen(
 
     ImU32 hoverFill =
         IM_COL32(
-            40,
-            155,
+            30,
+            150,
             255,
-            70
+            18
         );
 
     ImU32 hoverBorder =
         IM_COL32(
-            130,
+            120,
             230,
             255,
-            240
+            150
         );
 
     MainMenuAction action =
@@ -2444,7 +2416,11 @@ MainMenuAction DrawMainMenuScreen(
         action =
             MainMenuAction::Play;
     }
-
+    if (ImGui::IsItemHovered())
+    {
+        mainMenuHoveredButton =
+            0;
+    }
     if (
         DrawMainMenuButton(
             "MainMenu_Editor",
@@ -2459,7 +2435,11 @@ MainMenuAction DrawMainMenuScreen(
         action =
             MainMenuAction::Editor;
     }
-
+    if (ImGui::IsItemHovered())
+    {
+        mainMenuHoveredButton =
+            0;
+    }
     if (
         DrawMainMenuButton(
             "MainMenu_Exit",
@@ -2473,6 +2453,11 @@ MainMenuAction DrawMainMenuScreen(
     {
         action =
             MainMenuAction::Exit;
+    }
+    if (ImGui::IsItemHovered())
+    {
+        mainMenuHoveredButton =
+            0;
     }
     ImGui::End();
 
@@ -7766,6 +7751,11 @@ int main()
         true
     );
     audioSystem.LoadSound(
+        "menu_hover",
+        "Assets/Audio/menu_hover.wav",
+        false
+    );
+    audioSystem.LoadSound(
         "music_rescue",
         "Assets/Audio/music_rescue.wav",
         true
@@ -7849,7 +7839,19 @@ int main()
                 DrawMainMenuScreen(
                     mainMenuBackgroundTexture
                 );
+            if (
+                mainMenuHoveredButton != -1 &&
+                mainMenuHoveredButton != previousMainMenuHoveredButton
+                )
+            {
+                audioSystem.PlayFromStart(
+                    "menu_hover",
+                    0.35f
+                );
+            }
 
+            previousMainMenuHoveredButton =
+                mainMenuHoveredButton;
             if (menuAction == MainMenuAction::Play)
             {
                 showMainMenu =

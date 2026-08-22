@@ -46,7 +46,110 @@
 //float yaw = -90.0f;
 //float pitch = 0.0f;
 
+GLuint LoadMenuTexture(
+    const char* path
+)
+{
+    int width =
+        0;
 
+    int height =
+        0;
+
+    int channels =
+        0;
+
+    stbi_set_flip_vertically_on_load(
+        false
+    );
+
+    unsigned char* data =
+        stbi_load(
+            path,
+            &width,
+            &height,
+            &channels,
+            0
+        );
+
+    if (data == nullptr)
+    {
+        std::cout
+            << "Failed to load menu texture: "
+            << path
+            << std::endl;
+
+        return 0;
+    }
+
+    GLenum format =
+        GL_RGB;
+
+    if (channels == 4)
+    {
+        format =
+            GL_RGBA;
+    }
+
+    GLuint textureId =
+        0;
+
+    glGenTextures(
+        1,
+        &textureId
+    );
+
+    glBindTexture(
+        GL_TEXTURE_2D,
+        textureId
+    );
+
+    glTexImage2D(
+        GL_TEXTURE_2D,
+        0,
+        format,
+        width,
+        height,
+        0,
+        format,
+        GL_UNSIGNED_BYTE,
+        data
+    );
+
+    glGenerateMipmap(
+        GL_TEXTURE_2D
+    );
+
+    glTexParameteri(
+        GL_TEXTURE_2D,
+        GL_TEXTURE_WRAP_S,
+        GL_CLAMP_TO_EDGE
+    );
+
+    glTexParameteri(
+        GL_TEXTURE_2D,
+        GL_TEXTURE_WRAP_T,
+        GL_CLAMP_TO_EDGE
+    );
+
+    glTexParameteri(
+        GL_TEXTURE_2D,
+        GL_TEXTURE_MIN_FILTER,
+        GL_LINEAR_MIPMAP_LINEAR
+    );
+
+    glTexParameteri(
+        GL_TEXTURE_2D,
+        GL_TEXTURE_MAG_FILTER,
+        GL_LINEAR
+    );
+
+    stbi_image_free(
+        data
+    );
+
+    return textureId;
+}
 
 glm::vec3 GetRayFromMouse(double mouseX, double mouseY, int width, int height,
     glm::mat4 projection, glm::mat4 view)
@@ -80,6 +183,18 @@ float lastFrame = 0.0f;
 bool useCulling = true;
 bool useDistanceOptimization =
 true;
+// ================= MAIN MENU =================
+bool showMainMenu =
+true;
+
+bool mainMenuClickPlayed =
+false;
+
+bool escapeMenuPressed =
+false;
+
+GLuint mainMenuBackgroundTexture =
+0;
 bool useTorchFireFlicker =
 true;
 bool coinWinSoundPlayed =
@@ -2087,6 +2202,243 @@ enum GizmoMode
     ROTATE,
     SCALE
 };
+enum class MainMenuAction
+{
+    None,
+    Play,
+    Editor,
+    Exit
+};
+bool DrawMainMenuInvisibleButton(
+    const char* id,
+    const ImVec2& position,
+    const ImVec2& size,
+    ImU32 hoverColor,
+    ImU32 borderColor
+)
+{
+    ImGui::SetCursorScreenPos(
+        position
+    );
+
+    ImGui::InvisibleButton(
+        id,
+        size
+    );
+
+    bool hovered =
+        ImGui::IsItemHovered();
+
+    bool clicked =
+        ImGui::IsItemClicked();
+
+    ImDrawList* drawList =
+        ImGui::GetWindowDrawList();
+
+    if (hovered)
+    {
+        ImVec2 minPoint =
+            ImVec2(
+                position.x - 8.0f,
+                position.y - 6.0f
+            );
+
+        ImVec2 maxPoint =
+            ImVec2(
+                position.x + size.x + 8.0f,
+                position.y + size.y + 6.0f
+            );
+
+        drawList->AddRectFilled(
+            minPoint,
+            maxPoint,
+            hoverColor,
+            6.0f
+        );
+
+        drawList->AddRect(
+            minPoint,
+            maxPoint,
+            borderColor,
+            6.0f,
+            0,
+            3.0f
+        );
+    }
+
+    return clicked;
+}
+MainMenuAction DrawMainMenuScreen(
+    GLuint backgroundTexture
+)
+{
+    ImGuiIO& io =
+        ImGui::GetIO();
+
+    ImGui::SetNextWindowPos(
+        ImVec2(
+            0.0f,
+            0.0f
+        ),
+        ImGuiCond_Always
+    );
+
+    ImGui::SetNextWindowSize(
+        io.DisplaySize,
+        ImGuiCond_Always
+    );
+
+    ImGuiWindowFlags flags =
+        ImGuiWindowFlags_NoTitleBar |
+        ImGuiWindowFlags_NoResize |
+        ImGuiWindowFlags_NoMove |
+        ImGuiWindowFlags_NoCollapse |
+        ImGuiWindowFlags_NoScrollbar |
+        ImGuiWindowFlags_NoScrollWithMouse |
+        ImGuiWindowFlags_NoSavedSettings |
+        ImGuiWindowFlags_NoBackground;
+
+    ImGui::Begin(
+        "Main Menu",
+        nullptr,
+        flags
+    );
+
+    ImDrawList* drawList =
+        ImGui::GetWindowDrawList();
+
+    ImVec2 screenMin =
+        ImVec2(
+            0.0f,
+            0.0f
+        );
+
+    ImVec2 screenMax =
+        ImVec2(
+            io.DisplaySize.x,
+            io.DisplaySize.y
+        );
+
+    if (backgroundTexture != 0)
+    {
+        drawList->AddImage(
+            (ImTextureID)(intptr_t)backgroundTexture,
+            screenMin,
+            screenMax
+        );
+    }
+    else
+    {
+        drawList->AddRectFilled(
+            screenMin,
+            screenMax,
+            IM_COL32(
+                8,
+                16,
+                28,
+                255
+            )
+        );
+    }
+
+    float buttonWidth =
+        io.DisplaySize.x * 0.30f;
+
+    float buttonHeight =
+        io.DisplaySize.y * 0.095f;
+
+    float buttonX =
+        io.DisplaySize.x * 0.365f;
+
+    ImVec2 playPosition =
+        ImVec2(
+            buttonX,
+            io.DisplaySize.y * 0.435f
+        );
+
+    ImVec2 editorPosition =
+        ImVec2(
+            buttonX,
+            io.DisplaySize.y * 0.565f
+        );
+
+    ImVec2 exitPosition =
+        ImVec2(
+            buttonX,
+            io.DisplaySize.y * 0.700f
+        );
+
+    ImVec2 buttonSize =
+        ImVec2(
+            buttonWidth,
+            buttonHeight
+        );
+
+    ImU32 hoverFill =
+        IM_COL32(
+            60,
+            170,
+            255,
+            55
+        );
+
+    ImU32 hoverBorder =
+        IM_COL32(
+            120,
+            220,
+            255,
+            230
+        );
+
+    MainMenuAction action =
+        MainMenuAction::None;
+
+    if (
+        DrawMainMenuInvisibleButton(
+            "MainMenu_Play",
+            playPosition,
+            buttonSize,
+            hoverFill,
+            hoverBorder
+        )
+        )
+    {
+        action =
+            MainMenuAction::Play;
+    }
+
+    if (
+        DrawMainMenuInvisibleButton(
+            "MainMenu_Editor",
+            editorPosition,
+            buttonSize,
+            hoverFill,
+            hoverBorder
+        )
+        )
+    {
+        action =
+            MainMenuAction::Editor;
+    }
+
+    if (
+        DrawMainMenuInvisibleButton(
+            "MainMenu_Exit",
+            exitPosition,
+            buttonSize,
+            hoverFill,
+            hoverBorder
+        )
+        )
+    {
+        action =
+            MainMenuAction::Exit;
+    }
+
+    ImGui::End();
+
+    return action;
+}
 MoveAxis currentAxis = NONE;
 GizmoMode currentGizmoMode = TRANSLATE;
 void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
@@ -5104,7 +5456,10 @@ int main()
         "Run",
         "Assets/Models/Characters/Player/Run.fbx"
     );
-
+    mainMenuBackgroundTexture =
+        LoadMenuTexture(
+            "Assets/UI/orion_build_learn_create.png"
+        );
     playerAnimations.LoadAnimation(
         "Jump",
         "Assets/Models/Characters/Player/Jump.fbx"
@@ -7368,10 +7723,161 @@ int main()
     );
     while (!glfwWindowShouldClose(window))
     {
-      
+        glfwPollEvents();
+
         ImGui_ImplOpenGL3_NewFrame();
         ImGui_ImplGlfw_NewFrame();
         ImGui::NewFrame();
+
+        // ================= RETURN TO MAIN MENU WITH ESC =================
+        bool escapeDown =
+            glfwGetKey(
+                window,
+                GLFW_KEY_ESCAPE
+            ) == GLFW_PRESS;
+
+        if (
+            !showMainMenu &&
+            escapeDown &&
+            !escapeMenuPressed
+            )
+        {
+            showMainMenu =
+                true;
+
+            appMode =
+                AppMode::Editor;
+
+            audioSystem.Stop(
+                "monster_chase"
+            );
+
+            audioSystem.Stop(
+                "music_rescue"
+            );
+
+            audioSystem.Stop(
+                "walk_grass"
+            );
+
+            audioSystem.Stop(
+                "run_grass"
+            );
+
+            glfwSetInputMode(
+                window,
+                GLFW_CURSOR,
+                GLFW_CURSOR_NORMAL
+            );
+
+            rightMouseCameraActive =
+                false;
+
+            firstMouse =
+                true;
+
+            ignoreNextMouseDelta =
+                true;
+        }
+
+        escapeMenuPressed =
+            escapeDown;
+
+        // ================= MAIN MENU SCREEN =================
+        if (showMainMenu)
+        {
+            MainMenuAction menuAction =
+                DrawMainMenuScreen(
+                    mainMenuBackgroundTexture
+                );
+
+            if (menuAction == MainMenuAction::Play)
+            {
+                showMainMenu =
+                    false;
+
+                appMode =
+                    AppMode::Play;
+
+                mainMenuClickPlayed =
+                    true;
+            }
+            else if (menuAction == MainMenuAction::Editor)
+            {
+                showMainMenu =
+                    false;
+
+                appMode =
+                    AppMode::Editor;
+
+                mainMenuClickPlayed =
+                    true;
+            }
+            else if (menuAction == MainMenuAction::Exit)
+            {
+                glfwSetWindowShouldClose(
+                    window,
+                    true
+                );
+
+                mainMenuClickPlayed =
+                    true;
+            }
+
+            if (mainMenuClickPlayed)
+            {
+                audioSystem.PlayFromStart(
+                    "interaction",
+                    0.8f
+                );
+
+                mainMenuClickPlayed =
+                    false;
+            }
+
+            int menuWidth =
+                0;
+
+            int menuHeight =
+                0;
+
+            glfwGetFramebufferSize(
+                window,
+                &menuWidth,
+                &menuHeight
+            );
+
+            glViewport(
+                0,
+                0,
+                menuWidth,
+                menuHeight
+            );
+
+            glClearColor(
+                0.0f,
+                0.0f,
+                0.0f,
+                1.0f
+            );
+
+            glClear(
+                GL_COLOR_BUFFER_BIT |
+                GL_DEPTH_BUFFER_BIT
+            );
+
+            ImGui::Render();
+
+            ImGui_ImplOpenGL3_RenderDrawData(
+                ImGui::GetDrawData()
+            );
+
+            glfwSwapBuffers(
+                window
+            );
+
+            continue;
+        }
        ImGuiIO& debugIO = ImGui::GetIO();
        // resseting plaaayer to the start .............................
    /*     if (
@@ -7494,12 +8000,10 @@ if (
 }
 blockEditorMouseLook =
 appMode == AppMode::Play;
-        glfwPollEvents();
 
 
 
-        ImGuiIO& io = ImGui::GetIO();
-
+ImGuiIO& io = ImGui::GetIO();
       
         bool rightMouseDown =
             glfwGetMouseButton(

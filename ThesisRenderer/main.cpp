@@ -39,6 +39,10 @@
 #include <cmath>
 #include "AudioSystem.h"
 #include <unordered_map>
+#ifdef _WIN32
+#define NOMINMAX
+#include <windows.h>
+#endif
 // ================= CAMERA VARIABLES =================
 //glm::vec3 cameraPos = glm::vec3(0.0f, 0.0f, 3.0f);
 //glm::vec3 cameraFront = glm::vec3(0.0f, 0.0f, -1.0f);
@@ -190,6 +194,9 @@ true;
 bool mainMenuClickPlayed =
 false;
 
+bool mainMenuLinkClicked =
+false;
+
 bool escapeMenuPressed =
 false;
 
@@ -198,6 +205,12 @@ false;
 
 GLuint mainMenuBackgroundTexture =
 0;
+
+const char* mainMenuGithubUrl =
+"https://github.com/Taki-yak";
+
+const char* mainMenuEmailUrl =
+"takiyakhlef49@gmail.com";
 bool useTorchFireFlicker =
 true;
 bool coinWinSoundPlayed =
@@ -2209,6 +2222,33 @@ enum GizmoMode
     ROTATE,
     SCALE
 };
+void OpenMainMenuLink(
+    const char* url
+)
+{
+    if (url == nullptr)
+        return;
+
+#ifdef _WIN32
+    ShellExecuteA(
+        nullptr,
+        "open",
+        url,
+        nullptr,
+        nullptr,
+        SW_SHOWNORMAL
+    );
+#else
+    std::string command =
+        std::string("xdg-open \"") +
+        url +
+        "\"";
+
+    std::system(
+        command.c_str()
+    );
+#endif
+}
 enum class MainMenuAction
 {
     None,
@@ -2269,6 +2309,73 @@ bool DrawMainMenuButton(
             maxPoint,
             borderColor,
             6.0f,
+            0,
+            2.0f
+        );
+    }
+
+    return clicked;
+}
+bool DrawMainMenuIconButton(
+    const char* id,
+    const ImVec2& position,
+    const ImVec2& size
+)
+{
+    ImGui::SetCursorScreenPos(
+        position
+    );
+
+    ImGui::InvisibleButton(
+        id,
+        size
+    );
+
+    bool hovered =
+        ImGui::IsItemHovered();
+
+    bool clicked =
+        ImGui::IsItemClicked();
+
+    if (hovered)
+    {
+        ImDrawList* drawList =
+            ImGui::GetWindowDrawList();
+
+        ImVec2 minPoint =
+            ImVec2(
+                position.x,
+                position.y
+            );
+
+        ImVec2 maxPoint =
+            ImVec2(
+                position.x + size.x,
+                position.y + size.y
+            );
+
+        drawList->AddRectFilled(
+            minPoint,
+            maxPoint,
+            IM_COL32(
+                40,
+                160,
+                255,
+                28
+            ),
+            8.0f
+        );
+
+        drawList->AddRect(
+            minPoint,
+            maxPoint,
+            IM_COL32(
+                120,
+                230,
+                255,
+                170
+            ),
+            8.0f,
             0,
             2.0f
         );
@@ -2453,6 +2560,61 @@ MainMenuAction DrawMainMenuScreen(
     {
         action =
             MainMenuAction::Exit;
+    }
+    float linkButtonWidth =
+        io.DisplaySize.x * 0.055f;
+
+    float linkButtonHeight =
+        io.DisplaySize.y * 0.085f;
+
+    ImVec2 githubPosition =
+        ImVec2(
+            io.DisplaySize.x * 0.825f,
+            io.DisplaySize.y * 0.842f
+        );
+
+    ImVec2 emailPosition =
+        ImVec2(
+            io.DisplaySize.x * 0.905f,
+            io.DisplaySize.y * 0.842f
+        );
+
+    ImVec2 linkButtonSize =
+        ImVec2(
+            linkButtonWidth,
+            linkButtonHeight
+        );
+
+    if (
+        DrawMainMenuIconButton(
+            "MainMenu_GitHub",
+            githubPosition,
+            linkButtonSize
+        )
+        )
+    {
+        OpenMainMenuLink(
+            mainMenuGithubUrl
+        );
+
+        mainMenuLinkClicked =
+            true;
+    }
+
+    if (
+        DrawMainMenuIconButton(
+            "MainMenu_Email",
+            emailPosition,
+            linkButtonSize
+        )
+        )
+    {
+        OpenMainMenuLink(
+            mainMenuEmailUrl
+        );
+
+        mainMenuLinkClicked =
+            true;
     }
     if (ImGui::IsItemHovered())
     {
@@ -7839,6 +8001,16 @@ int main()
                 DrawMainMenuScreen(
                     mainMenuBackgroundTexture
                 );
+            if (mainMenuLinkClicked)
+            {
+                audioSystem.PlayFromStart(
+                    "menu_click",
+                    0.75f
+                );
+
+                mainMenuLinkClicked =
+                    false;
+            }
             if (
                 mainMenuHoveredButton != -1 &&
                 mainMenuHoveredButton != previousMainMenuHoveredButton

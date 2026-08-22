@@ -193,6 +193,9 @@ false;
 bool escapeMenuPressed =
 false;
 
+bool mainMenuMusicPlaying =
+false;
+
 GLuint mainMenuBackgroundTexture =
 0;
 bool useTorchFireFlicker =
@@ -2209,8 +2212,9 @@ enum class MainMenuAction
     Editor,
     Exit
 };
-bool DrawMainMenuInvisibleButton(
+bool DrawMainMenuButton(
     const char* id,
+    const char* label,
     const ImVec2& position,
     const ImVec2& size,
     ImU32 hoverColor,
@@ -2239,30 +2243,63 @@ bool DrawMainMenuInvisibleButton(
     {
         ImVec2 minPoint =
             ImVec2(
-                position.x - 8.0f,
-                position.y - 6.0f
+                position.x,
+                position.y
             );
 
         ImVec2 maxPoint =
             ImVec2(
-                position.x + size.x + 8.0f,
-                position.y + size.y + 6.0f
+                position.x + size.x,
+                position.y + size.y
             );
 
         drawList->AddRectFilled(
             minPoint,
             maxPoint,
             hoverColor,
-            6.0f
+            8.0f
         );
 
         drawList->AddRect(
             minPoint,
             maxPoint,
             borderColor,
-            6.0f,
+            8.0f,
             0,
             3.0f
+        );
+
+        float fontSize =
+            ImGui::GetFontSize() * 1.20f;
+
+        ImVec2 textSize =
+            ImGui::CalcTextSize(
+                label
+            );
+
+        textSize.x *=
+            1.20f;
+
+        textSize.y *=
+            1.20f;
+
+        ImVec2 textPosition =
+            ImVec2(
+                position.x + size.x * 0.50f - textSize.x * 0.50f,
+                position.y + size.y * 0.50f - textSize.y * 0.50f
+            );
+
+        drawList->AddText(
+            nullptr,
+            fontSize,
+            textPosition,
+            IM_COL32(
+                255,
+                255,
+                255,
+                255
+            ),
+            label
         );
     }
 
@@ -2342,30 +2379,30 @@ MainMenuAction DrawMainMenuScreen(
     }
 
     float buttonWidth =
-        io.DisplaySize.x * 0.30f;
+        io.DisplaySize.x * 0.275f;
 
     float buttonHeight =
-        io.DisplaySize.y * 0.095f;
+        io.DisplaySize.y * 0.092f;
 
     float buttonX =
-        io.DisplaySize.x * 0.365f;
+        io.DisplaySize.x * 0.362f;
 
     ImVec2 playPosition =
         ImVec2(
             buttonX,
-            io.DisplaySize.y * 0.435f
+            io.DisplaySize.y * 0.405f
         );
 
     ImVec2 editorPosition =
         ImVec2(
             buttonX,
-            io.DisplaySize.y * 0.565f
+            io.DisplaySize.y * 0.532f
         );
 
     ImVec2 exitPosition =
         ImVec2(
             buttonX,
-            io.DisplaySize.y * 0.700f
+            io.DisplaySize.y * 0.664f
         );
 
     ImVec2 buttonSize =
@@ -2376,26 +2413,27 @@ MainMenuAction DrawMainMenuScreen(
 
     ImU32 hoverFill =
         IM_COL32(
-            60,
-            170,
+            40,
+            155,
             255,
-            55
+            70
         );
 
     ImU32 hoverBorder =
         IM_COL32(
-            120,
-            220,
+            130,
+            230,
             255,
-            230
+            240
         );
 
     MainMenuAction action =
         MainMenuAction::None;
 
     if (
-        DrawMainMenuInvisibleButton(
+        DrawMainMenuButton(
             "MainMenu_Play",
+            "ENTER PLAY MODE",
             playPosition,
             buttonSize,
             hoverFill,
@@ -2408,8 +2446,9 @@ MainMenuAction DrawMainMenuScreen(
     }
 
     if (
-        DrawMainMenuInvisibleButton(
+        DrawMainMenuButton(
             "MainMenu_Editor",
+            "ENTER EDITOR MODE",
             editorPosition,
             buttonSize,
             hoverFill,
@@ -2422,8 +2461,9 @@ MainMenuAction DrawMainMenuScreen(
     }
 
     if (
-        DrawMainMenuInvisibleButton(
+        DrawMainMenuButton(
             "MainMenu_Exit",
+            "EXIT",
             exitPosition,
             buttonSize,
             hoverFill,
@@ -2434,7 +2474,6 @@ MainMenuAction DrawMainMenuScreen(
         action =
             MainMenuAction::Exit;
     }
-
     ImGui::End();
 
     return action;
@@ -7657,7 +7696,17 @@ int main()
         "Assets/Audio/forest_ambience.wav",
         true
     );
+    audioSystem.LoadSound(
+        "menu_music",
+        "Assets/Audio/menu_music.wav",
+        true
+    );
 
+    audioSystem.LoadSound(
+        "menu_click",
+        "Assets/Audio/menu_click.wav",
+        false
+    );
     audioSystem.LoadSound(
         "interaction",
         "Assets/Audio/interaction.wav",
@@ -7701,10 +7750,10 @@ int main()
         "Assets/Audio/coin_lose.wav",
         false
     );
-    audioSystem.Play(
+   /* audioSystem.Play(
         "forest_ambience",
         0.25f
-    );
+    );*/
     audioSystem.LoadSound(
         "monster_zone",
         "Assets/Audio/monster_zone.wav",
@@ -7786,6 +7835,16 @@ int main()
         // ================= MAIN MENU SCREEN =================
         if (showMainMenu)
         {
+            if (!mainMenuMusicPlaying)
+            {
+                audioSystem.Play(
+                    "menu_music",
+                    0.45f
+                );
+
+                mainMenuMusicPlaying =
+                    true;
+            }
             MainMenuAction menuAction =
                 DrawMainMenuScreen(
                     mainMenuBackgroundTexture
@@ -7826,10 +7885,25 @@ int main()
 
             if (mainMenuClickPlayed)
             {
-                audioSystem.PlayFromStart(
-                    "interaction",
-                    0.8f
+                audioSystem.Stop(
+                    "menu_music"
                 );
+
+                mainMenuMusicPlaying =
+                    false;
+
+                audioSystem.PlayFromStart(
+                    "menu_click",
+                    1.0f
+                );
+
+                if (menuAction != MainMenuAction::Exit)
+                {
+                    audioSystem.Play(
+                        "forest_ambience",
+                        0.25f
+                    );
+                }
 
                 mainMenuClickPlayed =
                     false;
@@ -7941,6 +8015,12 @@ int main()
            audioSystem.Stop(
                "monster_chase"
            );
+           audioSystem.Stop(
+               "forest_ambience"
+           );
+
+           mainMenuMusicPlaying =
+               false;
            RecalculateCoinHuntState(
                scene
 

@@ -1758,7 +1758,43 @@ static Mesh* CreateLoadedPrimitiveMeshFromDetail(
 
     int coneSides =
         32;
+    // ================= LOAD STAIRS DETAIL V3A =================
+    if (meshType == "Stairs")
+    {
+        int stairsSteps =
+            5;
 
+        std::string prefix =
+            "stairs_steps=";
+
+        if (
+            primitiveDetail.find(
+                prefix
+            ) == 0
+            )
+        {
+            std::string valueText =
+                primitiveDetail.substr(
+                    prefix.size()
+                );
+
+            stairsSteps =
+                std::atoi(
+                    valueText.c_str()
+                );
+        }
+
+        stairsSteps =
+            ClampLoadedPrimitiveInt(
+                stairsSteps,
+                2,
+                12
+            );
+
+        return CreateLoadedStairsMesh(
+            stairsSteps
+        );
+    }
     if (
         !ParseLoadedPrimitiveDetail(
             primitiveDetail,

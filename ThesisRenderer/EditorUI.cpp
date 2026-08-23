@@ -7308,6 +7308,13 @@ static void UpdateWorldPainterPreview(
             camera,
             paintDistance
         );
+    center.y =
+        GetTerrainHeight(
+            center.x,
+            center.z
+        ) +
+        1.5f +
+        brushRadius * 0.10f;
 
     preview->transform.position =
         center;

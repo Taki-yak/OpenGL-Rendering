@@ -175,7 +175,9 @@ static void SetPrimitiveShapeScale(
             z
         );
 }
-
+static void DrawStairsDetailControls(
+    SceneObject* selectedObject
+);
 static void ClampPrimitiveShapeScale(
     SceneObject* object
 )
@@ -1580,6 +1582,618 @@ static SceneObject* DuplicateSelectedEditorObject(
 static void DrawPrimitiveMeshDetailControls(
     SceneObject* selectedObject
 );
+// ================= STAIRS DETAIL CONTROLS V3A =================
+
+struct StairsDetailState
+{
+    int steps =
+        5;
+};
+
+static std::unordered_map<SceneObject*, StairsDetailState> stairsDetailStates;
+
+static int ClampEditorStairsSteps(
+    int value
+)
+{
+    if (value < 2)
+        return 2;
+
+    if (value > 12)
+        return 12;
+
+    return value;
+}
+
+static void AddEditorStairsVertex(
+    std::vector<float>& data,
+    const glm::vec3& position,
+    const glm::vec3& normal,
+    const glm::vec2& texCoord
+)
+{
+    data.push_back(position.x);
+    data.push_back(position.y);
+    data.push_back(position.z);
+
+    data.push_back(normal.x);
+    data.push_back(normal.y);
+    data.push_back(normal.z);
+
+    data.push_back(texCoord.x);
+    data.push_back(texCoord.y);
+}
+
+static void AddEditorStairsQuad(
+    std::vector<float>& data,
+    const glm::vec3& a,
+    const glm::vec3& b,
+    const glm::vec3& c,
+    const glm::vec3& d,
+    const glm::vec3& normal
+)
+{
+    AddEditorStairsVertex(
+        data,
+        a,
+        normal,
+        glm::vec2(
+            0.0f,
+            0.0f
+        )
+    );
+
+    AddEditorStairsVertex(
+        data,
+        b,
+        normal,
+        glm::vec2(
+            1.0f,
+            0.0f
+        )
+    );
+
+    AddEditorStairsVertex(
+        data,
+        c,
+        normal,
+        glm::vec2(
+            1.0f,
+            1.0f
+        )
+    );
+
+    AddEditorStairsVertex(
+        data,
+        a,
+        normal,
+        glm::vec2(
+            0.0f,
+            0.0f
+        )
+    );
+
+    AddEditorStairsVertex(
+        data,
+        c,
+        normal,
+        glm::vec2(
+            1.0f,
+            1.0f
+        )
+    );
+
+    AddEditorStairsVertex(
+        data,
+        d,
+        normal,
+        glm::vec2(
+            0.0f,
+            1.0f
+        )
+    );
+}
+
+static void AddEditorStairsBox(
+    std::vector<float>& data,
+    const glm::vec3& minPoint,
+    const glm::vec3& maxPoint
+)
+{
+    glm::vec3 p000(
+        minPoint.x,
+        minPoint.y,
+        minPoint.z
+    );
+
+    glm::vec3 p001(
+        minPoint.x,
+        minPoint.y,
+        maxPoint.z
+    );
+
+    glm::vec3 p010(
+        minPoint.x,
+        maxPoint.y,
+        minPoint.z
+    );
+
+    glm::vec3 p011(
+        minPoint.x,
+        maxPoint.y,
+        maxPoint.z
+    );
+
+    glm::vec3 p100(
+        maxPoint.x,
+        minPoint.y,
+        minPoint.z
+    );
+
+    glm::vec3 p101(
+        maxPoint.x,
+        minPoint.y,
+        maxPoint.z
+    );
+
+    glm::vec3 p110(
+        maxPoint.x,
+        maxPoint.y,
+        minPoint.z
+    );
+
+    glm::vec3 p111(
+        maxPoint.x,
+        maxPoint.y,
+        maxPoint.z
+    );
+
+    // Front
+    AddEditorStairsQuad(
+        data,
+        p001,
+        p101,
+        p111,
+        p011,
+        glm::vec3(
+            0.0f,
+            0.0f,
+            1.0f
+        )
+    );
+
+    // Back
+    AddEditorStairsQuad(
+        data,
+        p100,
+        p000,
+        p010,
+        p110,
+        glm::vec3(
+            0.0f,
+            0.0f,
+            -1.0f
+        )
+    );
+
+    // Left
+    AddEditorStairsQuad(
+        data,
+        p000,
+        p001,
+        p011,
+        p010,
+        glm::vec3(
+            -1.0f,
+            0.0f,
+            0.0f
+        )
+    );
+
+    // Right
+    AddEditorStairsQuad(
+        data,
+        p101,
+        p100,
+        p110,
+        p111,
+        glm::vec3(
+            1.0f,
+            0.0f,
+            0.0f
+        )
+    );
+
+    // Top
+    AddEditorStairsQuad(
+        data,
+        p010,
+        p011,
+        p111,
+        p110,
+        glm::vec3(
+            0.0f,
+            1.0f,
+            0.0f
+        )
+    );
+
+    // Bottom
+    AddEditorStairsQuad(
+        data,
+        p000,
+        p100,
+        p101,
+        p001,
+        glm::vec3(
+            0.0f,
+            -1.0f,
+            0.0f
+        )
+    );
+}
+
+static Mesh* CreateEditorStairsMesh(
+    int steps
+)
+{
+    steps =
+        ClampEditorStairsSteps(
+            steps
+        );
+
+    std::vector<float> data;
+
+    float stepDepth =
+        1.0f / static_cast<float>(
+            steps
+            );
+
+    for (int i = 0; i < steps; i++)
+    {
+        float zMin =
+            -0.5f +
+            stepDepth *
+            static_cast<float>(
+                i
+                );
+
+        float zMax =
+            -0.5f +
+            stepDepth *
+            static_cast<float>(
+                i + 1
+                );
+
+        float height =
+            -0.5f +
+            static_cast<float>(
+                i + 1
+                ) /
+            static_cast<float>(
+                steps
+                );
+
+        AddEditorStairsBox(
+            data,
+            glm::vec3(
+                -0.5f,
+                -0.5f,
+                zMin
+            ),
+            glm::vec3(
+                0.5f,
+                height,
+                zMax
+            )
+        );
+    }
+
+    return new Mesh(
+        data.data(),
+        static_cast<int>(
+            data.size() *
+            sizeof(float)
+            )
+    );
+}
+
+static Mesh* GetEditorStairsMesh(
+    int steps
+)
+{
+    steps =
+        ClampEditorStairsSteps(
+            steps
+        );
+
+    static std::unordered_map<int, Mesh*> cachedStairsMeshes;
+
+    auto it =
+        cachedStairsMeshes.find(
+            steps
+        );
+
+    if (it != cachedStairsMeshes.end())
+        return it->second;
+
+    Mesh* mesh =
+        CreateEditorStairsMesh(
+            steps
+        );
+
+    cachedStairsMeshes[steps] =
+        mesh;
+
+    return mesh;
+}
+
+static StairsDetailState LoadStairsDetailStateFromObject(
+    SceneObject* object
+)
+{
+    StairsDetailState state;
+
+    if (object == nullptr)
+        return state;
+
+    std::string detail =
+        object->editorPrimitiveDetail;
+
+    std::string prefix =
+        "stairs_steps=";
+
+    if (
+        detail.find(
+            prefix
+        ) == 0
+        )
+    {
+        std::string valueText =
+            detail.substr(
+                prefix.size()
+            );
+
+        state.steps =
+            std::atoi(
+                valueText.c_str()
+            );
+    }
+
+    state.steps =
+        ClampEditorStairsSteps(
+            state.steps
+        );
+
+    return state;
+}
+
+static void SaveStairsDetailStateToObject(
+    SceneObject* object,
+    const StairsDetailState& state
+)
+{
+    if (object == nullptr)
+        return;
+
+    int steps =
+        ClampEditorStairsSteps(
+            state.steps
+        );
+
+    object->editorMeshType =
+        "Stairs";
+
+    object->editorPrimitiveDetail =
+        "stairs_steps=" +
+        std::to_string(
+            steps
+        );
+}
+
+static void ApplyStairsDetailToObject(
+    SceneObject* object
+)
+{
+    if (object == nullptr)
+        return;
+
+    StairsDetailState& state =
+        stairsDetailStates[object];
+
+    state.steps =
+        ClampEditorStairsSteps(
+            state.steps
+        );
+
+    object->mesh =
+        GetEditorStairsMesh(
+            state.steps
+        );
+
+    object->editorMeshType =
+        "Stairs";
+
+    SaveStairsDetailStateToObject(
+        object,
+        state
+    );
+
+    object->boundingRadius =
+        2.0f;
+}
+
+static void DrawStairsDetailControls(
+    SceneObject* selectedObject
+)
+{
+    if (selectedObject == nullptr)
+        return;
+
+    if (selectedObject->editorMeshType != "Stairs")
+        return;
+
+    if (
+        stairsDetailStates.find(
+            selectedObject
+        ) == stairsDetailStates.end()
+        )
+    {
+        stairsDetailStates[selectedObject] =
+            LoadStairsDetailStateFromObject(
+                selectedObject
+            );
+    }
+
+    StairsDetailState& state =
+        stairsDetailStates[selectedObject];
+
+    if (
+        ImGui::CollapsingHeader(
+            "Stairs Detail Controls V3A",
+            ImGuiTreeNodeFlags_DefaultOpen
+        )
+        )
+    {
+        ImGui::Text(
+            "Procedural stairs mesh"
+        );
+
+        ImGui::Separator();
+
+        int steps =
+            state.steps;
+
+        if (
+            ImGui::SliderInt(
+                "Step Count",
+                &steps,
+                2,
+                12
+            )
+            )
+        {
+            state.steps =
+                steps;
+
+            ApplyStairsDetailToObject(
+                selectedObject
+            );
+        }
+
+        if (
+            ImGui::Button(
+                "Regenerate Stairs"
+            )
+            )
+        {
+            ApplyStairsDetailToObject(
+                selectedObject
+            );
+        }
+
+        ImGui::Separator();
+
+        if (
+            ImGui::Button(
+                "Low Stairs"
+            )
+            )
+        {
+            state.steps =
+                4;
+
+            selectedObject->transform.scale =
+                glm::vec3(
+                    2.5f,
+                    0.45f,
+                    3.0f
+                );
+
+            ApplyStairsDetailToObject(
+                selectedObject
+            );
+        }
+
+        ImGui::SameLine();
+
+        if (
+            ImGui::Button(
+                "Tall Stairs"
+            )
+            )
+        {
+            state.steps =
+                8;
+
+            selectedObject->transform.scale =
+                glm::vec3(
+                    2.0f,
+                    1.8f,
+                    3.0f
+                );
+
+            ApplyStairsDetailToObject(
+                selectedObject
+            );
+        }
+
+        if (
+            ImGui::Button(
+                "Wide Stairs"
+            )
+            )
+        {
+            state.steps =
+                6;
+
+            selectedObject->transform.scale =
+                glm::vec3(
+                    4.0f,
+                    1.0f,
+                    3.0f
+                );
+
+            ApplyStairsDetailToObject(
+                selectedObject
+            );
+        }
+
+        ImGui::SameLine();
+
+        if (
+            ImGui::Button(
+                "Reset Stairs"
+            )
+            )
+        {
+            state.steps =
+                5;
+
+            selectedObject->transform.scale =
+                glm::vec3(
+                    2.0f,
+                    1.0f,
+                    2.5f
+                );
+
+            ApplyStairsDetailToObject(
+                selectedObject
+            );
+        }
+
+        ImGui::Separator();
+
+        ImGui::Text(
+            "Saved Detail:"
+        );
+
+        ImGui::TextWrapped(
+            "%s",
+            selectedObject->editorPrimitiveDetail.c_str()
+        );
+    }
+}
 void EditorUI::DrawInspector(
     SceneObject* selectedObject
 )
@@ -1699,6 +2313,9 @@ void EditorUI::DrawInspector(
             selectedObject
         );
         DrawPrimitiveMeshDetailControls(
+            selectedObject
+        );
+        DrawStairsDetailControls(
             selectedObject
         );
         ImGui::Separator();

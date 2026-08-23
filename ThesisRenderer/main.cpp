@@ -1,4 +1,7 @@
-﻿#include <glad/glad.h>
+﻿#ifndef NOMINMAX
+#define NOMINMAX
+#endif
+#include <glad/glad.h>
 #include <GLFW/glfw3.h>
 #include <iostream>
 #include "stb_image.h"
@@ -39,9 +42,11 @@
 #include <cmath>
 #include "AudioSystem.h"
 #include <unordered_map>
-#ifdef _WIN32
-#define NOMINMAX
-#include <windows.h>
+#ifdef max
+#undef max
+#endif
+#ifdef min
+#undef min
 #endif
 // ================= CAMERA VARIABLES =================
 //glm::vec3 cameraPos = glm::vec3(0.0f, 0.0f, 3.0f);
@@ -2265,25 +2270,23 @@ void OpenMainMenuLink(
     if (url == nullptr)
         return;
 
+    std::string command;
+
 #ifdef _WIN32
-    ShellExecuteA(
-        nullptr,
-        "open",
-        url,
-        nullptr,
-        nullptr,
-        SW_SHOWNORMAL
-    );
-#else
-    std::string command =
-        std::string("xdg-open \"") +
-        url +
+    command =
+        "start \"\" \"" +
+        std::string(url) +
         "\"";
+#else
+    command =
+        "xdg-open \"" +
+        std::string(url) +
+        "\"";
+#endif
 
     std::system(
         command.c_str()
     );
-#endif
 }
 enum class MainMenuAction
 {

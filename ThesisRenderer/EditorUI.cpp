@@ -6979,6 +6979,572 @@ static void BuildDemoScene(
         << "Demo scene built successfully."
         << std::endl;
 }
+// ================= WORLD PAINTER V1 + V2 =================
+
+static float WorldPainterRandomFloat(
+    float minValue,
+    float maxValue
+)
+{
+    float t =
+        static_cast<float>(
+            std::rand()
+            ) /
+        static_cast<float>(
+            RAND_MAX
+            );
+
+    return
+        minValue +
+        (maxValue - minValue) *
+        t;
+}
+
+static glm::vec3 GetWorldPainterCenter(
+    Camera& camera,
+    float distance
+)
+{
+    glm::vec3 forward =
+        glm::vec3(
+            camera.Front.x,
+            0.0f,
+            camera.Front.z
+        );
+
+    if (glm::length(forward) < 0.001f)
+    {
+        forward =
+            glm::vec3(
+                0.0f,
+                0.0f,
+                -1.0f
+            );
+    }
+
+    forward =
+        glm::normalize(
+            forward
+        );
+
+    glm::vec3 center =
+        camera.Position +
+        forward *
+        distance;
+
+    center =
+        SnapEditorPositionToTerrain(
+            center,
+            0.15f
+        );
+
+    return center;
+}
+
+static void AddWorldPainterVertex(
+    std::vector<float>& data,
+    const glm::vec3& position,
+    const glm::vec3& normal,
+    const glm::vec2& texCoord
+)
+{
+    data.push_back(position.x);
+    data.push_back(position.y);
+    data.push_back(position.z);
+
+    data.push_back(normal.x);
+    data.push_back(normal.y);
+    data.push_back(normal.z);
+
+    data.push_back(texCoord.x);
+    data.push_back(texCoord.y);
+}
+
+static Mesh* CreateWorldPainterPreviewMesh()
+{
+    std::vector<float> data;
+
+    const float pi =
+        3.14159265359f;
+
+    int segments =
+        96;
+
+    float outerRadius =
+        1.0f;
+
+    float innerRadius =
+        0.94f;
+
+    glm::vec3 normal =
+        glm::vec3(
+            0.0f,
+            1.0f,
+            0.0f
+        );
+
+    for (int i = 0; i < segments; i++)
+    {
+        float a0 =
+            static_cast<float>(i) /
+            static_cast<float>(segments) *
+            pi *
+            2.0f;
+
+        float a1 =
+            static_cast<float>(i + 1) /
+            static_cast<float>(segments) *
+            pi *
+            2.0f;
+
+        glm::vec3 outer0 =
+            glm::vec3(
+                std::cos(a0) * outerRadius,
+                0.0f,
+                std::sin(a0) * outerRadius
+            );
+
+        glm::vec3 outer1 =
+            glm::vec3(
+                std::cos(a1) * outerRadius,
+                0.0f,
+                std::sin(a1) * outerRadius
+            );
+
+        glm::vec3 inner0 =
+            glm::vec3(
+                std::cos(a0) * innerRadius,
+                0.0f,
+                std::sin(a0) * innerRadius
+            );
+
+        glm::vec3 inner1 =
+            glm::vec3(
+                std::cos(a1) * innerRadius,
+                0.0f,
+                std::sin(a1) * innerRadius
+            );
+
+        AddWorldPainterVertex(
+            data,
+            inner0,
+            normal,
+            glm::vec2(0.0f, 0.0f)
+        );
+
+        AddWorldPainterVertex(
+            data,
+            outer0,
+            normal,
+            glm::vec2(1.0f, 0.0f)
+        );
+
+        AddWorldPainterVertex(
+            data,
+            outer1,
+            normal,
+            glm::vec2(1.0f, 1.0f)
+        );
+
+        AddWorldPainterVertex(
+            data,
+            inner0,
+            normal,
+            glm::vec2(0.0f, 0.0f)
+        );
+
+        AddWorldPainterVertex(
+            data,
+            outer1,
+            normal,
+            glm::vec2(1.0f, 1.0f)
+        );
+
+        AddWorldPainterVertex(
+            data,
+            inner1,
+            normal,
+            glm::vec2(0.0f, 1.0f)
+        );
+    }
+
+    return new Mesh(
+        data.data(),
+        static_cast<int>(
+            data.size() *
+            sizeof(float)
+            )
+    );
+}
+
+static Mesh* GetWorldPainterPreviewMesh()
+{
+    static Mesh* previewMesh =
+        nullptr;
+
+    if (previewMesh == nullptr)
+    {
+        previewMesh =
+            CreateWorldPainterPreviewMesh();
+    }
+
+    return previewMesh;
+}
+
+static SceneObject* FindWorldPainterPreview(
+    Scene& scene
+)
+{
+    for (SceneObject* object : scene.objects)
+    {
+        if (object == nullptr)
+            continue;
+
+        if (object->name == "World Painter Preview")
+            return object;
+    }
+
+    return nullptr;
+}
+
+static void UpdateWorldPainterPreview(
+    Scene& scene,
+    Shader* shader,
+    Camera& camera,
+    float brushRadius,
+    float paintDistance,
+    bool visible
+)
+{
+    SceneObject* preview =
+        FindWorldPainterPreview(
+            scene
+        );
+
+    if (preview == nullptr)
+    {
+        Material* previewMaterial =
+            new Material(
+                nullptr
+            );
+
+        previewMaterial->tint =
+            glm::vec3(
+                0.0f,
+                0.85f,
+                1.0f
+            );
+
+        previewMaterial->ambient =
+            glm::vec3(
+                0.0f,
+                0.45f,
+                0.65f
+            );
+
+        previewMaterial->diffuse =
+            glm::vec3(
+                0.0f,
+                0.85f,
+                1.0f
+            );
+
+        previewMaterial->specular =
+            glm::vec3(
+                0.1f,
+                0.4f,
+                0.7f
+            );
+
+        previewMaterial->shininess =
+            32.0f;
+
+        previewMaterial->wireframe =
+            true;
+
+        preview =
+            new SceneObject(
+                GetWorldPainterPreviewMesh(),
+                shader,
+                previewMaterial
+            );
+
+        preview->name =
+            "World Painter Preview";
+
+        preview->assetId =
+            "World Painter Preview";
+
+        preview->assetType =
+            AssetType::Prop;
+        preview->spawnSource =
+            SpawnSource::Procedural;
+
+        preview->persistent =
+            false;
+
+        preview->showInHierarchy =
+            false;
+
+        preview->isCollider =
+            false;
+
+        preview->boundingRadius =
+            200.0f;
+
+        scene.AddObject(
+            preview
+        );
+    }
+
+    preview->visible =
+        visible;
+
+    if (!visible)
+        return;
+
+    glm::vec3 center =
+        GetWorldPainterCenter(
+            camera,
+            paintDistance
+        );
+
+    preview->transform.position =
+        center;
+
+    preview->transform.scale =
+        glm::vec3(
+            brushRadius,
+            1.0f,
+            brushRadius
+        );
+
+    preview->transform.rotation =
+        glm::vec3(
+            0.0f
+        );
+}
+
+static void SpawnWorldPaintedModel(
+    Scene& scene,
+    SceneObject*& selectedObject,
+    Shader* shader,
+    Model* model,
+    const std::string& objectName,
+    const std::string& modelPath,
+    const glm::vec3& position,
+    float scaleValue,
+    bool collider,
+    bool randomRotation
+)
+{
+    if (model == nullptr)
+        return;
+
+    SceneObject* object =
+        new SceneObject(
+            model,
+            shader
+        );
+
+    object->name =
+        objectName;
+
+    object->transform.position =
+        SnapEditorPositionToTerrain(
+            position,
+            2.0f
+        );
+
+    object->transform.scale =
+        glm::vec3(
+            scaleValue
+        );
+
+    if (randomRotation)
+    {
+        object->transform.rotation =
+            glm::vec3(
+                0.0f,
+                WorldPainterRandomFloat(
+                    0.0f,
+                    360.0f
+                ),
+                0.0f
+            );
+    }
+
+    object->isCollider =
+        collider;
+
+    object->colliderRadius =
+        scaleValue *
+        0.8f;
+
+    object->boundingRadius =
+        60.0f;
+
+    object->assetId =
+        objectName;
+
+    object->assetType =
+        AssetType::Prop;
+
+    object->spawnSource =
+        SpawnSource::Manual;
+
+    object->persistent =
+        true;
+
+    object->showInHierarchy =
+        true;
+
+    SetEditorSaveMetadata(
+        object,
+        "Model",
+        "None",
+        modelPath,
+        ""
+    );
+
+    scene.AddObject(
+        object
+    );
+
+    selectedObject =
+        object;
+}
+
+static void PaintWorldBrush(
+    Scene& scene,
+    SceneObject*& selectedObject,
+    Shader* shader,
+    Camera& camera,
+    int brushType,
+    float brushRadius,
+    int density,
+    float paintDistance,
+    float minScale,
+    float maxScale,
+    bool randomRotation,
+    Model* pineTreeModel,
+    Model* rockModel,
+    Model* grassModel,
+    Model* bushModel
+)
+{
+    glm::vec3 center =
+        GetWorldPainterCenter(
+            camera,
+            paintDistance
+        );
+
+    for (int i = 0; i < density; i++)
+    {
+        float angle =
+            WorldPainterRandomFloat(
+                0.0f,
+                6.28318530718f
+            );
+
+        float radius =
+            std::sqrt(
+                WorldPainterRandomFloat(
+                    0.0f,
+                    1.0f
+                )
+            ) *
+            brushRadius;
+
+        glm::vec3 position =
+            center;
+
+        position.x +=
+            std::cos(angle) *
+            radius;
+
+        position.z +=
+            std::sin(angle) *
+            radius;
+
+        int finalBrushType =
+            brushType;
+
+        if (brushType == 4)
+        {
+            finalBrushType =
+                std::rand() %
+                4;
+        }
+
+        float scaleValue =
+            WorldPainterRandomFloat(
+                minScale,
+                maxScale
+            );
+
+        if (finalBrushType == 0)
+        {
+            SpawnWorldPaintedModel(
+                scene,
+                selectedObject,
+                shader,
+                pineTreeModel,
+                "Painted Pine Tree",
+                "Assets/Models/Environment/NaturePack/PineTree_1.obj",
+                position,
+                scaleValue,
+                false,
+                randomRotation
+            );
+        }
+        else if (finalBrushType == 1)
+        {
+            SpawnWorldPaintedModel(
+                scene,
+                selectedObject,
+                shader,
+                rockModel,
+                "Painted Rock",
+                "Assets/Models/Environment/NaturePack/Rock_1.obj",
+                position,
+                scaleValue,
+                true,
+                randomRotation
+            );
+        }
+        else if (finalBrushType == 2)
+        {
+            SpawnWorldPaintedModel(
+                scene,
+                selectedObject,
+                shader,
+                grassModel,
+                "Painted Grass",
+                "Assets/Models/Environment/NaturePack/Grass.obj",
+                position,
+                scaleValue,
+                false,
+                randomRotation
+            );
+        }
+        else if (finalBrushType == 3)
+        {
+            SpawnWorldPaintedModel(
+                scene,
+                selectedObject,
+                shader,
+                bushModel,
+                "Painted Bush",
+                "Assets/Models/Environment/NaturePack/Bush_1.obj",
+                position,
+                scaleValue,
+                false,
+                randomRotation
+            );
+        }
+    }
+}
 void EditorUI::DrawAssetBrowser(
     Scene& scene,
     SceneObject*& selectedObject,
@@ -7221,6 +7787,191 @@ void EditorUI::DrawAssetBrowser(
 
     if (ImGui::BeginTabBar("AssetBrowserTabs"))
     {
+        if (ImGui::BeginTabItem("World Painter"))
+        {
+            static int brushType =
+                4;
+
+            static float brushRadius =
+                14.0f;
+
+            static int brushDensity =
+                18;
+
+            static float paintDistance =
+                18.0f;
+
+            static float minScale =
+                0.75f;
+
+            static float maxScale =
+                1.75f;
+
+            static bool randomRotation =
+                true;
+
+            static bool showBrushPreview =
+                true;
+
+            const char* brushNames[] =
+            {
+                "Pine Trees",
+                "Rocks",
+                "Grass",
+                "Bushes",
+                "Mixed Forest"
+            };
+
+            ImGui::Text(
+                "Terrain Object Painting Tool"
+            );
+
+            ImGui::Separator();
+
+            ImGui::Combo(
+                "Brush Type",
+                &brushType,
+                brushNames,
+                IM_ARRAYSIZE(
+                    brushNames
+                )
+            );
+
+            ImGui::SliderFloat(
+                "Brush Radius",
+                &brushRadius,
+                4.0f,
+                40.0f
+            );
+
+            ImGui::SliderInt(
+                "Density",
+                &brushDensity,
+                1,
+                80
+            );
+
+            ImGui::SliderFloat(
+                "Paint Distance",
+                &paintDistance,
+                6.0f,
+                70.0f
+            );
+
+            ImGui::SliderFloat(
+                "Min Scale",
+                &minScale,
+                0.25f,
+                3.0f
+            );
+
+            ImGui::SliderFloat(
+                "Max Scale",
+                &maxScale,
+                0.25f,
+                4.0f
+            );
+
+            if (maxScale < minScale)
+            {
+                maxScale =
+                    minScale;
+            }
+
+            ImGui::Checkbox(
+                "Random Rotation",
+                &randomRotation
+            );
+
+            ImGui::Checkbox(
+                "Show Brush Preview",
+                &showBrushPreview
+            );
+
+            UpdateWorldPainterPreview(
+                scene,
+                shader,
+                camera,
+                brushRadius,
+                paintDistance,
+                showBrushPreview
+            );
+
+            ImGui::Separator();
+
+            if (ImGui::Button("Paint Brush"))
+            {
+                PaintWorldBrush(
+                    scene,
+                    selectedObject,
+                    shader,
+                    camera,
+                    brushType,
+                    brushRadius,
+                    brushDensity,
+                    paintDistance,
+                    minScale,
+                    maxScale,
+                    randomRotation,
+                    pineTreeModel,
+                    rockModel,
+                    grassModel,
+                    bushModel
+                );
+            }
+
+            ImGui::SameLine();
+
+            if (ImGui::Button("Small Forest Patch"))
+            {
+                PaintWorldBrush(
+                    scene,
+                    selectedObject,
+                    shader,
+                    camera,
+                    4,
+                    10.0f,
+                    18,
+                    paintDistance,
+                    0.65f,
+                    1.55f,
+                    true,
+                    pineTreeModel,
+                    rockModel,
+                    grassModel,
+                    bushModel
+                );
+            }
+
+            ImGui::SameLine();
+
+            if (ImGui::Button("Dense Grass Patch"))
+            {
+                PaintWorldBrush(
+                    scene,
+                    selectedObject,
+                    shader,
+                    camera,
+                    2,
+                    16.0f,
+                    50,
+                    paintDistance,
+                    0.35f,
+                    0.95f,
+                    true,
+                    pineTreeModel,
+                    rockModel,
+                    grassModel,
+                    bushModel
+                );
+            }
+
+            ImGui::TextWrapped(
+                "Move the editor camera, adjust Paint Distance, then press Paint Brush. The cyan ring shows where objects will be painted."
+            );
+
+            ImGui::EndTabItem();
+        }
         if (ImGui::BeginTabItem("Nature"))
         {
             ImGui::Text("Trees");

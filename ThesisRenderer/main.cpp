@@ -7997,6 +7997,26 @@ int main()
     );
 
     playerAnimationLibrary.PrintSummary();
+    AnimatedModel* previewAnimatedPlayer =
+        playerAnimationLibrary.GetAnimation(
+            "Idle"
+        );
+
+    bool showAnimatedPlayerPreview =
+        true;
+
+    glm::vec3 animatedPreviewPosition =
+        glm::vec3(
+            0.0f,
+            GetTerrainHeight(
+                0.0f,
+                -8.0f
+            ) + 0.05f,
+            -8.0f
+        );
+
+    float animatedPreviewScale =
+        0.018f;
     while (!glfwWindowShouldClose(window))
     {
         glfwPollEvents();
@@ -9929,7 +9949,114 @@ ImGuiIO& io = ImGui::GetIO();
                 culledObjects++;
             }
         }
+        // ================= DRAW ANIMATED PLAYER STATIC PREVIEW V1B =================
+        if (
+            showAnimatedPlayerPreview &&
+            previewAnimatedPlayer != nullptr &&
+            previewAnimatedPlayer->HasPreviewMesh()
+            )
+        {
+            shader.use();
 
+            glm::mat4 animatedModelMatrix =
+                glm::mat4(
+                    1.0f
+                );
+
+            animatedModelMatrix =
+                glm::translate(
+                    animatedModelMatrix,
+                    animatedPreviewPosition
+                );
+
+            animatedModelMatrix =
+                glm::rotate(
+                    animatedModelMatrix,
+                    glm::radians(
+                        180.0f
+                    ),
+                    glm::vec3(
+                        0.0f,
+                        1.0f,
+                        0.0f
+                    )
+                );
+
+            animatedModelMatrix =
+                glm::scale(
+                    animatedModelMatrix,
+                    glm::vec3(
+                        animatedPreviewScale
+                    )
+                );
+
+            shader.setMat4(
+                "model",
+                glm::value_ptr(
+                    animatedModelMatrix
+                )
+            );
+
+            shader.setBool(
+                "useTexture",
+                false
+            );
+
+            shader.setBool(
+                "isTerrain",
+                false
+            );
+
+            shader.setBool(
+                "isSelected",
+                false
+            );
+
+            shader.setVec3(
+                "materialTint",
+                glm::vec3(
+                    0.75f,
+                    0.80f,
+                    0.95f
+                )
+            );
+
+            shader.setVec3(
+                "materialAmbient",
+                glm::vec3(
+                    0.25f,
+                    0.25f,
+                    0.30f
+                )
+            );
+
+            shader.setVec3(
+                "materialDiffuse",
+                glm::vec3(
+                    0.75f,
+                    0.80f,
+                    0.95f
+                )
+            );
+
+            shader.setVec3(
+                "materialSpecular",
+                glm::vec3(
+                    0.08f,
+                    0.08f,
+                    0.10f
+                )
+            );
+
+            shader.setFloat(
+                "materialShininess",
+                16.0f
+            );
+
+            previewAnimatedPlayer->DrawStaticPreview(
+                shader
+            );
+        }
         // ===== DRAW MODELS (each binds its own texture) =====
   /*      glm::mat4 model1 = glm::mat4(1.0f);
         model1 = glm::translate(model1, glm::vec3(-3.0f, 2.0f, -3.0f));

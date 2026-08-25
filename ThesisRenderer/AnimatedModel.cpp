@@ -5,6 +5,229 @@ AnimatedModel::AnimatedModel(const std::string& path)
 {
     Load(path);
 }
+AnimatedModel::~AnimatedModel()
+{
+    if (previewVBO != 0)
+    {
+        glDeleteBuffers(
+            1,
+            &previewVBO
+        );
+
+        previewVBO =
+            0;
+    }
+
+    if (previewVAO != 0)
+    {
+        glDeleteVertexArrays(
+            1,
+            &previewVAO
+        );
+
+        previewVAO =
+            0;
+    }
+}
+
+void AnimatedModel::AddPreviewVertex(
+    const AnimatedVertex& vertex
+)
+{
+    previewVertexData.push_back(
+        vertex.position.x
+    );
+
+    previewVertexData.push_back(
+        vertex.position.y
+    );
+
+    previewVertexData.push_back(
+        vertex.position.z
+    );
+
+    previewVertexData.push_back(
+        vertex.normal.x
+    );
+
+    previewVertexData.push_back(
+        vertex.normal.y
+    );
+
+    previewVertexData.push_back(
+        vertex.normal.z
+    );
+
+    previewVertexData.push_back(
+        vertex.texCoords.x
+    );
+
+    previewVertexData.push_back(
+        vertex.texCoords.y
+    );
+}
+
+void AnimatedModel::BuildStaticPreviewMesh()
+{
+    previewReady =
+        false;
+
+    previewVertexCount =
+        0;
+
+    if (previewVertexData.empty())
+    {
+        std::cout
+            << "Animated preview mesh has no vertex data."
+            << std::endl;
+
+        return;
+    }
+
+    if (previewVBO != 0)
+    {
+        glDeleteBuffers(
+            1,
+            &previewVBO
+        );
+
+        previewVBO =
+            0;
+    }
+
+    if (previewVAO != 0)
+    {
+        glDeleteVertexArrays(
+            1,
+            &previewVAO
+        );
+
+        previewVAO =
+            0;
+    }
+
+    glGenVertexArrays(
+        1,
+        &previewVAO
+    );
+
+    glGenBuffers(
+        1,
+        &previewVBO
+    );
+
+    glBindVertexArray(
+        previewVAO
+    );
+
+    glBindBuffer(
+        GL_ARRAY_BUFFER,
+        previewVBO
+    );
+
+    glBufferData(
+        GL_ARRAY_BUFFER,
+        previewVertexData.size() *
+        sizeof(float),
+        previewVertexData.data(),
+        GL_STATIC_DRAW
+    );
+
+    int stride =
+        8 *
+        sizeof(float);
+
+    glVertexAttribPointer(
+        0,
+        3,
+        GL_FLOAT,
+        GL_FALSE,
+        stride,
+        (void*)0
+    );
+
+    glEnableVertexAttribArray(
+        0
+    );
+
+    glVertexAttribPointer(
+        1,
+        3,
+        GL_FLOAT,
+        GL_FALSE,
+        stride,
+        (void*)(3 * sizeof(float))
+    );
+
+    glEnableVertexAttribArray(
+        1
+    );
+
+    glVertexAttribPointer(
+        2,
+        2,
+        GL_FLOAT,
+        GL_FALSE,
+        stride,
+        (void*)(6 * sizeof(float))
+    );
+
+    glEnableVertexAttribArray(
+        2
+    );
+
+    glBindBuffer(
+        GL_ARRAY_BUFFER,
+        0
+    );
+
+    glBindVertexArray(
+        0
+    );
+
+    previewVertexCount =
+        static_cast<int>(
+            previewVertexData.size() / 8
+            );
+
+    previewReady =
+        true;
+
+    std::cout
+        << "Animated static preview built. Vertices for drawing: "
+        << previewVertexCount
+        << std::endl;
+}
+
+void AnimatedModel::DrawStaticPreview(
+    Shader& shader
+)
+{
+    if (!loaded)
+        return;
+
+    if (!previewReady)
+        return;
+
+    if (previewVAO == 0)
+        return;
+
+    shader.use();
+
+    glBindVertexArray(
+        previewVAO
+    );
+
+    glDrawArrays(
+        GL_TRIANGLES,
+        0,
+        previewVertexCount
+    );
+
+    glBindVertexArray(
+        0
+    );
+}
 void AnimatedModel::Load(
     const std::string& path
 )
@@ -14,7 +237,13 @@ void AnimatedModel::Load(
 
     loaded =
         false;
+    previewVertexData.clear();
 
+    previewVertexCount =
+        0;
+
+    previewReady =
+        false;
     vertices.clear();
     boneInfoMap.clear();
     animationNames.clear();
@@ -151,7 +380,7 @@ void AnimatedModel::Load(
         << "Total bones found: "
         << boneCounter
         << std::endl;
-
+    BuildStaticPreviewMesh();
     loaded =
         true;
 }
@@ -237,7 +466,32 @@ void AnimatedModel::ProcessMesh(
         scene,
         vertexStartIndex
     );
+    for (unsigned int faceIndex = 0;
+        faceIndex < mesh->mNumFaces;
+        faceIndex++)
+    {
+        aiFace face =
+            mesh->mFaces[faceIndex];
 
+        if (face.mNumIndices != 3)
+            continue;
+
+        for (unsigned int index = 0;
+            index < face.mNumIndices;
+            index++)
+        {
+            unsigned int vertexIndex =
+                vertexStartIndex +
+                face.mIndices[index];
+
+            if (vertexIndex < vertices.size())
+            {
+                AddPreviewVertex(
+                    vertices[vertexIndex]
+                );
+            }
+        }
+    }
     std::cout
         << "Processed mesh vertices: "
         << mesh->mNumVertices

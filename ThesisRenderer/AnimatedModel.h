@@ -14,14 +14,26 @@
 
 #include "AnimatedVertex.h"
 #include "BoneInfo.h"
-
+#include "Shader.h"
+#include <glad/glad.h>
 class AnimatedModel
 {
 public:
     AnimatedModel(
         const std::string& path
     );
+    ~AnimatedModel();
 
+    void DrawStaticPreview(
+        Shader& shader
+    );
+
+    bool HasPreviewMesh() const
+    {
+        return
+            previewReady &&
+            previewVertexCount > 0;
+    }
     void Load(
         const std::string& path
     );
@@ -74,7 +86,19 @@ private:
 
     int animationCount =
         0;
+    unsigned int previewVAO =
+        0;
 
+    unsigned int previewVBO =
+        0;
+
+    int previewVertexCount =
+        0;
+
+    bool previewReady =
+        false;
+
+    std::vector<float> previewVertexData;
     std::vector<std::string> animationNames;
 
     std::vector<AnimatedVertex> vertices;
@@ -93,7 +117,11 @@ private:
         aiMesh* mesh,
         const aiScene* scene
     );
+    void AddPreviewVertex(
+        const AnimatedVertex& vertex
+    );
 
+    void BuildStaticPreviewMesh();
     void ExtractBoneWeightForVertices(
         aiMesh* mesh,
         const aiScene* scene,

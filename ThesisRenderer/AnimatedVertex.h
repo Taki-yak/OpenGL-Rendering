@@ -16,10 +16,30 @@ struct AnimatedVertex
 
     AnimatedVertex()
     {
+        position =
+            glm::vec3(
+                0.0f
+            );
+
+        normal =
+            glm::vec3(
+                0.0f,
+                1.0f,
+                0.0f
+            );
+
+        texCoords =
+            glm::vec2(
+                0.0f
+            );
+
         for (int i = 0; i < MAX_BONE_INFLUENCE; i++)
         {
-            boneIDs[i] = -1;
-            weights[i] = 0.0f;
+            boneIDs[i] =
+                -1;
+
+            weights[i] =
+                0.0f;
         }
     }
 };

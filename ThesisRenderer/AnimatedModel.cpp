@@ -1,41 +1,52 @@
 #include "AnimatedModel.h"
 #include <glm/gtc/type_ptr.hpp>
 #include <fstream>
-#include <windows.h>
 AnimatedModel::AnimatedModel(const std::string& path)
 {
     Load(path);
 }
-
-void AnimatedModel::Load(const std::string& path)
+void AnimatedModel::Load(
+    const std::string& path
+)
 {
-    char currentDir[MAX_PATH];
+    sourcePath =
+        path;
 
-    GetCurrentDirectoryA(
-        MAX_PATH,
-        currentDir
-    );
+    loaded =
+        false;
+
+    vertices.clear();
+    boneInfoMap.clear();
+    animationNames.clear();
+
+    boneCounter =
+        0;
+
+    meshCount =
+        0;
+
+    animationCount =
+        0;
 
     std::cout
-        << "Current working directory: "
-        << currentDir
-        << std::endl;
-
-    std::cout
-        << "Trying to load FBX: "
+        << "Trying to load animated FBX: "
         << path
         << std::endl;
-    std::ifstream fileCheck(path);
+
+    std::ifstream fileCheck(
+        path
+    );
 
     if (!fileCheck.good())
     {
         std::cout
-            << "FBX FILE NOT FOUND: "
+            << "ANIMATION FBX FILE NOT FOUND: "
             << path
             << std::endl;
 
         return;
     }
+
     Assimp::Importer importer;
 
     const aiScene* scene =
@@ -57,6 +68,16 @@ void AnimatedModel::Load(const std::string& path)
         return;
     }
 
+    meshCount =
+        static_cast<int>(
+            scene->mNumMeshes
+            );
+
+    animationCount =
+        static_cast<int>(
+            scene->mNumAnimations
+            );
+
     std::cout
         << "Animated model loaded: "
         << path
@@ -64,12 +85,12 @@ void AnimatedModel::Load(const std::string& path)
 
     std::cout
         << "Meshes: "
-        << scene->mNumMeshes
+        << meshCount
         << std::endl;
 
     std::cout
         << "Animations: "
-        << scene->mNumAnimations
+        << animationCount
         << std::endl;
 
     ProcessNode(
@@ -77,26 +98,32 @@ void AnimatedModel::Load(const std::string& path)
         scene
     );
 
-    std::cout
-        << "Total animated vertices: "
-        << vertices.size()
-        << std::endl;
-
-    std::cout
-        << "Total bones found: "
-        << boneCounter
-        << std::endl;
-
     for (unsigned int i = 0; i < scene->mNumAnimations; i++)
     {
         aiAnimation* animation =
             scene->mAnimations[i];
 
+        std::string animationName =
+            animation->mName.C_Str();
+
+        if (animationName.empty())
+        {
+            animationName =
+                "Animation_" +
+                std::to_string(
+                    i
+                );
+        }
+
+        animationNames.push_back(
+            animationName
+        );
+
         std::cout
             << "Animation "
             << i
             << ": "
-            << animation->mName.C_Str()
+            << animationName
             << std::endl;
 
         std::cout
@@ -114,6 +141,19 @@ void AnimatedModel::Load(const std::string& path)
             << animation->mNumChannels
             << std::endl;
     }
+
+    std::cout
+        << "Total animated vertices: "
+        << vertices.size()
+        << std::endl;
+
+    std::cout
+        << "Total bones found: "
+        << boneCounter
+        << std::endl;
+
+    loaded =
+        true;
 }
 
 void AnimatedModel::ProcessNode(
@@ -194,7 +234,8 @@ void AnimatedModel::ProcessMesh(
 
     ExtractBoneWeightForVertices(
         mesh,
-        scene
+        scene,
+        vertexStartIndex
     );
 
     std::cout
@@ -207,7 +248,8 @@ void AnimatedModel::ProcessMesh(
 
 void AnimatedModel::ExtractBoneWeightForVertices(
     aiMesh* mesh,
-    const aiScene* scene
+    const aiScene* scene,
+    unsigned int vertexStartIndex
 )
 {
     for (unsigned int boneIndex = 0;
@@ -268,12 +310,19 @@ void AnimatedModel::ExtractBoneWeightForVertices(
             weightIndex++)
         {
             int vertexID =
-                weights[weightIndex].mVertexId;
+                static_cast<int>(
+                    vertexStartIndex +
+                    weights[weightIndex].mVertexId
+                    );
 
             float weight =
                 weights[weightIndex].mWeight;
-
-            if (vertexID < vertices.size())
+            if (
+                vertexID >= 0 &&
+                vertexID < static_cast<int>(
+                    vertices.size()
+                    )
+                )
             {
                 SetVertexBoneData(
                     vertices[vertexID],

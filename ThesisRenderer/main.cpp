@@ -7972,6 +7972,31 @@ int main()
         "Assets/Audio/music_rescue.wav",
         true
     );
+    // ================= ANIMATION SYSTEM V1A TEST =================
+
+    AnimationLibrary playerAnimationLibrary;
+
+    playerAnimationLibrary.LoadAnimation(
+        "Idle",
+        "Assets/Models/Charachters/Player/Idle.fbx"
+    );
+
+    playerAnimationLibrary.LoadAnimation(
+        "Walk",
+        "Assets/Models/Charachters/Player/Walk.fbx"
+    );
+
+    playerAnimationLibrary.LoadAnimation(
+        "Run",
+        "Assets/Models/Charachters/Player/Run.fbx"
+    );
+
+    playerAnimationLibrary.LoadAnimation(
+        "Jump",
+        "Assets/Models/Charachters/Player/Jump.fbx"
+    );
+
+    playerAnimationLibrary.PrintSummary();
     while (!glfwWindowShouldClose(window))
     {
         glfwPollEvents();

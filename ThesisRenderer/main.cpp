@@ -8017,6 +8017,25 @@ int main()
 
     float animatedPreviewScale =
         0.018f;
+    int animatedPreviewClipIndex =
+        0;
+
+    const char* animatedPreviewClipNames[] =
+    {
+        "Idle",
+        "Walk",
+        "Run",
+        "Jump"
+    };
+
+    std::string currentAnimatedPreviewClip =
+        "Idle";
+
+    float animatedPreviewRotationY =
+        180.0f;
+
+    bool showAnimationPreviewWindow =
+        true;
     while (!glfwWindowShouldClose(window))
     {
         glfwPollEvents();
@@ -8221,7 +8240,146 @@ int main()
 
             continue;
         }
+
        ImGuiIO& debugIO = ImGui::GetIO();
+       // ================= ANIMATION PREVIEW CONTROLS V1C =================
+       if (
+           appMode == AppMode::Editor &&
+           showAnimationPreviewWindow
+           )
+       {
+           ImGui::SetNextWindowPos(
+               ImVec2(
+                   520.0f,
+                   70.0f
+               ),
+               ImGuiCond_Once
+           );
+
+           ImGui::SetNextWindowSize(
+               ImVec2(
+                   310.0f,
+                   260.0f
+               ),
+               ImGuiCond_Once
+           );
+
+           ImGui::Begin(
+               "Animation Preview"
+           );
+
+           ImGui::Text(
+               "Animated Character Preview"
+           );
+
+           ImGui::Separator();
+
+           if (
+               ImGui::Combo(
+                   "Animation Clip",
+                   &animatedPreviewClipIndex,
+                   animatedPreviewClipNames,
+                   IM_ARRAYSIZE(
+                       animatedPreviewClipNames
+                   )
+               )
+               )
+           {
+               currentAnimatedPreviewClip =
+                   animatedPreviewClipNames[
+                       animatedPreviewClipIndex
+                   ];
+
+               previewAnimatedPlayer =
+                   playerAnimationLibrary.GetAnimation(
+                       currentAnimatedPreviewClip
+                   );
+           }
+
+           ImGui::Checkbox(
+               "Show Preview",
+               &showAnimatedPlayerPreview
+           );
+
+           ImGui::DragFloat3(
+               "Position",
+               &animatedPreviewPosition.x,
+               0.10f
+           );
+
+           ImGui::DragFloat(
+               "Scale",
+               &animatedPreviewScale,
+               0.001f,
+               0.001f,
+               1.0f
+           );
+
+           ImGui::DragFloat(
+               "Rotation Y",
+               &animatedPreviewRotationY,
+               1.0f,
+               -360.0f,
+               360.0f
+           );
+
+           if (
+               ImGui::Button(
+                   "Snap Preview To Terrain"
+               )
+               )
+           {
+               animatedPreviewPosition.y =
+                   GetTerrainHeight(
+                       animatedPreviewPosition.x,
+                       animatedPreviewPosition.z
+                   ) +
+                   0.05f;
+           }
+
+           ImGui::Separator();
+
+           ImGui::Text(
+               "Current Clip: %s",
+               currentAnimatedPreviewClip.c_str()
+           );
+
+           if (previewAnimatedPlayer != nullptr)
+           {
+               ImGui::Text(
+                   "Loaded: %s",
+                   previewAnimatedPlayer->IsLoaded() ? "Yes" : "No"
+               );
+
+               ImGui::Text(
+                   "Meshes: %d",
+                   previewAnimatedPlayer->GetMeshCount()
+               );
+
+               ImGui::Text(
+                   "Bones: %d",
+                   previewAnimatedPlayer->GetBoneCount()
+               );
+
+               ImGui::Text(
+                   "Animations: %d",
+                   previewAnimatedPlayer->GetAnimationCount()
+               );
+
+               ImGui::Text(
+                   "Vertices: %d",
+                   previewAnimatedPlayer->GetVertexCount()
+               );
+           }
+           else
+           {
+               ImGui::Text(
+                   "No animation clip selected."
+               );
+           }
+
+           ImGui::End();
+       }
        // resseting plaaayer to the start .............................
    /*     if (
             previousAppMode == AppMode::Editor &&
@@ -9968,12 +10126,11 @@ ImGuiIO& io = ImGui::GetIO();
                     animatedModelMatrix,
                     animatedPreviewPosition
                 );
-
             animatedModelMatrix =
                 glm::rotate(
                     animatedModelMatrix,
                     glm::radians(
-                        180.0f
+                        animatedPreviewRotationY
                     ),
                     glm::vec3(
                         0.0f,
@@ -9981,7 +10138,6 @@ ImGuiIO& io = ImGui::GetIO();
                         0.0f
                     )
                 );
-
             animatedModelMatrix =
                 glm::scale(
                     animatedModelMatrix,

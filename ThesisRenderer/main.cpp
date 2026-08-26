@@ -8036,6 +8036,25 @@ int main()
 
     bool showAnimationPreviewWindow =
         true;
+   
+
+    bool useAnimatedPlayerVisual =
+        false;
+
+    bool hideClassicPlayerWhenAnimated =
+        true;
+
+    std::string animatedRuntimeClip =
+        "Idle";
+
+    float animatedPlayerScale =
+        0.025f;
+
+    float animatedPlayerRotationOffsetY =
+        0.0f;
+
+    float animatedPlayerYOffset =
+        0.05f;
     while (!glfwWindowShouldClose(window))
     {
         glfwPollEvents();
@@ -9904,6 +9923,122 @@ ImGuiIO& io = ImGui::GetIO();
         cube1.transform.position = glm::vec3(0.0f, 0.0f, -3.0f);
         cube1.UpdateComponents(deltaTime);
         cube1.Draw(renderer, glm::mat4(1.0f));
+        // ================= ANIMATED PLAYER RUNTIME STATE V2 =================
+
+        if (playerObject != nullptr)
+        {
+            playerObject->visible =
+                !(
+                    useAnimatedPlayerVisual &&
+                    hideClassicPlayerWhenAnimated
+                    );
+        }
+
+        if (
+            useAnimatedPlayerVisual &&
+            playerObject != nullptr
+            )
+        {
+            bool moveForward =
+                glfwGetKey(
+                    window,
+                    GLFW_KEY_W
+                ) == GLFW_PRESS;
+
+            bool moveBackward =
+                glfwGetKey(
+                    window,
+                    GLFW_KEY_S
+                ) == GLFW_PRESS;
+
+            bool moveLeft =
+                glfwGetKey(
+                    window,
+                    GLFW_KEY_A
+                ) == GLFW_PRESS;
+
+            bool moveRight =
+                glfwGetKey(
+                    window,
+                    GLFW_KEY_D
+                ) == GLFW_PRESS;
+
+            bool running =
+                glfwGetKey(
+                    window,
+                    GLFW_KEY_LEFT_SHIFT
+                ) == GLFW_PRESS;
+
+            bool jumpPressed =
+                glfwGetKey(
+                    window,
+                    GLFW_KEY_SPACE
+                ) == GLFW_PRESS;
+
+            bool moving =
+                moveForward ||
+                moveBackward ||
+                moveLeft ||
+                moveRight;
+
+            std::string wantedClip =
+                "Idle";
+
+            if (
+                appMode == AppMode::Play &&
+                jumpPressed &&
+                !thirdPersonController.isGrounded
+                )
+            {
+                wantedClip =
+                    "Jump";
+            }
+            else if (
+                appMode == AppMode::Play &&
+                moving &&
+                running
+                )
+            {
+                wantedClip =
+                    "Run";
+            }
+            else if (
+                appMode == AppMode::Play &&
+                moving
+                )
+            {
+                wantedClip =
+                    "Walk";
+            }
+            else
+            {
+                wantedClip =
+                    "Idle";
+            }
+
+            if (wantedClip != animatedRuntimeClip)
+            {
+                animatedRuntimeClip =
+                    wantedClip;
+
+                previewAnimatedPlayer =
+                    playerAnimationLibrary.GetAnimation(
+                        animatedRuntimeClip
+                    );
+
+                if (previewAnimatedPlayer != nullptr)
+                {
+                    previewAnimatedPlayer->Play(
+                        true
+                    );
+
+                    previewAnimatedPlayer->SetAnimationSpeed(
+                        1.0f
+                    );
+                }
+            }
+        }
+
         if (previewAnimatedPlayer != nullptr)
         {
             previewAnimatedPlayer->UpdateAnimation(
@@ -10165,7 +10300,10 @@ ImGuiIO& io = ImGui::GetIO();
         }
         // ================= DRAW ANIMATED PLAYER STATIC PREVIEW V1B =================
         if (
-            showAnimatedPlayerPreview &&
+            (
+                showAnimatedPlayerPreview ||
+                useAnimatedPlayerVisual
+                ) &&
             previewAnimatedPlayer != nullptr &&
             previewAnimatedPlayer->HasPreviewMesh()
             )
@@ -10177,16 +10315,44 @@ ImGuiIO& io = ImGui::GetIO();
                     1.0f
                 );
 
+            glm::vec3 finalAnimatedPosition =
+                animatedPreviewPosition;
+
+            float finalAnimatedScale =
+                animatedPreviewScale;
+
+            float finalAnimatedRotationY =
+                animatedPreviewRotationY;
+
+            if (
+                useAnimatedPlayerVisual &&
+                playerObject != nullptr
+                )
+            {
+                finalAnimatedPosition =
+                    playerObject->transform.position;
+
+                finalAnimatedPosition.y +=
+                    animatedPlayerYOffset;
+
+                finalAnimatedScale =
+                    animatedPlayerScale;
+
+                finalAnimatedRotationY =
+                    playerObject->transform.rotation.y +
+                    animatedPlayerRotationOffsetY;
+            }
+
             animatedModelMatrix =
                 glm::translate(
                     animatedModelMatrix,
-                    animatedPreviewPosition
+                    finalAnimatedPosition
                 );
             animatedModelMatrix =
                 glm::rotate(
                     animatedModelMatrix,
                     glm::radians(
-                        animatedPreviewRotationY
+                        finalAnimatedRotationY
                     ),
                     glm::vec3(
                         0.0f,
@@ -10198,7 +10364,7 @@ ImGuiIO& io = ImGui::GetIO();
                 glm::scale(
                     animatedModelMatrix,
                     glm::vec3(
-                        animatedPreviewScale
+                        finalAnimatedScale
                     )
                 );
 
@@ -10593,6 +10759,50 @@ ImGuiIO& io = ImGui::GetIO();
 
             if (playerObject != nullptr)
             {
+                ImGui::Text(
+                    "Character Visual Mode"
+                );
+
+                ImGui::Checkbox(
+                    "Use Animated Player",
+                    &useAnimatedPlayerVisual
+                );
+
+                ImGui::Checkbox(
+                    "Hide Classic Player Mesh",
+                    &hideClassicPlayerWhenAnimated
+                );
+
+                ImGui::DragFloat(
+                    "Animated Scale",
+                    &animatedPlayerScale,
+                    0.001f,
+                    0.001f,
+                    1.0f
+                );
+
+                ImGui::DragFloat(
+                    "Animated Rotation Offset Y",
+                    &animatedPlayerRotationOffsetY,
+                    1.0f,
+                    -360.0f,
+                    360.0f
+                );
+
+                ImGui::DragFloat(
+                    "Animated Y Offset",
+                    &animatedPlayerYOffset,
+                    0.01f,
+                    -5.0f,
+                    5.0f
+                );
+
+                ImGui::Text(
+                    "Runtime Animation: %s",
+                    animatedRuntimeClip.c_str()
+                );
+
+                ImGui::Separator();
                 ImGui::Text("Player Position");
                 ImGui::Text(
                     "X: %.2f  Y: %.2f  Z: %.2f",

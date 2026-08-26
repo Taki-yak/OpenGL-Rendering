@@ -16,6 +16,8 @@
 #include "BoneInfo.h"
 #include "Shader.h"
 #include <glad/glad.h>
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/quaternion.hpp>
 class AnimatedModel
 {
 public:
@@ -27,7 +29,43 @@ public:
     void DrawStaticPreview(
         Shader& shader
     );
+    void UpdateAnimation(
+        float deltaTime
+    );
 
+    void Play(
+        bool resetTime = true
+    );
+
+    void Pause();
+
+    void SetLooping(
+        bool value
+    );
+
+    void SetAnimationSpeed(
+        float speed
+    );
+
+    bool IsPlaying() const
+    {
+        return animationPlaying;
+    }
+
+    float GetAnimationTime() const
+    {
+        return animationTime;
+    }
+
+    float GetAnimationDuration() const
+    {
+        return animationDuration;
+    }
+
+    float GetAnimationSpeed() const
+    {
+        return animationSpeed;
+    }
     bool HasPreviewMesh() const
     {
         return
@@ -76,6 +114,37 @@ public:
     }
 
 private:
+    Assimp::Importer importer;
+
+    const aiScene* loadedScene =
+        nullptr;
+
+    float animationTime =
+        0.0f;
+
+    float animationDuration =
+        0.0f;
+
+    float ticksPerSecond =
+        25.0f;
+
+    float animationSpeed =
+        1.0f;
+
+    bool animationPlaying =
+        true;
+
+    bool animationLooping =
+        true;
+
+    glm::mat4 globalInverseTransform =
+        glm::mat4(
+            1.0f
+        );
+
+    std::vector<AnimatedVertex> previewTriangleVertices;
+
+    std::vector<glm::mat4> finalBoneMatrices;
     std::string sourcePath;
 
     bool loaded =
@@ -133,4 +202,45 @@ private:
         int boneID,
         float weight
     );
+    void CalculateBoneTransform(
+        aiNode* node,
+        const glm::mat4& parentTransform
+    );
+
+    const aiNodeAnim* FindNodeAnimationChannel(
+        aiAnimation* animation,
+        const std::string& nodeName
+    );
+
+    glm::vec3 InterpolatePosition(
+        float animationTime,
+        const aiNodeAnim* channel
+    );
+
+    glm::quat InterpolateRotation(
+        float animationTime,
+        const aiNodeAnim* channel
+    );
+
+    glm::vec3 InterpolateScale(
+        float animationTime,
+        const aiNodeAnim* channel
+    );
+
+    int GetPositionIndex(
+        float animationTime,
+        const aiNodeAnim* channel
+    );
+
+    int GetRotationIndex(
+        float animationTime,
+        const aiNodeAnim* channel
+    );
+
+    int GetScaleIndex(
+        float animationTime,
+        const aiNodeAnim* channel
+    );
+
+    void UpdateSkinnedPreviewMesh();
 };

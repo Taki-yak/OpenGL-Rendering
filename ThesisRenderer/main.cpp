@@ -8343,7 +8343,58 @@ int main()
                "Current Clip: %s",
                currentAnimatedPreviewClip.c_str()
            );
+           if (previewAnimatedPlayer != nullptr)
+           {
+               if (previewAnimatedPlayer->IsPlaying())
+               {
+                   if (ImGui::Button("Pause Animation"))
+                   {
+                       previewAnimatedPlayer->Pause();
+                   }
+               }
+               else
+               {
+                   if (ImGui::Button("Play Animation"))
+                   {
+                       previewAnimatedPlayer->Play(
+                           false
+                       );
+                   }
+               }
 
+               ImGui::SameLine();
+
+               if (ImGui::Button("Restart Animation"))
+               {
+                   previewAnimatedPlayer->Play(
+                       true
+                   );
+               }
+
+               float animationSpeed =
+                   previewAnimatedPlayer->GetAnimationSpeed();
+
+               if (
+                   ImGui::DragFloat(
+                       "Animation Speed",
+                       &animationSpeed,
+                       0.05f,
+                       0.0f,
+                       3.0f
+                   )
+                   )
+               {
+                   previewAnimatedPlayer->SetAnimationSpeed(
+                       animationSpeed
+                   );
+               }
+
+               ImGui::Text(
+                   "Time: %.2f / %.2f",
+                   previewAnimatedPlayer->GetAnimationTime(),
+                   previewAnimatedPlayer->GetAnimationDuration()
+               );
+           }
            if (previewAnimatedPlayer != nullptr)
            {
                ImGui::Text(
@@ -9853,7 +9904,12 @@ ImGuiIO& io = ImGui::GetIO();
         cube1.transform.position = glm::vec3(0.0f, 0.0f, -3.0f);
         cube1.UpdateComponents(deltaTime);
         cube1.Draw(renderer, glm::mat4(1.0f));
-       
+        if (previewAnimatedPlayer != nullptr)
+        {
+            previewAnimatedPlayer->UpdateAnimation(
+                deltaTime
+            );
+        }
         int totalObjects =
             static_cast<int>(
                 scene.objects.size()

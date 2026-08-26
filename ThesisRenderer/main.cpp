@@ -54,7 +54,23 @@
 //glm::vec3 cameraUp = glm::vec3(0.0f, 1.0f, 0.0f);
 //float yaw = -90.0f;
 //float pitch = 0.0f;
+float LerpAngleDegrees(
+    float current,
+    float target,
+    float factor
+)
+{
+    float difference =
+        std::fmod(
+            target - current + 540.0f,
+            360.0f
+        ) - 180.0f;
 
+    return
+        current +
+        difference *
+        factor;
+}
 GLuint LoadMenuTexture(
     const char* path
 )
@@ -8048,13 +8064,26 @@ int main()
         "Idle";
 
     float animatedPlayerScale =
-        0.025f;
+        0.015f;
 
     float animatedPlayerRotationOffsetY =
         0.0f;
 
     float animatedPlayerYOffset =
         0.05f;
+    glm::vec3 smoothedAnimatedPlayerPosition =
+        glm::vec3(
+            0.0f
+        );
+
+    float smoothedAnimatedPlayerRotationY =
+        0.0f;
+
+    bool animatedPlayerSmoothInitialized =
+        false;
+
+    float animatedClipSwitchCooldown =
+        0.0f;
     while (!glfwWindowShouldClose(window))
     {
         glfwPollEvents();
@@ -10015,8 +10044,19 @@ ImGuiIO& io = ImGui::GetIO();
                 wantedClip =
                     "Idle";
             }
+            animatedClipSwitchCooldown -=
+                deltaTime;
 
-            if (wantedClip != animatedRuntimeClip)
+            if (animatedClipSwitchCooldown < 0.0f)
+            {
+                animatedClipSwitchCooldown =
+                    0.0f;
+            }
+
+            if (
+                wantedClip != animatedRuntimeClip &&
+                animatedClipSwitchCooldown <= 0.0f
+                )
             {
                 animatedRuntimeClip =
                     wantedClip;
@@ -10032,9 +10072,33 @@ ImGuiIO& io = ImGui::GetIO();
                         true
                     );
 
-                    previewAnimatedPlayer->SetAnimationSpeed(
-                        1.0f
-                    );
+                    if (animatedRuntimeClip == "Idle")
+                    {
+                        previewAnimatedPlayer->SetAnimationSpeed(
+                            0.55f
+                        );
+                    }
+                    else if (animatedRuntimeClip == "Walk")
+                    {
+                        previewAnimatedPlayer->SetAnimationSpeed(
+                            0.75f
+                        );
+                    }
+                    else if (animatedRuntimeClip == "Run")
+                    {
+                        previewAnimatedPlayer->SetAnimationSpeed(
+                            0.90f
+                        );
+                    }
+                    else if (animatedRuntimeClip == "Jump")
+                    {
+                        previewAnimatedPlayer->SetAnimationSpeed(
+                            0.80f
+                        );
+                    }
+
+                    animatedClipSwitchCooldown =
+                        0.12f;
                 }
             }
         }
@@ -10329,20 +10393,65 @@ ImGuiIO& io = ImGui::GetIO();
                 playerObject != nullptr
                 )
             {
-                finalAnimatedPosition =
+                glm::vec3 targetAnimatedPosition =
                     playerObject->transform.position;
 
-                finalAnimatedPosition.y +=
+                targetAnimatedPosition.y +=
                     animatedPlayerYOffset;
+
+                float targetAnimatedRotationY =
+                    playerObject->transform.rotation.y +
+                    animatedPlayerRotationOffsetY;
+
+                if (!animatedPlayerSmoothInitialized)
+                {
+                    smoothedAnimatedPlayerPosition =
+                        targetAnimatedPosition;
+
+                    smoothedAnimatedPlayerRotationY =
+                        targetAnimatedRotationY;
+
+                    animatedPlayerSmoothInitialized =
+                        true;
+                }
+
+                float positionSmoothFactor =
+                    glm::clamp(
+                        deltaTime * 12.0f,
+                        0.0f,
+                        1.0f
+                    );
+
+                float rotationSmoothFactor =
+                    glm::clamp(
+                        deltaTime * 10.0f,
+                        0.0f,
+                        1.0f
+                    );
+
+                smoothedAnimatedPlayerPosition =
+                    glm::mix(
+                        smoothedAnimatedPlayerPosition,
+                        targetAnimatedPosition,
+                        positionSmoothFactor
+                    );
+
+                smoothedAnimatedPlayerRotationY =
+                    LerpAngleDegrees(
+                        smoothedAnimatedPlayerRotationY,
+                        targetAnimatedRotationY,
+                        rotationSmoothFactor
+                    );
+
+                finalAnimatedPosition =
+                    smoothedAnimatedPlayerPosition;
 
                 finalAnimatedScale =
                     animatedPlayerScale;
 
                 finalAnimatedRotationY =
-                    playerObject->transform.rotation.y +
-                    animatedPlayerRotationOffsetY;
+                    smoothedAnimatedPlayerRotationY;
             }
-
             animatedModelMatrix =
                 glm::translate(
                     animatedModelMatrix,
@@ -10763,10 +10872,19 @@ ImGuiIO& io = ImGui::GetIO();
                     "Character Visual Mode"
                 );
 
+                bool previousAnimatedVisualState =
+                    useAnimatedPlayerVisual;
+
                 ImGui::Checkbox(
                     "Use Animated Player",
                     &useAnimatedPlayerVisual
                 );
+
+                if (previousAnimatedVisualState != useAnimatedPlayerVisual)
+                {
+                    animatedPlayerSmoothInitialized =
+                        false;
+                }
 
                 ImGui::Checkbox(
                     "Hide Classic Player Mesh",

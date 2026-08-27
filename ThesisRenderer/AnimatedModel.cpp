@@ -1197,6 +1197,31 @@ void AnimatedModel::CalculateBoneTransform(
                 channel
             );
 
+        if (removeRootMotion)
+        {
+            bool isRootMotionBone =
+                nodeName == "mixamorig:Hips" ||
+                nodeName == "Hips" ||
+                nodeName == "mixamorig:Root" ||
+                nodeName == "Root" ||
+                nodeName == "Armature" ||
+                nodeName == "mixamorig:Spine";
+
+            if (
+                isRootMotionBone &&
+                channel->mNumPositionKeys > 0
+                )
+            {
+                aiVector3D firstFramePosition =
+                    channel->mPositionKeys[0].mValue;
+                translation =
+                    glm::vec3(
+                        firstFramePosition.x,
+                        firstFramePosition.y,
+                        firstFramePosition.z
+                    );
+            }
+        }
         glm::mat4 translationMatrix =
             glm::translate(
                 glm::mat4(

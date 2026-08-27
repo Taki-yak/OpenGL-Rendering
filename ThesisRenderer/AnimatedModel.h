@@ -107,7 +107,13 @@ public:
     {
         return animationNames;
     }
-
+    void SetRemoveRootMotion(
+        bool value
+    )
+    {
+        removeRootMotion =
+            value;
+    }
     const std::string& GetPath() const
     {
         return sourcePath;
@@ -121,7 +127,8 @@ private:
 
     float animationTime =
         0.0f;
-
+    bool removeRootMotion =
+        true;
     float animationDuration =
         0.0f;
 

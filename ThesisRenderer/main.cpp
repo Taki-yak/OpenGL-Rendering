@@ -8342,6 +8342,12 @@ int main()
                    playerAnimationLibrary.GetAnimation(
                        currentAnimatedPreviewClip
                    );
+               if (previewAnimatedPlayer != nullptr)
+               {
+                   previewAnimatedPlayer->SetRemoveRootMotion(
+                       true
+                   );
+               }
            }
 
            ImGui::Checkbox(
@@ -10065,40 +10071,44 @@ ImGuiIO& io = ImGui::GetIO();
                     playerAnimationLibrary.GetAnimation(
                         animatedRuntimeClip
                     );
-
+                if (previewAnimatedPlayer != nullptr)
+                {
+                    previewAnimatedPlayer->SetRemoveRootMotion(
+                        true
+                    );
+                }
                 if (previewAnimatedPlayer != nullptr)
                 {
                     previewAnimatedPlayer->Play(
                         true
                     );
-
                     if (animatedRuntimeClip == "Idle")
                     {
                         previewAnimatedPlayer->SetAnimationSpeed(
-                            0.55f
+                            0.45f
                         );
                     }
                     else if (animatedRuntimeClip == "Walk")
                     {
                         previewAnimatedPlayer->SetAnimationSpeed(
-                            0.75f
+                            0.55f
                         );
                     }
                     else if (animatedRuntimeClip == "Run")
                     {
                         previewAnimatedPlayer->SetAnimationSpeed(
-                            0.90f
+                            0.70f
                         );
                     }
                     else if (animatedRuntimeClip == "Jump")
                     {
                         previewAnimatedPlayer->SetAnimationSpeed(
-                            0.80f
+                            0.75f
                         );
                     }
 
                     animatedClipSwitchCooldown =
-                        0.12f;
+                        0.25f;
                 }
             }
         }

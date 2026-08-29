@@ -3652,9 +3652,28 @@ void UpdatePlayModeCameraFollow(
             0.0f
         );
 
+    static glm::vec3 smoothedCameraPosition =
+        glm::vec3(
+            0.0f
+        );
+
+    static glm::vec3 smoothedLookTarget =
+        glm::vec3(
+            0.0f
+        );
+
+    static glm::vec3 smoothedCameraForward =
+        glm::vec3(
+            0.0f,
+            0.0f,
+            -1.0f
+        );
+
     glm::vec3 playerPosition =
         playerObject->transform.position;
 
+    // Follow the player's ground position, not jump height.
+    // This prevents the camera from shaking up/down during jumping.
     glm::vec3 playerGroundPosition =
         glm::vec3(
             playerPosition.x,
@@ -3665,6 +3684,58 @@ void UpdatePlayModeCameraFollow(
             playerPosition.z
         );
 
+    glm::vec3 targetCameraForward =
+        glm::vec3(
+            camera.Front.x,
+            0.0f,
+            camera.Front.z
+        );
+
+    if (glm::length(targetCameraForward) < 0.001f)
+    {
+        targetCameraForward =
+            glm::vec3(
+                0.0f,
+                0.0f,
+                -1.0f
+            );
+    }
+
+    targetCameraForward =
+        glm::normalize(
+            targetCameraForward
+        );
+
+    float cameraDistance =
+        7.0f;
+
+    float cameraHeight =
+        3.0f +
+        playCameraLookOffset *
+        0.25f;
+
+    float lookHeight =
+        1.45f +
+        playCameraLookOffset;
+
+    glm::vec3 targetLookPosition =
+        playerGroundPosition +
+        glm::vec3(
+            0.0f,
+            lookHeight,
+            0.0f
+        );
+
+    glm::vec3 targetCameraPosition =
+        playerGroundPosition -
+        targetCameraForward *
+        cameraDistance +
+        glm::vec3(
+            0.0f,
+            cameraHeight,
+            0.0f
+        );
+
     if (
         !cameraFollowInitialized ||
         deltaTime > 0.2f
@@ -3673,100 +3744,105 @@ void UpdatePlayModeCameraFollow(
         smoothedFollowPosition =
             playerGroundPosition;
 
+        smoothedCameraPosition =
+            targetCameraPosition;
+
+        smoothedLookTarget =
+            targetLookPosition;
+
+        smoothedCameraForward =
+            targetCameraForward;
+
+        camera.Position =
+            targetCameraPosition;
+
+        camera.Front =
+            glm::normalize(
+                targetLookPosition -
+                camera.Position
+            );
+
         cameraFollowInitialized =
             true;
+
+        return;
     }
 
-    float horizontalSmooth =
-        glm::clamp(
-            deltaTime * 12.0f,
-            0.0f,
-            1.0f
+    float followSmooth =
+        1.0f -
+        std::exp(
+            -10.0f *
+            deltaTime
         );
 
-    float verticalSmooth =
-        glm::clamp(
-            deltaTime * 3.5f,
-            0.0f,
-            1.0f
+    float cameraPositionSmooth =
+        1.0f -
+        std::exp(
+            -7.0f *
+            deltaTime
         );
 
-    smoothedFollowPosition.x =
+    float cameraDirectionSmooth =
+        1.0f -
+        std::exp(
+            -9.0f *
+            deltaTime
+        );
+
+    smoothedFollowPosition =
         glm::mix(
-            smoothedFollowPosition.x,
-            playerGroundPosition.x,
-            horizontalSmooth
+            smoothedFollowPosition,
+            playerGroundPosition,
+            followSmooth
         );
 
-    smoothedFollowPosition.z =
-        glm::mix(
-            smoothedFollowPosition.z,
-            playerGroundPosition.z,
-            horizontalSmooth
-        );
-
-    smoothedFollowPosition.y =
-        glm::mix(
-            smoothedFollowPosition.y,
-            playerGroundPosition.y,
-            verticalSmooth
-        );
-
-    glm::vec3 cameraForward =
-        glm::vec3(
-            camera.Front.x,
-            0.0f,
-            camera.Front.z
-        );
-
-    if (glm::length(cameraForward) < 0.001f)
-    {
-        cameraForward =
-            glm::vec3(
-                0.0f,
-                0.0f,
-                -1.0f
-            );
-    }
-
-    cameraForward =
+    smoothedCameraForward =
         glm::normalize(
-            cameraForward
+            glm::mix(
+                smoothedCameraForward,
+                targetCameraForward,
+                cameraDirectionSmooth
+            )
         );
 
-    glm::vec3 lookTarget =
+    targetLookPosition =
         smoothedFollowPosition +
         glm::vec3(
             0.0f,
-            1.25f + playCameraLookOffset,
+            lookHeight,
             0.0f
         );
 
-    glm::vec3 desiredCameraPosition =
-        smoothedFollowPosition
-        - cameraForward * 6.5f
-        + glm::vec3(
+    targetCameraPosition =
+        smoothedFollowPosition -
+        smoothedCameraForward *
+        cameraDistance +
+        glm::vec3(
             0.0f,
-            2.65f + playCameraLookOffset * 0.25f,
+            cameraHeight,
             0.0f
         );
-    float cameraSmooth =
-        glm::clamp(
-            deltaTime * 10.0f,
-            0.0f,
-            1.0f
+
+    smoothedCameraPosition =
+        glm::mix(
+            smoothedCameraPosition,
+            targetCameraPosition,
+            cameraPositionSmooth
+        );
+
+    smoothedLookTarget =
+        glm::mix(
+            smoothedLookTarget,
+            targetLookPosition,
+            followSmooth
         );
 
     camera.Position =
-        glm::mix(
-            camera.Position,
-            desiredCameraPosition,
-            cameraSmooth
-        );
+        smoothedCameraPosition;
 
     camera.Front =
         glm::normalize(
-            lookTarget -
+            smoothedLookTarget -
             camera.Position
         );
 }
@@ -10103,7 +10179,7 @@ ImGuiIO& io = ImGui::GetIO();
                     else if (animatedRuntimeClip == "Jump")
                     {
                         previewAnimatedPlayer->SetAnimationSpeed(
-                            0.75f
+                            0.95f
                         );
                     }
 

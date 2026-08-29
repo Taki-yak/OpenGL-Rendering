@@ -71,6 +71,59 @@ float LerpAngleDegrees(
         difference *
         factor;
 }
+void ConfigureRuntimeAnimationClip(
+    AnimatedModel* model,
+    const std::string& clipName
+)
+{
+    if (model == nullptr)
+        return;
+
+    model->SetRemoveRootMotion(
+        true
+    );
+
+    if (clipName == "Idle")
+    {
+        model->SetLooping(
+            true
+        );
+
+        model->SetAnimationSpeed(
+            0.35f
+        );
+    }
+    else if (clipName == "Walk")
+    {
+        model->SetLooping(
+            true
+        );
+
+        model->SetAnimationSpeed(
+            0.55f
+        );
+    }
+    else if (clipName == "Run")
+    {
+        model->SetLooping(
+            true
+        );
+
+        model->SetAnimationSpeed(
+            0.70f
+        );
+    }
+    else if (clipName == "Jump")
+    {
+        model->SetLooping(
+            false
+        );
+
+        model->SetAnimationSpeed(
+            1.5f
+        );
+    }
+}
 GLuint LoadMenuTexture(
     const char* path
 )
@@ -3707,7 +3760,7 @@ void UpdatePlayModeCameraFollow(
         );
 
     float cameraDistance =
-        7.0f;
+        6.0f;
 
     float cameraHeight =
         3.0f +
@@ -8160,6 +8213,14 @@ int main()
 
     float animatedClipSwitchCooldown =
         0.0f;
+    float animatedJumpLockTimer =
+        0.0f;
+
+    float animatedJumpVisualDuration =
+        1.5f;
+
+    bool animatedJumpPreviousSpaceDown =
+        false;
     while (!glfwWindowShouldClose(window))
     {
         glfwPollEvents();
@@ -10034,7 +10095,7 @@ ImGuiIO& io = ImGui::GetIO();
         cube1.transform.position = glm::vec3(0.0f, 0.0f, -3.0f);
         cube1.UpdateComponents(deltaTime);
         cube1.Draw(renderer, glm::mat4(1.0f));
-        // ================= ANIMATED PLAYER RUNTIME STATE V2 =================
+        // ================= ANIMATED PLAYER RUNTIME STATE V3 CLEANUP =================
 
         if (playerObject != nullptr)
         {
@@ -10043,6 +10104,28 @@ ImGuiIO& io = ImGui::GetIO();
                     useAnimatedPlayerVisual &&
                     hideClassicPlayerWhenAnimated
                     );
+        }
+
+        bool spaceDownForAnimatedJump =
+            glfwGetKey(
+                window,
+                GLFW_KEY_SPACE
+            ) == GLFW_PRESS;
+
+        bool animatedJumpJustPressed =
+            spaceDownForAnimatedJump &&
+            !animatedJumpPreviousSpaceDown;
+
+        animatedJumpPreviousSpaceDown =
+            spaceDownForAnimatedJump;
+
+        if (
+            appMode != AppMode::Play ||
+            !useAnimatedPlayerVisual
+            )
+        {
+            animatedJumpLockTimer =
+                0.0f;
         }
 
         if (
@@ -10080,25 +10163,39 @@ ImGuiIO& io = ImGui::GetIO();
                     GLFW_KEY_LEFT_SHIFT
                 ) == GLFW_PRESS;
 
-            bool jumpPressed =
-                glfwGetKey(
-                    window,
-                    GLFW_KEY_SPACE
-                ) == GLFW_PRESS;
-
             bool moving =
                 moveForward ||
                 moveBackward ||
                 moveLeft ||
                 moveRight;
 
+            if (
+                appMode == AppMode::Play &&
+                animatedJumpJustPressed
+                )
+            {
+                animatedJumpLockTimer =
+                    animatedJumpVisualDuration;
+            }
+
+            if (animatedJumpLockTimer > 0.0f)
+            {
+                animatedJumpLockTimer -=
+                    deltaTime;
+
+                if (animatedJumpLockTimer < 0.0f)
+                {
+                    animatedJumpLockTimer =
+                        0.0f;
+                }
+            }
+
             std::string wantedClip =
                 "Idle";
 
             if (
                 appMode == AppMode::Play &&
-                jumpPressed &&
-                !thirdPersonController.isGrounded
+                animatedJumpLockTimer > 0.0f
                 )
             {
                 wantedClip =
@@ -10126,6 +10223,7 @@ ImGuiIO& io = ImGui::GetIO();
                 wantedClip =
                     "Idle";
             }
+
             animatedClipSwitchCooldown -=
                 deltaTime;
 
@@ -10135,9 +10233,19 @@ ImGuiIO& io = ImGui::GetIO();
                     0.0f;
             }
 
+            bool canSwitchClip =
+                animatedClipSwitchCooldown <= 0.0f;
+
+            // Jump must start immediately, even if cooldown is active.
+            if (wantedClip == "Jump")
+            {
+                canSwitchClip =
+                    true;
+            }
+
             if (
                 wantedClip != animatedRuntimeClip &&
-                animatedClipSwitchCooldown <= 0.0f
+                canSwitchClip
                 )
             {
                 animatedRuntimeClip =
@@ -10147,44 +10255,28 @@ ImGuiIO& io = ImGui::GetIO();
                     playerAnimationLibrary.GetAnimation(
                         animatedRuntimeClip
                     );
+
                 if (previewAnimatedPlayer != nullptr)
                 {
-                    previewAnimatedPlayer->SetRemoveRootMotion(
-                        true
+                    ConfigureRuntimeAnimationClip(
+                        previewAnimatedPlayer,
+                        animatedRuntimeClip
                     );
-                }
-                if (previewAnimatedPlayer != nullptr)
-                {
+
                     previewAnimatedPlayer->Play(
                         true
                     );
-                    if (animatedRuntimeClip == "Idle")
-                    {
-                        previewAnimatedPlayer->SetAnimationSpeed(
-                            0.45f
-                        );
-                    }
-                    else if (animatedRuntimeClip == "Walk")
-                    {
-                        previewAnimatedPlayer->SetAnimationSpeed(
-                            0.55f
-                        );
-                    }
-                    else if (animatedRuntimeClip == "Run")
-                    {
-                        previewAnimatedPlayer->SetAnimationSpeed(
-                            0.70f
-                        );
-                    }
-                    else if (animatedRuntimeClip == "Jump")
-                    {
-                        previewAnimatedPlayer->SetAnimationSpeed(
-                            0.95f
-                        );
-                    }
+                }
 
+                if (animatedRuntimeClip == "Jump")
+                {
                     animatedClipSwitchCooldown =
-                        0.25f;
+                        animatedJumpVisualDuration;
+                }
+                else
+                {
+                    animatedClipSwitchCooldown =
+                        0.18f;
                 }
             }
         }

@@ -71,6 +71,199 @@ float LerpAngleDegrees(
         difference *
         factor;
 }
+float GetTimeDistance(
+    float a,
+    float b
+)
+{
+    float distance =
+        std::fabs(
+            a - b
+        );
+
+    if (distance > 12.0f)
+    {
+        distance =
+            24.0f - distance;
+    }
+
+    return distance;
+}
+
+void UpdateDayNightSystem(
+    float deltaTime,
+    bool cycleEnabled,
+    float& timeOfDay,
+    float cycleSpeed,
+    glm::vec3& sunDirection,
+    glm::vec3& sunColor,
+    glm::vec3& skyColor
+)
+{
+    if (cycleEnabled)
+    {
+        timeOfDay +=
+            deltaTime *
+            cycleSpeed;
+
+        if (timeOfDay >= 24.0f)
+        {
+            timeOfDay -=
+                24.0f;
+        }
+
+        if (timeOfDay < 0.0f)
+        {
+            timeOfDay +=
+                24.0f;
+        }
+    }
+
+    const float pi =
+        3.14159265f;
+
+    float sunAngle =
+        (
+            timeOfDay /
+            24.0f
+            ) *
+        2.0f *
+        pi -
+        pi * 0.5f;
+
+    float sunHeight =
+        std::sin(
+            sunAngle
+        );
+
+    float daylight =
+        glm::clamp(
+            (
+                sunHeight +
+                0.15f
+                ) /
+            1.15f,
+            0.0f,
+            1.0f
+        );
+
+    float sunriseBlend =
+        glm::clamp(
+            1.0f -
+            GetTimeDistance(
+                timeOfDay,
+                6.2f
+            ) /
+            1.5f,
+            0.0f,
+            1.0f
+        );
+
+    float sunsetBlend =
+        glm::clamp(
+            1.0f -
+            GetTimeDistance(
+                timeOfDay,
+                18.2f
+            ) /
+            1.5f,
+            0.0f,
+            1.0f
+        );
+
+    float warmBlend =
+        glm::max(
+            sunriseBlend,
+            sunsetBlend
+        );
+
+    glm::vec3 daySunColor =
+        glm::vec3(
+            1.10f,
+            1.05f,
+            0.95f
+        );
+
+    glm::vec3 sunsetSunColor =
+        glm::vec3(
+            1.35f,
+            0.75f,
+            0.35f
+        );
+
+    glm::vec3 nightSunColor =
+        glm::vec3(
+            0.18f,
+            0.22f,
+            0.38f
+        );
+
+    glm::vec3 daySkyColor =
+        glm::vec3(
+            0.38f,
+            0.55f,
+            0.78f
+        );
+
+    glm::vec3 sunsetSkyColor =
+        glm::vec3(
+            0.80f,
+            0.38f,
+            0.18f
+        );
+
+    glm::vec3 nightSkyColor =
+        glm::vec3(
+            0.025f,
+            0.030f,
+            0.060f
+        );
+
+    sunColor =
+        glm::mix(
+            nightSunColor,
+            daySunColor,
+            daylight
+        );
+
+    sunColor =
+        glm::mix(
+            sunColor,
+            sunsetSunColor,
+            warmBlend
+        );
+
+    skyColor =
+        glm::mix(
+            nightSkyColor,
+            daySkyColor,
+            daylight
+        );
+
+    skyColor =
+        glm::mix(
+            skyColor,
+            sunsetSkyColor,
+            warmBlend
+        );
+
+    float sunY =
+        -glm::max(
+            sunHeight,
+            0.12f
+        );
+
+    sunDirection =
+        glm::normalize(
+            glm::vec3(
+                std::cos(
+                    sunAngle
+                ) * 0.55f,
+                sunY,
+                -0.35f
+            )
+        );
+}
 void ConfigureRuntimeAnimationClip(
     AnimatedModel* model,
     const std::string& clipName
@@ -409,7 +602,52 @@ int previousMainMenuHoveredButton =
 -1;
 float musicNpcTerrainOffset =
     0.15f;
+bool showVisualPolishPanel =
+true;
 
+bool enableDayNightCycle =
+false;
+
+bool showObjectiveMarkers =
+true;
+
+bool cinematicPresentationMode =
+false;
+
+bool cinematicTogglePressed =
+false;
+
+float dayNightTimeOfDay =
+14.0f;
+
+float dayNightCycleSpeed =
+0.25f;
+
+float cinematicBlackBarHeight =
+90.0f;
+
+glm::vec3 dynamicSunDirection =
+glm::normalize(
+    glm::vec3(
+        -0.55f,
+        -1.0f,
+        -0.35f
+    )
+);
+
+glm::vec3 dynamicSunColor =
+glm::vec3(
+    1.10f,
+    1.05f,
+    0.95f
+);
+
+glm::vec3 dynamicSkyColor =
+glm::vec3(
+    0.10f,
+    0.12f,
+    0.16f
+);
 std::string musicRescueText =
     "Music Rescue: Waiting for gate.";
 float interactionRadius =4.0f;
@@ -4186,7 +4424,400 @@ bool IsTriggerZoneObject(
 
     return false;
 }
+bool IsMonsterSpawnObject(
+    SceneObject* object
+);
 
+bool IsMusicGateObject(
+    SceneObject* object
+);
+
+bool IsMusicNpcObject(
+    SceneObject* object
+);
+bool WorldToScreenPosition(
+    const glm::vec3& worldPosition,
+    const glm::mat4& view,
+    const glm::mat4& projection,
+    int screenWidth,
+    int screenHeight,
+    ImVec2& screenPosition
+)
+{
+    glm::vec4 clipPosition =
+        projection *
+        view *
+        glm::vec4(
+            worldPosition,
+            1.0f
+        );
+
+    if (clipPosition.w <= 0.01f)
+        return false;
+
+    glm::vec3 ndc =
+        glm::vec3(
+            clipPosition
+        ) /
+        clipPosition.w;
+
+    if (
+        ndc.x < -1.2f ||
+        ndc.x > 1.2f ||
+        ndc.y < -1.2f ||
+        ndc.y > 1.2f
+        )
+    {
+        return false;
+    }
+
+    screenPosition.x =
+        (
+            ndc.x * 0.5f +
+            0.5f
+            ) *
+        static_cast<float>(
+            screenWidth
+            );
+
+    screenPosition.y =
+        (
+            1.0f -
+            (
+                ndc.y * 0.5f +
+                0.5f
+                )
+            ) *
+        static_cast<float>(
+            screenHeight
+            );
+
+    return true;
+}
+
+void DrawSingleObjectiveMarker(
+    const char* label,
+    const glm::vec3& worldPosition,
+    const glm::vec3& cameraPosition,
+    const glm::mat4& view,
+    const glm::mat4& projection,
+    int screenWidth,
+    int screenHeight,
+    ImU32 color
+)
+{
+    ImVec2 screenPosition;
+
+    if (
+        !WorldToScreenPosition(
+            worldPosition,
+            view,
+            projection,
+            screenWidth,
+            screenHeight,
+            screenPosition
+        )
+        )
+    {
+        return;
+    }
+
+    float distance =
+        glm::length(
+            worldPosition -
+            cameraPosition
+        );
+
+    if (distance > 140.0f)
+        return;
+
+    ImDrawList* drawList =
+        ImGui::GetForegroundDrawList();
+
+    float radius =
+        8.0f;
+
+    drawList->AddCircleFilled(
+        screenPosition,
+        radius,
+        color
+    );
+
+    drawList->AddCircle(
+        screenPosition,
+        radius + 3.0f,
+        IM_COL32(
+            255,
+            255,
+            255,
+            220
+        ),
+        24,
+        2.0f
+    );
+
+    char textBuffer[128];
+
+    snprintf(
+        textBuffer,
+        sizeof(textBuffer),
+        "%s %.0fm",
+        label,
+        distance
+    );
+
+    ImVec2 textSize =
+        ImGui::CalcTextSize(
+            textBuffer
+        );
+
+    ImVec2 textPosition =
+        ImVec2(
+            screenPosition.x -
+            textSize.x * 0.5f,
+            screenPosition.y -
+            34.0f
+        );
+
+    drawList->AddRectFilled(
+        ImVec2(
+            textPosition.x - 6.0f,
+            textPosition.y - 3.0f
+        ),
+        ImVec2(
+            textPosition.x + textSize.x + 6.0f,
+            textPosition.y + textSize.y + 3.0f
+        ),
+        IM_COL32(
+            0,
+            0,
+            0,
+            150
+        ),
+        6.0f
+    );
+
+    drawList->AddText(
+        textPosition,
+        IM_COL32(
+            255,
+            255,
+            255,
+            255
+        ),
+        textBuffer
+    );
+}
+
+void DrawObjectiveMarkers(
+    Scene& scene,
+    const glm::vec3& cameraPosition,
+    const glm::mat4& view,
+    const glm::mat4& projection,
+    int screenWidth,
+    int screenHeight
+)
+{
+    for (SceneObject* object : scene.objects)
+    {
+        if (object == nullptr)
+            continue;
+
+        if (!object->visible)
+            continue;
+
+        glm::vec3 markerPosition =
+            object->transform.position +
+            glm::vec3(
+                0.0f,
+                2.2f,
+                0.0f
+            );
+
+        if (IsCoinObject(object))
+        {
+            DrawSingleObjectiveMarker(
+                "COIN",
+                markerPosition,
+                cameraPosition,
+                view,
+                projection,
+                screenWidth,
+                screenHeight,
+                IM_COL32(
+                    255,
+                    215,
+                    0,
+                    255
+                )
+            );
+        }
+        else if (IsTriggerZoneObject(object))
+        {
+            DrawSingleObjectiveMarker(
+                "TRIGGER",
+                markerPosition,
+                cameraPosition,
+                view,
+                projection,
+                screenWidth,
+                screenHeight,
+                IM_COL32(
+                    255,
+                    90,
+                    90,
+                    255
+                )
+            );
+        }
+        else if (IsMonsterSpawnObject(object))
+        {
+            DrawSingleObjectiveMarker(
+                "MONSTER",
+                markerPosition,
+                cameraPosition,
+                view,
+                projection,
+                screenWidth,
+                screenHeight,
+                IM_COL32(
+                    180,
+                    60,
+                    255,
+                    255
+                )
+            );
+        }
+        else if (IsMusicGateObject(object))
+        {
+            DrawSingleObjectiveMarker(
+                "GATE",
+                markerPosition,
+                cameraPosition,
+                view,
+                projection,
+                screenWidth,
+                screenHeight,
+                IM_COL32(
+                    80,
+                    180,
+                    255,
+                    255
+                )
+            );
+        }
+        else if (IsMusicNpcObject(object))
+        {
+            DrawSingleObjectiveMarker(
+                "NPC",
+                markerPosition,
+                cameraPosition,
+                view,
+                projection,
+                screenWidth,
+                screenHeight,
+                IM_COL32(
+                    120,
+                    255,
+                    160,
+                    255
+                )
+            );
+        }
+    }
+}
+void DrawCinematicOverlay(
+    int screenWidth,
+    int screenHeight,
+    float blackBarHeight
+)
+{
+    ImDrawList* drawList =
+        ImGui::GetForegroundDrawList();
+
+    drawList->AddRectFilled(
+        ImVec2(
+            0.0f,
+            0.0f
+        ),
+        ImVec2(
+            static_cast<float>(screenWidth),
+            blackBarHeight
+        ),
+        IM_COL32(
+            0,
+            0,
+            0,
+            255
+        )
+    );
+
+    drawList->AddRectFilled(
+        ImVec2(
+            0.0f,
+            static_cast<float>(screenHeight) -
+            blackBarHeight
+        ),
+        ImVec2(
+            static_cast<float>(screenWidth),
+            static_cast<float>(screenHeight)
+        ),
+        IM_COL32(
+            0,
+            0,
+            0,
+            255
+        )
+    );
+
+    const char* title =
+        "ORION ENGINE";
+
+    const char* subtitle =
+        "Cinematic Presentation Mode";
+
+    ImVec2 titleSize =
+        ImGui::CalcTextSize(
+            title
+        );
+
+    ImVec2 subtitleSize =
+        ImGui::CalcTextSize(
+            subtitle
+        );
+
+    drawList->AddText(
+        ImVec2(
+            static_cast<float>(screenWidth) * 0.5f -
+            titleSize.x * 0.5f,
+            24.0f
+        ),
+        IM_COL32(
+            255,
+            255,
+            255,
+            230
+        ),
+        title
+    );
+
+    drawList->AddText(
+        ImVec2(
+            static_cast<float>(screenWidth) * 0.5f -
+            subtitleSize.x * 0.5f,
+            static_cast<float>(screenHeight) -
+            blackBarHeight +
+            24.0f
+        ),
+        IM_COL32(
+            200,
+            200,
+            200,
+            220
+        ),
+        subtitle
+    );
+}
 bool IsMonsterSpawnObject(
     SceneObject* object
 )
@@ -8554,7 +9185,14 @@ int main()
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);*/
 
-    int width, height, nrChannels;
+    int width =
+        0;
+
+    int height =
+        0;
+
+    int nrChannels =
+        0;
     std::cout << "==== CONTROLS ====\n";
     std::cout << "WASD - Move camera\n";
     std::cout << "Mouse - Look around\n";
@@ -8801,7 +9439,23 @@ int main()
     while (!glfwWindowShouldClose(window))
     {
         glfwPollEvents();
+        bool f10Down =
+            glfwGetKey(
+                window,
+                GLFW_KEY_F10
+            ) == GLFW_PRESS;
 
+        if (
+            f10Down &&
+            !cinematicTogglePressed
+            )
+        {
+            cinematicPresentationMode =
+                !cinematicPresentationMode;
+        }
+
+        cinematicTogglePressed =
+            f10Down;
         ImGui_ImplOpenGL3_NewFrame();
         ImGui_ImplGlfw_NewFrame();
         ImGui::NewFrame();
@@ -8989,7 +9643,7 @@ int main()
                 GL_COLOR_BUFFER_BIT |
                 GL_DEPTH_BUFFER_BIT
             );
-
+           
             ImGui::Render();
 
             ImGui_ImplOpenGL3_RenderDrawData(
@@ -9342,6 +9996,15 @@ int main()
         float currentFrame = glfwGetTime();
         deltaTime = currentFrame - lastFrame;
         lastFrame = currentFrame;
+        UpdateDayNightSystem(
+            deltaTime,
+            enableDayNightCycle,
+            dayNightTimeOfDay,
+            dayNightCycleSpeed,
+            dynamicSunDirection,
+            dynamicSunColor,
+            dynamicSkyColor
+        );
         if (!editorCameraStartFixed)
         {
             camera.Position =
@@ -10378,7 +11041,12 @@ ImGuiIO& io = ImGui::GetIO();
             width,
             height
         );
-        glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
+        glClearColor(
+            dynamicSkyColor.r,
+            dynamicSkyColor.g,
+            dynamicSkyColor.b,
+            1.0f
+        );
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         glm::mat4 model = glm::rotate(glm::mat4(1.0f),
@@ -10391,7 +11059,20 @@ ImGuiIO& io = ImGui::GetIO();
             0.1f,
             900.0f
         );
-
+        if (
+            showObjectiveMarkers &&
+            !showMainMenu
+            )
+        {
+            DrawObjectiveMarkers(
+                scene,
+                camera.Position,
+                view,
+                projection,
+                width,
+                height
+            );
+        }
         glDepthFunc(GL_LEQUAL);
         glDepthMask(GL_FALSE);
         gridShader.use();
@@ -10637,21 +11318,12 @@ ImGuiIO& io = ImGui::GetIO();
         );
         shader.setVec3(
             "sunDirection",
-            glm::normalize(
-                glm::vec3(
-                    -0.55f,
-                    -1.0f,
-                    -0.35f
-                )
-            )
+            dynamicSunDirection
         );
+
         shader.setVec3(
             "sunColor",
-            glm::vec3(
-                1.10f,
-                1.05f,
-                0.95f
-            )
+            dynamicSunColor
         );
         UpdateTorchFireFlicker(
             scene,
@@ -11795,6 +12467,130 @@ ImGuiIO& io = ImGui::GetIO();
                 }
 
                 ImGui::Separator();
+                if (
+                    appMode == AppMode::Editor &&
+                    showVisualPolishPanel &&
+                    !cinematicPresentationMode
+                    )
+                {
+                    ImGui::SetNextWindowPos(
+                        ImVec2(
+                            40.0f,
+                            560.0f
+                        ),
+                        ImGuiCond_Once
+                    );
+
+                    ImGui::SetNextWindowSize(
+                        ImVec2(
+                            360.0f,
+                            260.0f
+                        ),
+                        ImGuiCond_Once
+                    );
+
+                    ImGui::Begin(
+                        "Visual Polish"
+                    );
+
+                    ImGui::Text(
+                        "Lighting and Presentation"
+                    );
+
+                    ImGui::Separator();
+
+                    ImGui::Checkbox(
+                        "Enable Day/Night Cycle",
+                        &enableDayNightCycle
+                    );
+
+                    ImGui::SliderFloat(
+                        "Time of Day",
+                        &dayNightTimeOfDay,
+                        0.0f,
+                        24.0f
+                    );
+
+                    ImGui::DragFloat(
+                        "Cycle Speed",
+                        &dayNightCycleSpeed,
+                        0.01f,
+                        0.01f,
+                        5.0f
+                    );
+
+                    ImGui::Separator();
+
+                    ImGui::Checkbox(
+                        "Show Objective Markers",
+                        &showObjectiveMarkers
+                    );
+
+                    ImGui::Checkbox(
+                        "Cinematic Mode",
+                        &cinematicPresentationMode
+                    );
+
+                    ImGui::TextDisabled(
+                        "Shortcut: F10"
+                    );
+
+                    ImGui::DragFloat(
+                        "Black Bar Height",
+                        &cinematicBlackBarHeight,
+                        1.0f,
+                        0.0f,
+                        180.0f
+                    );
+
+                    ImGui::Separator();
+
+                    if (
+                        ImGui::Button(
+                            "Golden Hour"
+                        )
+                        )
+                    {
+                        dayNightTimeOfDay =
+                            18.0f;
+
+                        enableDayNightCycle =
+                            false;
+                    }
+
+                    ImGui::SameLine();
+
+                    if (
+                        ImGui::Button(
+                            "Night"
+                        )
+                        )
+                    {
+                        dayNightTimeOfDay =
+                            22.0f;
+
+                        enableDayNightCycle =
+                            false;
+                    }
+
+                    ImGui::SameLine();
+
+                    if (
+                        ImGui::Button(
+                            "Day"
+                        )
+                        )
+                    {
+                        dayNightTimeOfDay =
+                            14.0f;
+
+                        enableDayNightCycle =
+                            false;
+                    }
+
+                    ImGui::End();
+                }
+
                 ImGui::Separator();
                 ImGui::Text("Player Position");
                 ImGui::Text(

@@ -8213,6 +8213,11 @@ int main()
 
     float animatedClipSwitchCooldown =
         0.0f;
+    bool showAnimatedRuntimeDebug =
+        true;
+
+    bool drawAnimationPreviewOnlyInEditor =
+        true;
     float animatedJumpLockTimer =
         0.0f;
 
@@ -8692,6 +8697,40 @@ int main()
                scene
 
            );
+           if (useAnimatedPlayerVisual)
+           {
+               animatedRuntimeClip =
+                   "Idle";
+
+               animatedClipSwitchCooldown =
+                   0.0f;
+
+               animatedJumpLockTimer =
+                   0.0f;
+
+               animatedJumpPreviousSpaceDown =
+                   false;
+
+               previewAnimatedPlayer =
+                   playerAnimationLibrary.GetAnimation(
+                       animatedRuntimeClip
+                   );
+
+               if (previewAnimatedPlayer != nullptr)
+               {
+                   ConfigureRuntimeAnimationClip(
+                       previewAnimatedPlayer,
+                       animatedRuntimeClip
+                   );
+
+                   previewAnimatedPlayer->Play(
+                       true
+                   );
+               }
+
+               animatedPlayerSmoothInitialized =
+                   false;
+           }
        }
        if (
            previousAppMode == AppMode::Play &&
@@ -10541,11 +10580,29 @@ ImGuiIO& io = ImGui::GetIO();
             }
         }
         // ================= DRAW ANIMATED PLAYER STATIC PREVIEW V1B =================
+        bool shouldDrawAnimatedCharacter =
+            false;
+
         if (
-            (
-                showAnimatedPlayerPreview ||
-                useAnimatedPlayerVisual
-                ) &&
+            appMode == AppMode::Editor &&
+            showAnimatedPlayerPreview
+            )
+        {
+            shouldDrawAnimatedCharacter =
+                true;
+        }
+
+        if (
+            appMode == AppMode::Play &&
+            useAnimatedPlayerVisual
+            )
+        {
+            shouldDrawAnimatedCharacter =
+                true;
+        }
+
+        if (
+            shouldDrawAnimatedCharacter &&
             previewAnimatedPlayer != nullptr &&
             previewAnimatedPlayer->HasPreviewMesh()
             )
@@ -11097,7 +11154,59 @@ ImGuiIO& io = ImGui::GetIO();
                     "Runtime Animation: %s",
                     animatedRuntimeClip.c_str()
                 );
+                ImGui::Separator();
 
+                ImGui::Text(
+                    "Animation Runtime Settings"
+                );
+
+                ImGui::Text(
+                    "Current Clip: %s",
+                    animatedRuntimeClip.c_str()
+                );
+
+                ImGui::DragFloat(
+                    "Jump Visual Duration",
+                    &animatedJumpVisualDuration,
+                    0.01f,
+                    0.30f,
+                    1.50f
+                );
+
+                ImGui::Checkbox(
+                    "Show Animation Debug",
+                    &showAnimatedRuntimeDebug
+                );
+
+                if (
+                    ImGui::Button(
+                        "Reset Animated Player Defaults"
+                    )
+                    )
+                {
+                    animatedPlayerScale =
+                        0.015f;
+
+                    animatedPlayerRotationOffsetY =
+                        0.0f;
+
+                    animatedPlayerYOffset =
+                        0.05f;
+
+                    animatedJumpVisualDuration =
+                        0.85f;
+
+                    animatedPlayerSmoothInitialized =
+                        false;
+
+                    animatedClipSwitchCooldown =
+                        0.0f;
+
+                    animatedJumpLockTimer =
+                        0.0f;
+                }
+
+                ImGui::Separator();
                 ImGui::Separator();
                 ImGui::Text("Player Position");
                 ImGui::Text(
@@ -11510,7 +11619,25 @@ ImGuiIO& io = ImGui::GetIO();
                 "Speed: %.2f",
                 thirdPersonController.currentMoveSpeed
             );
+            if (showAnimatedRuntimeDebug)
+            {
+                ImGui::Separator();
 
+                ImGui::Text(
+                    "Animated Clip: %s",
+                    animatedRuntimeClip.c_str()
+                );
+
+                ImGui::Text(
+                    "Jump Lock: %.2f",
+                    animatedJumpLockTimer
+                );
+
+                ImGui::Text(
+                    "Animated Player: %s",
+                    useAnimatedPlayerVisual ? "Enabled" : "Disabled"
+                );
+            }
             ImGui::Separator();
             ImGui::Text("Press Stop to return to editor.");
             ImGui::Separator();

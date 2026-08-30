@@ -4494,7 +4494,14 @@ bool WorldToScreenPosition(
 
     return true;
 }
-
+enum class ObjectiveMarkerShape
+{
+    Circle,
+    Diamond,
+    Triangle,
+    Square,
+    Ring
+};
 void DrawSingleObjectiveMarker(
     const char* label,
     const glm::vec3& worldPosition,
@@ -4503,7 +4510,8 @@ void DrawSingleObjectiveMarker(
     const glm::mat4& projection,
     int screenWidth,
     int screenHeight,
-    ImU32 color
+    ImU32 color,
+    ObjectiveMarkerShape shape
 )
 {
     ImVec2 screenPosition;
@@ -4534,27 +4542,210 @@ void DrawSingleObjectiveMarker(
     ImDrawList* drawList =
         ImGui::GetForegroundDrawList();
 
+    float pulse =
+        1.0f +
+        std::sin(
+            static_cast<float>(
+                glfwGetTime()
+                ) *
+            4.0f +
+            worldPosition.x *
+            0.10f
+        ) *
+        0.18f;
+
     float radius =
-        8.0f;
+        8.0f *
+        pulse;
 
-    drawList->AddCircleFilled(
-        screenPosition,
-        radius,
-        color
-    );
+    float outlineRadius =
+        radius +
+        4.0f;
 
-    drawList->AddCircle(
-        screenPosition,
-        radius + 3.0f,
-        IM_COL32(
-            255,
-            255,
-            255,
-            220
-        ),
-        24,
-        2.0f
-    );
+    // ================= DIFFERENT MARKER SHAPES =================
+
+    if (shape == ObjectiveMarkerShape::Circle)
+    {
+        drawList->AddCircleFilled(
+            screenPosition,
+            radius,
+            color,
+            28
+        );
+
+        drawList->AddCircle(
+            screenPosition,
+            outlineRadius,
+            IM_COL32(
+                255,
+                255,
+                255,
+                220
+            ),
+            28,
+            2.0f
+        );
+    }
+    else if (shape == ObjectiveMarkerShape::Diamond)
+    {
+        ImVec2 top =
+            ImVec2(
+                screenPosition.x,
+                screenPosition.y -
+                outlineRadius
+            );
+
+        ImVec2 right =
+            ImVec2(
+                screenPosition.x +
+                outlineRadius,
+                screenPosition.y
+            );
+
+        ImVec2 bottom =
+            ImVec2(
+                screenPosition.x,
+                screenPosition.y +
+                outlineRadius
+            );
+
+        ImVec2 left =
+            ImVec2(
+                screenPosition.x -
+                outlineRadius,
+                screenPosition.y
+            );
+
+        drawList->AddQuadFilled(
+            top,
+            right,
+            bottom,
+            left,
+            color
+        );
+
+        drawList->AddQuad(
+            top,
+            right,
+            bottom,
+            left,
+            IM_COL32(
+                255,
+                255,
+                255,
+                230
+            ),
+            2.0f
+        );
+    }
+    else if (shape == ObjectiveMarkerShape::Triangle)
+    {
+        ImVec2 top =
+            ImVec2(
+                screenPosition.x,
+                screenPosition.y -
+                outlineRadius
+            );
+
+        ImVec2 left =
+            ImVec2(
+                screenPosition.x -
+                outlineRadius,
+                screenPosition.y +
+                outlineRadius
+            );
+
+        ImVec2 right =
+            ImVec2(
+                screenPosition.x +
+                outlineRadius,
+                screenPosition.y +
+                outlineRadius
+            );
+
+        drawList->AddTriangleFilled(
+            top,
+            left,
+            right,
+            color
+        );
+
+        drawList->AddTriangle(
+            top,
+            left,
+            right,
+            IM_COL32(
+                255,
+                255,
+                255,
+                230
+            ),
+            2.0f
+        );
+    }
+    else if (shape == ObjectiveMarkerShape::Square)
+    {
+        ImVec2 minPoint =
+            ImVec2(
+                screenPosition.x -
+                outlineRadius,
+                screenPosition.y -
+                outlineRadius
+            );
+
+        ImVec2 maxPoint =
+            ImVec2(
+                screenPosition.x +
+                outlineRadius,
+                screenPosition.y +
+                outlineRadius
+            );
+
+        drawList->AddRectFilled(
+            minPoint,
+            maxPoint,
+            color,
+            4.0f
+        );
+
+        drawList->AddRect(
+            minPoint,
+            maxPoint,
+            IM_COL32(
+                255,
+                255,
+                255,
+                230
+            ),
+            4.0f,
+            0,
+            2.0f
+        );
+    }
+    else if (shape == ObjectiveMarkerShape::Ring)
+    {
+        drawList->AddCircle(
+            screenPosition,
+            outlineRadius,
+            color,
+            32,
+            4.0f
+        );
+
+        drawList->AddCircleFilled(
+            screenPosition,
+            radius * 0.45f,
+            IM_COL32(
+                255,
+                255,
+                255,
+                230
+            ),
+            24
+        );
+    }
+
+    // ================= LABEL BACKGROUND =================
 
     char textBuffer[128];
 
@@ -4576,7 +4767,7 @@ void DrawSingleObjectiveMarker(
             screenPosition.x -
             textSize.x * 0.5f,
             screenPosition.y -
-            34.0f
+            38.0f
         );
 
     drawList->AddRectFilled(
@@ -4592,7 +4783,7 @@ void DrawSingleObjectiveMarker(
             0,
             0,
             0,
-            150
+            165
         ),
         6.0f
     );
@@ -4649,7 +4840,8 @@ void DrawObjectiveMarkers(
                     215,
                     0,
                     255
-                )
+                ),
+                ObjectiveMarkerShape::Circle
             );
         }
         else if (IsTriggerZoneObject(object))
@@ -4667,7 +4859,8 @@ void DrawObjectiveMarkers(
                     90,
                     90,
                     255
-                )
+                ),
+                ObjectiveMarkerShape::Diamond
             );
         }
         else if (IsMonsterSpawnObject(object))
@@ -4685,7 +4878,8 @@ void DrawObjectiveMarkers(
                     60,
                     255,
                     255
-                )
+                ),
+                ObjectiveMarkerShape::Triangle
             );
         }
         else if (IsMusicGateObject(object))
@@ -4703,7 +4897,8 @@ void DrawObjectiveMarkers(
                     180,
                     255,
                     255
-                )
+                ),
+                ObjectiveMarkerShape::Square
             );
         }
         else if (IsMusicNpcObject(object))
@@ -4721,10 +4916,141 @@ void DrawObjectiveMarkers(
                     255,
                     160,
                     255
-                )
+                ),
+                ObjectiveMarkerShape::Ring
             );
         }
     }
+}
+void DrawObjectiveHeader(
+    Scene& scene,
+    int screenWidth
+)
+{
+    int visibleCoins =
+        0;
+
+    bool hasTrigger =
+        false;
+
+    bool hasMonster =
+        false;
+
+    bool hasGate =
+        false;
+
+    bool hasNpc =
+        false;
+
+    for (SceneObject* object : scene.objects)
+    {
+        if (object == nullptr)
+            continue;
+
+        if (!object->visible)
+            continue;
+
+        if (IsCoinObject(object))
+        {
+            visibleCoins++;
+        }
+
+        if (IsTriggerZoneObject(object))
+        {
+            hasTrigger =
+                true;
+        }
+
+        if (IsMonsterSpawnObject(object))
+        {
+            hasMonster =
+                true;
+        }
+
+        if (IsMusicGateObject(object))
+        {
+            hasGate =
+                true;
+        }
+
+        if (IsMusicNpcObject(object))
+        {
+            hasNpc =
+                true;
+        }
+    }
+
+    std::string objectiveText =
+        "Objective: Explore the scene";
+
+    if (visibleCoins > 0)
+    {
+        objectiveText =
+            "Objective: Collect coins  |  Remaining: " +
+            std::to_string(
+                visibleCoins
+            );
+    }
+    else if (
+        hasGate &&
+        hasNpc
+        )
+    {
+        objectiveText =
+            "Objective: Reach the Music Gate and rescue the NPC";
+    }
+    else if (
+        hasTrigger &&
+        hasMonster
+        )
+    {
+        objectiveText =
+            "Objective: Enter the trigger zone and survive the monster event";
+    }
+
+    ImDrawList* drawList =
+        ImGui::GetForegroundDrawList();
+
+    ImVec2 textSize =
+        ImGui::CalcTextSize(
+            objectiveText.c_str()
+        );
+
+    ImVec2 textPosition =
+        ImVec2(
+            static_cast<float>(screenWidth) * 0.5f -
+            textSize.x * 0.5f,
+            22.0f
+        );
+
+    drawList->AddRectFilled(
+        ImVec2(
+            textPosition.x - 14.0f,
+            textPosition.y - 7.0f
+        ),
+        ImVec2(
+            textPosition.x + textSize.x + 14.0f,
+            textPosition.y + textSize.y + 7.0f
+        ),
+        IM_COL32(
+            0,
+            0,
+            0,
+            170
+        ),
+        8.0f
+    );
+
+    drawList->AddText(
+        textPosition,
+        IM_COL32(
+            255,
+            255,
+            255,
+            255
+        ),
+        objectiveText.c_str()
+    );
 }
 void DrawCinematicOverlay(
     int screenWidth,
@@ -11071,6 +11397,10 @@ ImGuiIO& io = ImGui::GetIO();
                 projection,
                 width,
                 height
+            );
+            DrawObjectiveHeader(
+                scene,
+                width
             );
         }
         glDepthFunc(GL_LEQUAL);

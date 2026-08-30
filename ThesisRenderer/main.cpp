@@ -5107,7 +5107,578 @@ SceneObject* FindPlayerObject(
 
     return nullptr;
 }
+enum class SceneHealthLevel
+{
+    Info,
+    Warning,
+    Error
+};
 
+struct SceneHealthEntry
+{
+    SceneHealthLevel level;
+    std::string message;
+};
+
+void AddSceneHealthEntry(
+    std::vector<SceneHealthEntry>& entries,
+    SceneHealthLevel level,
+    const std::string& message
+)
+{
+    SceneHealthEntry entry;
+
+    entry.level =
+        level;
+
+    entry.message =
+        message;
+
+    entries.push_back(
+        entry
+    );
+}
+
+ImVec4 GetSceneHealthColor(
+    SceneHealthLevel level
+)
+{
+    if (level == SceneHealthLevel::Error)
+    {
+        return ImVec4(
+            1.0f,
+            0.25f,
+            0.25f,
+            1.0f
+        );
+    }
+
+    if (level == SceneHealthLevel::Warning)
+    {
+        return ImVec4(
+            1.0f,
+            0.75f,
+            0.20f,
+            1.0f
+        );
+    }
+
+    return ImVec4(
+        0.35f,
+        1.0f,
+        0.45f,
+        1.0f
+    );
+}
+
+const char* GetSceneHealthPrefix(
+    SceneHealthLevel level
+)
+{
+    if (level == SceneHealthLevel::Error)
+        return "[ERROR]";
+
+    if (level == SceneHealthLevel::Warning)
+        return "[WARNING]";
+
+    return "[OK]";
+}
+
+std::vector<SceneHealthEntry> EvaluateSceneHealth(
+    Scene& scene,
+    SceneObject* playerObject,
+    bool useAnimatedPlayerVisual
+)
+{
+    std::vector<SceneHealthEntry> entries;
+
+    int totalObjects =
+        0;
+
+    int visibleObjects =
+        0;
+
+    int hiddenObjects =
+        0;
+
+    int coinCount =
+        0;
+
+    int triggerZoneCount =
+        0;
+
+    int monsterSpawnCount =
+        0;
+
+    int musicGateCount =
+        0;
+
+    int musicNpcCount =
+        0;
+
+    int objectsBelowTerrain =
+        0;
+
+    for (SceneObject* object : scene.objects)
+    {
+        if (object == nullptr)
+            continue;
+
+        totalObjects++;
+
+        if (object->visible)
+        {
+            visibleObjects++;
+        }
+        else
+        {
+            hiddenObjects++;
+        }
+
+        if (IsCoinObject(object))
+        {
+            coinCount++;
+        }
+
+        if (IsTriggerZoneObject(object))
+        {
+            triggerZoneCount++;
+        }
+
+        if (IsMonsterSpawnObject(object))
+        {
+            monsterSpawnCount++;
+        }
+
+        if (IsMusicGateObject(object))
+        {
+            musicGateCount++;
+        }
+
+        if (IsMusicNpcObject(object))
+        {
+            musicNpcCount++;
+        }
+
+        bool skipTerrainCheck =
+            object->name == "Player" ||
+            object->name == "Procedural Terrain" ||
+            object->name == "Ground" ||
+            object->name.find("Generated") != std::string::npos ||
+            object->name.find("Grass Terrain Tile") != std::string::npos;
+
+        if (
+            object->visible &&
+            !skipTerrainCheck
+            )
+        {
+            float terrainY =
+                GetTerrainHeight(
+                    object->transform.position.x,
+                    object->transform.position.z
+                );
+
+            if (object->transform.position.y < terrainY - 2.0f)
+            {
+                objectsBelowTerrain++;
+            }
+        }
+    }
+
+    int totalLights =
+        0;
+
+    int pointLights =
+        0;
+
+    for (Light* light : scene.lights)
+    {
+        if (light == nullptr)
+            continue;
+
+        totalLights++;
+
+        if (light->type != LightType::Directional)
+        {
+            pointLights++;
+        }
+    }
+
+    SceneObject* foundPlayer =
+        playerObject;
+
+    if (foundPlayer == nullptr)
+    {
+        foundPlayer =
+            FindPlayerObject(
+                scene
+            );
+    }
+
+    if (foundPlayer == nullptr)
+    {
+        AddSceneHealthEntry(
+            entries,
+            SceneHealthLevel::Error,
+            "No Player object was found. Play Mode cannot be tested correctly."
+        );
+    }
+    else
+    {
+        float expectedPlayerY =
+            GetPlayerTerrainY(
+                foundPlayer->transform.position.x,
+                foundPlayer->transform.position.z
+            );
+
+        if (foundPlayer->transform.position.y < expectedPlayerY - 1.0f)
+        {
+            AddSceneHealthEntry(
+                entries,
+                SceneHealthLevel::Error,
+                "Player is below the terrain. Use Player Tools to respawn or place the player on terrain."
+            );
+        }
+        else
+        {
+            AddSceneHealthEntry(
+                entries,
+                SceneHealthLevel::Info,
+                "Player exists and is positioned above the terrain."
+            );
+        }
+    }
+
+    if (totalObjects == 0)
+    {
+        AddSceneHealthEntry(
+            entries,
+            SceneHealthLevel::Error,
+            "The scene has no objects."
+        );
+    }
+    else
+    {
+        AddSceneHealthEntry(
+            entries,
+            SceneHealthLevel::Info,
+            "Scene contains " +
+            std::to_string(totalObjects) +
+            " objects, including " +
+            std::to_string(visibleObjects) +
+            " visible objects."
+        );
+    }
+
+    if (visibleObjects == 0)
+    {
+        AddSceneHealthEntry(
+            entries,
+            SceneHealthLevel::Error,
+            "All objects are hidden. The scene will appear empty in Play Mode."
+        );
+    }
+
+    bool hasCoinObjective =
+        coinCount > 0;
+
+    bool hasMonsterObjective =
+        triggerZoneCount > 0 &&
+        monsterSpawnCount > 0;
+
+    bool hasMusicObjective =
+        musicGateCount > 0 &&
+        musicNpcCount > 0;
+
+    bool hasAnyObjective =
+        hasCoinObjective ||
+        hasMonsterObjective ||
+        hasMusicObjective;
+
+    if (!hasAnyObjective)
+    {
+        AddSceneHealthEntry(
+            entries,
+            SceneHealthLevel::Warning,
+            "No clear gameplay objective was found. Add coins, a trigger zone with monster spawn, or a music gate objective."
+        );
+    }
+    else
+    {
+        AddSceneHealthEntry(
+            entries,
+            SceneHealthLevel::Info,
+            "At least one playable objective was found."
+        );
+    }
+
+    if (coinCount > 0)
+    {
+        AddSceneHealthEntry(
+            entries,
+            SceneHealthLevel::Info,
+            "Coin Hunt objective detected with " +
+            std::to_string(coinCount) +
+            " coins."
+        );
+    }
+
+    if (
+        triggerZoneCount > 0 &&
+        monsterSpawnCount == 0
+        )
+    {
+        AddSceneHealthEntry(
+            entries,
+            SceneHealthLevel::Warning,
+            "Trigger zone exists, but no monster spawn object was found."
+        );
+    }
+
+    if (
+        monsterSpawnCount > 0 &&
+        triggerZoneCount == 0
+        )
+    {
+        AddSceneHealthEntry(
+            entries,
+            SceneHealthLevel::Warning,
+            "Monster spawn exists, but no trigger zone was found."
+        );
+    }
+
+    if (
+        musicGateCount > 0 &&
+        musicNpcCount == 0
+        )
+    {
+        AddSceneHealthEntry(
+            entries,
+            SceneHealthLevel::Warning,
+            "Music Gate exists, but no Music NPC was found."
+        );
+    }
+
+    if (
+        musicNpcCount > 0 &&
+        musicGateCount == 0
+        )
+    {
+        AddSceneHealthEntry(
+            entries,
+            SceneHealthLevel::Warning,
+            "Music NPC exists, but no Music Gate was found."
+        );
+    }
+
+    if (objectsBelowTerrain > 0)
+    {
+        AddSceneHealthEntry(
+            entries,
+            SceneHealthLevel::Warning,
+            std::to_string(objectsBelowTerrain) +
+            " visible objects appear to be below the terrain."
+        );
+    }
+
+    if (totalObjects > 1200)
+    {
+        AddSceneHealthEntry(
+            entries,
+            SceneHealthLevel::Warning,
+            "The scene contains many objects. Performance may decrease on weaker hardware."
+        );
+    }
+
+    if (pointLights > 12)
+    {
+        AddSceneHealthEntry(
+            entries,
+            SceneHealthLevel::Error,
+            "More than 12 point lights were found. The shader supports only 12 active point lights."
+        );
+    }
+    else if (pointLights > 10)
+    {
+        AddSceneHealthEntry(
+            entries,
+            SceneHealthLevel::Warning,
+            "The scene is close to the 12 point light limit."
+        );
+    }
+    else
+    {
+        AddSceneHealthEntry(
+            entries,
+            SceneHealthLevel::Info,
+            "Lighting setup is within the supported limit."
+        );
+    }
+
+    if (useAnimatedPlayerVisual)
+    {
+        AddSceneHealthEntry(
+            entries,
+            SceneHealthLevel::Info,
+            "Animated player visual mode is enabled."
+        );
+    }
+    else
+    {
+        AddSceneHealthEntry(
+            entries,
+            SceneHealthLevel::Info,
+            "Classic player visual mode is enabled."
+        );
+    }
+
+    return entries;
+}
+
+void DrawSceneHealthValidator(
+    Scene& scene,
+    SceneObject* playerObject,
+    bool useAnimatedPlayerVisual
+)
+{
+    ImGui::SetNextWindowPos(
+        ImVec2(
+            880.0f,
+            70.0f
+        ),
+        ImGuiCond_Once
+    );
+
+    ImGui::SetNextWindowSize(
+        ImVec2(
+            430.0f,
+            430.0f
+        ),
+        ImGuiCond_Once
+    );
+
+    ImGui::Begin(
+        "Scene Health Validator"
+    );
+
+    ImGui::Text(
+        "Playable Scene Check"
+    );
+
+    ImGui::Separator();
+
+    std::vector<SceneHealthEntry> entries =
+        EvaluateSceneHealth(
+            scene,
+            playerObject,
+            useAnimatedPlayerVisual
+        );
+
+    int errorCount =
+        0;
+
+    int warningCount =
+        0;
+
+    int infoCount =
+        0;
+
+    for (const SceneHealthEntry& entry : entries)
+    {
+        if (entry.level == SceneHealthLevel::Error)
+        {
+            errorCount++;
+        }
+        else if (entry.level == SceneHealthLevel::Warning)
+        {
+            warningCount++;
+        }
+        else
+        {
+            infoCount++;
+        }
+    }
+
+    if (errorCount > 0)
+    {
+        ImGui::TextColored(
+            ImVec4(
+                1.0f,
+                0.25f,
+                0.25f,
+                1.0f
+            ),
+            "Scene Ready: NO"
+        );
+    }
+    else if (warningCount > 0)
+    {
+        ImGui::TextColored(
+            ImVec4(
+                1.0f,
+                0.75f,
+                0.20f,
+                1.0f
+            ),
+            "Scene Ready: YES, with warnings"
+        );
+    }
+    else
+    {
+        ImGui::TextColored(
+            ImVec4(
+                0.35f,
+                1.0f,
+                0.45f,
+                1.0f
+            ),
+            "Scene Ready: YES"
+        );
+    }
+
+    ImGui::Text(
+        "Errors: %d  Warnings: %d  OK: %d",
+        errorCount,
+        warningCount,
+        infoCount
+    );
+
+    ImGui::Separator();
+
+    ImGui::Text(
+        "Validation Results"
+    );
+
+    ImGui::Separator();
+
+    for (const SceneHealthEntry& entry : entries)
+    {
+        ImGui::TextColored(
+            GetSceneHealthColor(
+                entry.level
+            ),
+            "%s",
+            GetSceneHealthPrefix(
+                entry.level
+            )
+        );
+
+        ImGui::SameLine();
+
+        ImGui::TextWrapped(
+            "%s",
+            entry.message.c_str()
+        );
+    }
+
+    ImGui::Separator();
+
+    ImGui::TextDisabled(
+        "This panel updates automatically while editing the scene."
+    );
+
+    ImGui::End();
+}
 void RecalculateCoinHuntState(
     Scene& scene
 )
@@ -8181,7 +8752,8 @@ int main()
 
     bool showAnimationPreviewWindow =
         true;
-   
+    bool showSceneHealthValidator =
+        true;
 
     bool useAnimatedPlayerVisual =
         false;
@@ -8626,6 +9198,17 @@ int main()
            }
 
            ImGui::End();
+       }
+       if (
+           appMode == AppMode::Editor &&
+           showSceneHealthValidator
+           )
+       {
+           DrawSceneHealthValidator(
+               scene,
+               playerObject,
+               useAnimatedPlayerVisual
+           );
        }
        // resseting plaaayer to the start .............................
    /*     if (
@@ -11100,7 +11683,12 @@ ImGuiIO& io = ImGui::GetIO();
             );
 
             ImGui::Begin("Player Tools");
+            ImGui::Checkbox(
+                "Show Scene Health Validator",
+                &showSceneHealthValidator
+            );
 
+            ImGui::Separator();
             if (playerObject != nullptr)
             {
                 ImGui::Text(

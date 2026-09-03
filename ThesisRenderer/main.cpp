@@ -21,6 +21,7 @@
 #include "RotatorComponent.h"
 #include "OscillatorComponent.h"
 #include "SceneSerializer.h"
+#include "GameplayFeedbackFX.h"
 #include "imgui.h"
 #include "imgui_impl_glfw.h"
 #include "imgui_impl_opengl3.h"
@@ -45,6 +46,7 @@
 #include <algorithm>
 #include "AudioSystem.h"
 #include <unordered_map>
+
 #ifdef max
 #undef max
 #endif
@@ -614,51 +616,9 @@ false;
 
 bool showObjectiveMarkers =
 true;
-bool showGameplayFeedbackFX =
-true;
 MiniMapRadar miniMapRadar;
 CinematicOverlay cinematicOverlay;
-struct FloatingGameplayText
-{
-    glm::vec3 worldPosition =
-        glm::vec3(0.0f);
-
-    std::string text =
-        "";
-
-    float lifetime =
-        0.0f;
-
-    float duration =
-        0.0f;
-
-    ImVec4 color =
-        ImVec4(
-            1.0f,
-            1.0f,
-            1.0f,
-            1.0f
-        );
-};
-
-std::vector<FloatingGameplayText> floatingGameplayTexts;
-
-std::string gameplayNotificationText =
-"";
-
-float gameplayNotificationTimer =
-0.0f;
-
-float gameplayNotificationDuration =
-1.0f;
-
-ImVec4 gameplayNotificationColor =
-ImVec4(
-    1.0f,
-    1.0f,
-    1.0f,
-    1.0f
-);
+GameplayFeedbackFX gameplayFeedbackFX;
 float dayNightTimeOfDay =
 14.0f;
 bool enableWeatherSystem =
@@ -708,8 +668,6 @@ float weatherRainIntensity =
 float dayNightCycleSpeed =
 0.25f;
 
-float cinematicBlackBarHeight =
-90.0f;
 
 glm::vec3 dynamicSunDirection =
 glm::normalize(
@@ -5455,389 +5413,12 @@ void DrawObjectiveHeader(
         objectiveText.c_str()
     );
 }
-void AddFloatingGameplayText(
-    const glm::vec3& worldPosition,
-    const std::string& text,
-    const ImVec4& color
-)
-{
-    FloatingGameplayText floatingText;
 
-    floatingText.worldPosition =
-        worldPosition;
 
-    floatingText.text =
-        text;
 
-    floatingText.lifetime =
-        1.25f;
 
-    floatingText.duration =
-        1.25f;
 
-    floatingText.color =
-        color;
 
-    floatingGameplayTexts.push_back(
-        floatingText
-    );
-}
-
-void ShowGameplayNotification(
-    const std::string& text,
-    const ImVec4& color,
-    float duration
-)
-{
-    gameplayNotificationText =
-        text;
-
-    gameplayNotificationColor =
-        color;
-
-    gameplayNotificationDuration =
-        duration;
-
-    gameplayNotificationTimer =
-        duration;
-}
-
-void UpdateGameplayFeedbackFX(
-    float deltaTime
-)
-{
-    for (FloatingGameplayText& text : floatingGameplayTexts)
-    {
-        text.lifetime -=
-            deltaTime;
-    }
-
-    floatingGameplayTexts.erase(
-        std::remove_if(
-            floatingGameplayTexts.begin(),
-            floatingGameplayTexts.end(),
-            [](const FloatingGameplayText& text)
-            {
-                return text.lifetime <= 0.0f;
-            }
-        ),
-        floatingGameplayTexts.end()
-    );
-
-    if (gameplayNotificationTimer > 0.0f)
-    {
-        gameplayNotificationTimer -=
-            deltaTime;
-
-        if (gameplayNotificationTimer < 0.0f)
-        {
-            gameplayNotificationTimer =
-                0.0f;
-        }
-    }
-}
-
-void DrawFloatingGameplayTexts(
-    const glm::mat4& view,
-    const glm::mat4& projection,
-    int screenWidth,
-    int screenHeight
-)
-{
-    ImDrawList* drawList =
-        ImGui::GetForegroundDrawList();
-
-    for (const FloatingGameplayText& text : floatingGameplayTexts)
-    {
-        ImVec2 screenPosition;
-
-        if (
-            !WorldToScreenPosition(
-                text.worldPosition,
-                view,
-                projection,
-                screenWidth,
-                screenHeight,
-                screenPosition
-            )
-            )
-        {
-            continue;
-        }
-
-        float progress =
-            1.0f -
-            text.lifetime /
-            text.duration;
-
-        float alpha =
-            glm::clamp(
-                text.lifetime /
-                text.duration,
-                0.0f,
-                1.0f
-            );
-
-        screenPosition.y -=
-            progress *
-            48.0f;
-
-        float scale =
-            1.0f +
-            std::sin(
-                progress *
-                3.14159265f
-            ) *
-            0.35f;
-
-        ImVec4 finalColor =
-            text.color;
-
-        finalColor.w *=
-            alpha;
-
-        ImU32 textColor =
-            ImGui::ColorConvertFloat4ToU32(
-                finalColor
-            );
-
-        ImVec2 textSize =
-            ImGui::CalcTextSize(
-                text.text.c_str()
-            );
-
-        ImVec2 textPosition =
-            ImVec2(
-                screenPosition.x -
-                textSize.x * 0.5f * scale,
-                screenPosition.y -
-                textSize.y * 0.5f
-            );
-
-        drawList->AddRectFilled(
-            ImVec2(
-                textPosition.x - 8.0f,
-                textPosition.y - 4.0f
-            ),
-            ImVec2(
-                textPosition.x + textSize.x + 8.0f,
-                textPosition.y + textSize.y + 4.0f
-            ),
-            IM_COL32(
-                0,
-                0,
-                0,
-                static_cast<int>(
-                    150.0f *
-                    alpha
-                    )
-            ),
-            6.0f
-        );
-
-        drawList->AddText(
-            textPosition,
-            textColor,
-            text.text.c_str()
-        );
-    }
-}
-
-void DrawGameplayNotification(
-    int screenWidth
-)
-{
-    if (gameplayNotificationTimer <= 0.0f)
-        return;
-
-    float alpha =
-        glm::clamp(
-            gameplayNotificationTimer /
-            gameplayNotificationDuration,
-            0.0f,
-            1.0f
-        );
-
-    ImDrawList* drawList =
-        ImGui::GetForegroundDrawList();
-
-    ImVec2 textSize =
-        ImGui::CalcTextSize(
-            gameplayNotificationText.c_str()
-        );
-
-    ImVec2 textPosition =
-        ImVec2(
-            static_cast<float>(screenWidth) * 0.5f -
-            textSize.x * 0.5f,
-            72.0f
-        );
-
-    drawList->AddRectFilled(
-        ImVec2(
-            textPosition.x - 16.0f,
-            textPosition.y - 8.0f
-        ),
-        ImVec2(
-            textPosition.x + textSize.x + 16.0f,
-            textPosition.y + textSize.y + 8.0f
-        ),
-        IM_COL32(
-            0,
-            0,
-            0,
-            static_cast<int>(
-                180.0f *
-                alpha
-                )
-        ),
-        8.0f
-    );
-
-    ImVec4 finalColor =
-        gameplayNotificationColor;
-
-    finalColor.w *=
-        alpha;
-
-    drawList->AddText(
-        textPosition,
-        ImGui::ColorConvertFloat4ToU32(
-            finalColor
-        ),
-        gameplayNotificationText.c_str()
-    );
-}
-
-void DrawMonsterDangerOverlay(
-    int screenWidth,
-    int screenHeight
-)
-{
-    if (
-        !monsterEventActive ||
-        monsterPlayerCaught ||
-        musicRescueWin
-        )
-    {
-        return;
-    }
-
-    ImDrawList* drawList =
-        ImGui::GetForegroundDrawList();
-
-    float pulse =
-        0.5f +
-        0.5f *
-        std::sin(
-            static_cast<float>(
-                glfwGetTime()
-                ) *
-            7.0f
-        );
-
-    int alpha =
-        static_cast<int>(
-            28.0f +
-            pulse *
-            32.0f
-            );
-
-    drawList->AddRectFilled(
-        ImVec2(
-            0.0f,
-            0.0f
-        ),
-        ImVec2(
-            static_cast<float>(screenWidth),
-            static_cast<float>(screenHeight)
-        ),
-        IM_COL32(
-            160,
-            0,
-            0,
-            alpha
-        )
-    );
-
-    float borderThickness =
-        8.0f +
-        pulse *
-        4.0f;
-
-    drawList->AddRect(
-        ImVec2(
-            6.0f,
-            6.0f
-        ),
-        ImVec2(
-            static_cast<float>(screenWidth) - 6.0f,
-            static_cast<float>(screenHeight) - 6.0f
-        ),
-        IM_COL32(
-            255,
-            40,
-            40,
-            180
-        ),
-        0.0f,
-        0,
-        borderThickness
-    );
-
-    const char* dangerText =
-        "DANGER: MONSTER CHASING";
-
-    ImVec2 textSize =
-        ImGui::CalcTextSize(
-            dangerText
-        );
-
-    ImVec2 textPosition =
-        ImVec2(
-            static_cast<float>(screenWidth) * 0.5f -
-            textSize.x * 0.5f,
-            112.0f
-        );
-
-    drawList->AddText(
-        textPosition,
-        IM_COL32(
-            255,
-            80,
-            80,
-            255
-        ),
-        dangerText
-    );
-}
-
-void DrawGameplayFeedbackFX(
-    const glm::mat4& view,
-    const glm::mat4& projection,
-    int screenWidth,
-    int screenHeight
-)
-{
-    if (!showGameplayFeedbackFX)
-        return;
-
-    DrawFloatingGameplayTexts(
-        view,
-        projection,
-        screenWidth,
-        screenHeight
-    );
-
-    DrawGameplayNotification(
-        screenWidth
-    );
-
-    DrawMonsterDangerOverlay(
-        screenWidth,
-        screenHeight
-    );
-}
 bool IsMonsterSpawnObject(
     SceneObject* object
 )
@@ -6533,7 +6114,7 @@ void ActivateMonsterEvent(
 
     monsterEventText =
         "Monster Event: Monster awakened!";
-    ShowGameplayNotification(
+    gameplayFeedbackFX.ShowNotification(
         "Monster Event Started!",
         ImVec4(
             1.0f,
@@ -7465,7 +7046,7 @@ void UpdateCoinHunt(
                         0.0f
                     );
 
-                AddFloatingGameplayText(
+                gameplayFeedbackFX.AddFloatingText(
                     feedbackPosition,
                     "+1 Coin",
                     ImVec4(
@@ -7476,7 +7057,7 @@ void UpdateCoinHunt(
                     )
                 );
 
-                ShowGameplayNotification(
+                gameplayFeedbackFX.ShowNotification(
                     "Coin Collected!",
                     ImVec4(
                         1.0f,
@@ -11047,7 +10628,7 @@ int main()
         float currentFrame = glfwGetTime();
         deltaTime = currentFrame - lastFrame;
         lastFrame = currentFrame;
-        UpdateGameplayFeedbackFX(
+        gameplayFeedbackFX.Update(
             deltaTime
         );
         UpdateDayNightSystem(
@@ -12141,11 +11722,14 @@ ImGuiIO& io = ImGui::GetIO();
         }
         if (!showMainMenu)
         {
-            DrawGameplayFeedbackFX(
+            gameplayFeedbackFX.Draw(
                 view,
                 projection,
                 width,
-                height
+                height,
+                monsterEventActive,
+                monsterPlayerCaught,
+                musicRescueWin
             );
         }
         if (!showMainMenu)
@@ -13687,7 +13271,7 @@ ImGuiIO& io = ImGui::GetIO();
                     );
                     ImGui::Checkbox(
                         "Show Gameplay Feedback FX",
-                        &showGameplayFeedbackFX
+                        &gameplayFeedbackFX.enabled
                     );
                     ImGui::Checkbox(
                         "Cinematic Mode",

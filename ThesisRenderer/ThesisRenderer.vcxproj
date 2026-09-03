@@ -153,6 +153,7 @@
     <ClCompile Include="Cubemap.cpp" />
     <ClCompile Include="EditorUI.cpp" />
     <ClCompile Include="Frustum.cpp" />
+    <ClCompile Include="GameplayFeedbackFX.cpp" />
     <ClCompile Include="GridRenderer.cpp" />
     <ClCompile Include="InputManager.cpp" />
     <ClCompile Include="main.cpp" />
@@ -186,6 +187,7 @@
     <ClInclude Include="Cubemap.h" />
     <ClInclude Include="EditorUI.h" />
     <ClInclude Include="Frustum.h" />
+    <ClInclude Include="GameplayFeedbackFX.h" />
     <ClInclude Include="GridRenderer.h" />
     <ClInclude Include="InputManager.h" />
     <ClInclude Include="Light.h" />

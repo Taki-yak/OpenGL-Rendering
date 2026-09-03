@@ -35,6 +35,7 @@
 #include "AnimationLibrary.h"
 #include "AnimatedModel.h"
 #include "MiniMapRadar.h"
+#include "CinematicOverlay.h"
 #include <cstdlib>
 #include <ctime>
 #include <fstream>
@@ -616,6 +617,7 @@ true;
 bool showGameplayFeedbackFX =
 true;
 MiniMapRadar miniMapRadar;
+CinematicOverlay cinematicOverlay;
 struct FloatingGameplayText
 {
     glm::vec3 worldPosition =
@@ -657,12 +659,6 @@ ImVec4(
     1.0f,
     1.0f
 );
-bool cinematicPresentationMode =
-false;
-
-bool cinematicTogglePressed =
-false;
-
 float dayNightTimeOfDay =
 14.0f;
 bool enableWeatherSystem =
@@ -5842,98 +5838,6 @@ void DrawGameplayFeedbackFX(
         screenHeight
     );
 }
-void DrawCinematicOverlay(
-    int screenWidth,
-    int screenHeight,
-    float blackBarHeight
-)
-{
-    ImDrawList* drawList =
-        ImGui::GetForegroundDrawList();
-
-    drawList->AddRectFilled(
-        ImVec2(
-            0.0f,
-            0.0f
-        ),
-        ImVec2(
-            static_cast<float>(screenWidth),
-            blackBarHeight
-        ),
-        IM_COL32(
-            0,
-            0,
-            0,
-            255
-        )
-    );
-
-    drawList->AddRectFilled(
-        ImVec2(
-            0.0f,
-            static_cast<float>(screenHeight) -
-            blackBarHeight
-        ),
-        ImVec2(
-            static_cast<float>(screenWidth),
-            static_cast<float>(screenHeight)
-        ),
-        IM_COL32(
-            0,
-            0,
-            0,
-            255
-        )
-    );
-
-    const char* title =
-        "ORION ENGINE";
-
-    const char* subtitle =
-        "Cinematic Presentation Mode";
-
-    ImVec2 titleSize =
-        ImGui::CalcTextSize(
-            title
-        );
-
-    ImVec2 subtitleSize =
-        ImGui::CalcTextSize(
-            subtitle
-        );
-
-    drawList->AddText(
-        ImVec2(
-            static_cast<float>(screenWidth) * 0.5f -
-            titleSize.x * 0.5f,
-            24.0f
-        ),
-        IM_COL32(
-            255,
-            255,
-            255,
-            230
-        ),
-        title
-    );
-
-    drawList->AddText(
-        ImVec2(
-            static_cast<float>(screenWidth) * 0.5f -
-            subtitleSize.x * 0.5f,
-            static_cast<float>(screenHeight) -
-            blackBarHeight +
-            24.0f
-        ),
-        IM_COL32(
-            200,
-            200,
-            200,
-            220
-        ),
-        subtitle
-    );
-}
 bool IsMonsterSpawnObject(
     SceneObject* object
 )
@@ -10594,23 +10498,9 @@ int main()
     while (!glfwWindowShouldClose(window))
     {
         glfwPollEvents();
-        bool f10Down =
-            glfwGetKey(
-                window,
-                GLFW_KEY_F10
-            ) == GLFW_PRESS;
-
-        if (
-            f10Down &&
-            !cinematicTogglePressed
-            )
-        {
-            cinematicPresentationMode =
-                !cinematicPresentationMode;
-        }
-
-        cinematicTogglePressed =
-            f10Down;
+        cinematicOverlay.HandleShortcut(
+            window
+        );
         ImGui_ImplOpenGL3_NewFrame();
         ImGui_ImplGlfw_NewFrame();
         ImGui::NewFrame();
@@ -10799,6 +10689,11 @@ int main()
                 GL_DEPTH_BUFFER_BIT
             );
            
+            cinematicOverlay.Draw(
+                width,
+                height
+            );
+
             ImGui::Render();
 
             ImGui_ImplOpenGL3_RenderDrawData(
@@ -13682,7 +13577,7 @@ ImGuiIO& io = ImGui::GetIO();
                 if (
                     appMode == AppMode::Editor &&
                     showVisualPolishPanel &&
-                    !cinematicPresentationMode
+                    !cinematicOverlay.enabled
                     )
                 {
                     ImGui::SetNextWindowPos(
@@ -13796,16 +13691,15 @@ ImGuiIO& io = ImGui::GetIO();
                     );
                     ImGui::Checkbox(
                         "Cinematic Mode",
-                        &cinematicPresentationMode
+                        &cinematicOverlay.enabled
                     );
 
                     ImGui::TextDisabled(
                         "Shortcut: F10"
                     );
-
                     ImGui::DragFloat(
                         "Black Bar Height",
-                        &cinematicBlackBarHeight,
+                        &cinematicOverlay.blackBarHeight,
                         1.0f,
                         0.0f,
                         180.0f

@@ -149,6 +149,7 @@
     <ClCompile Include="AnimatedModel.cpp" />
     <ClCompile Include="AssetDatabase.cpp" />
     <ClCompile Include="AudioSystem.cpp" />
+    <ClCompile Include="CinematicOverlay.cpp" />
     <ClCompile Include="Cubemap.cpp" />
     <ClCompile Include="EditorUI.cpp" />
     <ClCompile Include="Frustum.cpp" />
@@ -180,6 +181,7 @@
     <ClInclude Include="AudioSystem.h" />
     <ClInclude Include="BoneInfo.h" />
     <ClInclude Include="Camera.h" />
+    <ClInclude Include="CinematicOverlay.h" />
     <ClInclude Include="Component.h" />
     <ClInclude Include="Cubemap.h" />
     <ClInclude Include="EditorUI.h" />

@@ -111,6 +111,9 @@
     <ClCompile Include="MiniMapRadar.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="CinematicOverlay.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Shader.h">
@@ -213,6 +216,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="MiniMapRadar.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="CinematicOverlay.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

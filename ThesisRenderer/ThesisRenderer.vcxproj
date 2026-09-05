@@ -151,6 +151,7 @@
     <ClCompile Include="AudioSystem.cpp" />
     <ClCompile Include="CinematicOverlay.cpp" />
     <ClCompile Include="Cubemap.cpp" />
+    <ClCompile Include="DayNightSystem.cpp" />
     <ClCompile Include="EditorUI.cpp" />
     <ClCompile Include="Frustum.cpp" />
     <ClCompile Include="GameplayFeedbackFX.cpp" />
@@ -187,6 +188,7 @@
     <ClInclude Include="CinematicOverlay.h" />
     <ClInclude Include="Component.h" />
     <ClInclude Include="Cubemap.h" />
+    <ClInclude Include="DayNightSystem.h" />
     <ClInclude Include="EditorUI.h" />
     <ClInclude Include="Frustum.h" />
     <ClInclude Include="GameplayFeedbackFX.h" />

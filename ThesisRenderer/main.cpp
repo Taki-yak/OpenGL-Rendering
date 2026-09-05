@@ -49,6 +49,7 @@
 #include "AudioSystem.h"
 #include <unordered_map>
 #include "DayNightSystem.h"
+#include "CoinRushGameMode.h"
 #ifdef max
 #undef max
 #endif
@@ -294,12 +295,8 @@ const char* mainMenuEmailUrl =
 "https://www.linkedin.com/in/taki-eddine-yakhlef-586730293/";
 bool useTorchFireFlicker =
 true;
-bool coinWinSoundPlayed =
-false;
 float tinyPropRenderDistance =
 30.0f;
-int coinTotalCount =
-0;
 bool monsterEventActive =
 false;
 
@@ -326,37 +323,11 @@ float monsterTerrainOffset =
 
 std::string monsterEventText =
 "Monster Event: Waiting for trigger.";
-int coinCollectedCount =
-0;
-
-bool coinHuntActive =
-false;
-
-bool coinHuntWon =
-false;
-
-bool coinHuntLost =
-false;
-bool coinLoseSoundPlayed =
-false;
-
-float coinCollectRadius =
-1.3f;
-
-float coinHuntTimeLimit =
-7.0f * 60.0f;
-
-float coinHuntTimeRemaining =
-7.0f * 60.0f;
 float smallPropRenderDistance =
 75.0f;
-
 float rockRenderDistance =
 115.0f;
-
-float mediumPropRenderDistance =
-180.0f;
-
+float mediumPropRenderDistance =180.0f;
 int distanceCulledObjects =
 0;
 bool cKeyPressed = false;
@@ -425,6 +396,7 @@ GameplayFeedbackFX gameplayFeedbackFX;
 ObjectiveMarkerSystem objectiveMarkerSystem;
 WeatherSystem weatherSystem;
 DayNightSystem dayNightSystem;
+CoinRushGameMode coinRushGameMode;
 std::string musicRescueText =
     "Music Rescue: Waiting for gate.";
 float interactionRadius =4.0f;
@@ -4667,8 +4639,8 @@ void DrawRuntimeResultOverlay()
     if (
         !monsterPlayerCaught &&
         !musicRescueWin &&
-        !coinHuntWon &&
-        !coinHuntLost
+      !coinRushGameMode.won &&
+!coinRushGameMode.lost
         )
     {
         return;
@@ -4751,7 +4723,7 @@ void DrawRuntimeResultOverlay()
             "The rescue event was completed successfully."
         );
     }
-    else if (coinHuntWon)
+    else if (coinRushGameMode.won)
     {
         ImGui::TextColored(
             ImVec4(
@@ -4793,7 +4765,7 @@ void DrawRuntimeResultOverlay()
             "Coin objective completed successfully."
         );
     }
-    else if (coinHuntLost)
+    else if (coinRushGameMode.lost)
     {
         ImGui::TextColored(
             ImVec4(
@@ -5777,285 +5749,6 @@ void DrawSceneHealthValidator(
     ImGui::TextDisabled(
         "This panel updates automatically while editing the scene."
     );
-
-    ImGui::End();
-}
-void RecalculateCoinHuntState(
-    Scene& scene
-)
-{
-    coinTotalCount =
-        0;
-
-    coinCollectedCount =
-        0;
-
-    for (SceneObject* object : scene.objects)
-    {
-        if (!IsCoinObject(object))
-            continue;
-
-        coinTotalCount++;
-
-        if (!object->visible)
-        {
-            coinCollectedCount++;
-        }
-    }
-
-    coinHuntActive =
-        coinTotalCount > 0;
-}
-void UpdateCoinHunt(
-    Scene& scene,
-    AudioSystem& audioSystem,
-    float deltaTime
-)
-{
-    SceneObject* player =
-        FindPlayerObject(
-            scene
-        );
-
-    if (player == nullptr)
-        return;
-
-    coinTotalCount =
-        0;
-
-    coinCollectedCount =
-        0;
-
-    bool collectedCoinThisFrame =
-        false;
-
-    for (SceneObject* object : scene.objects)
-    {
-        if (!IsCoinObject(object))
-            continue;
-
-        coinTotalCount++;
-
-        if (!object->visible)
-        {
-            coinCollectedCount++;
-        }
-    }
-
-    coinHuntActive =
-        coinTotalCount > 0;
-
-    if (!coinHuntActive)
-        return;
-
-    if (
-        !coinHuntWon &&
-        !coinHuntLost
-        )
-    {
-        coinHuntTimeRemaining -=
-            deltaTime;
-
-        if (coinHuntTimeRemaining < 0.0f)
-        {
-            coinHuntTimeRemaining =
-                0.0f;
-        }
-    }
-
-    if (
-        !coinHuntWon &&
-        !coinHuntLost
-        )
-    {
-        for (SceneObject* object : scene.objects)
-        {
-            if (!IsCoinObject(object))
-                continue;
-
-            if (!object->visible)
-                continue;
-
-            glm::vec3 playerPosition =
-                player->transform.position;
-
-            glm::vec3 coinPosition =
-                object->transform.position;
-
-            float distance =
-                glm::distance(
-                    glm::vec3(
-                        playerPosition.x,
-                        0.0f,
-                        playerPosition.z
-                    ),
-                    glm::vec3(
-                        coinPosition.x,
-                        0.0f,
-                        coinPosition.z
-                    )
-                );
-
-            if (distance <= coinCollectRadius)
-            {
-                glm::vec3 feedbackPosition =
-                    object->transform.position +
-                    glm::vec3(
-                        0.0f,
-                        2.2f,
-                        0.0f
-                    );
-
-                gameplayFeedbackFX.AddFloatingText(
-                    feedbackPosition,
-                    "+1 Coin",
-                    ImVec4(
-                        1.0f,
-                        0.85f,
-                        0.15f,
-                        1.0f
-                    )
-                );
-
-                gameplayFeedbackFX.ShowNotification(
-                    "Coin Collected!",
-                    ImVec4(
-                        1.0f,
-                        0.85f,
-                        0.15f,
-                        1.0f
-                    ),
-                    0.90f
-                );
-
-                object->visible =
-                    false;
-
-                coinCollectedCount++;
-
-                collectedCoinThisFrame =
-                    true;
-
-                std::cout
-                    << "Coin collected: "
-                    << coinCollectedCount
-                    << " / "
-                    << coinTotalCount
-                    << std::endl;
-            }
-        }
-    }
-
-    if (collectedCoinThisFrame)
-    {
-        audioSystem.PlayFromStart(
-            "coin_collect",
-            0.90f
-        );
-    }
-
-    if (
-        coinTotalCount > 0 &&
-        coinCollectedCount >= coinTotalCount &&
-        !coinHuntWon &&
-        !coinHuntLost
-        )
-    {
-        coinHuntWon =
-            true;
-
-        if (!coinWinSoundPlayed)
-        {
-            audioSystem.PlayFromStart(
-                "coin_win",
-                0.95f
-            );
-
-            coinWinSoundPlayed =
-                true;
-        }
-
-        std::cout
-            << "Coin hunt completed!"
-            << std::endl;
-    }
-
-    if (
-        coinHuntTimeRemaining <= 0.0f &&
-        coinCollectedCount < coinTotalCount &&
-        !coinHuntWon &&
-        !coinHuntLost
-        )
-    {
-        coinHuntLost =
-            true;
-
-        if (!coinLoseSoundPlayed)
-        {
-            audioSystem.PlayFromStart(
-                "coin_lose",
-                0.95f
-            );
-
-            coinLoseSoundPlayed =
-                true;
-        }
-
-        std::cout
-            << "Coin hunt failed. Time is over."
-            << std::endl;
-    }
-}
-
-void DrawCoinHuntHUD()
-{
-    if (!coinHuntActive)
-        return;
-
-    ImGui::SetNextWindowPos(
-        ImVec2(
-            620.0f,
-            70.0f
-        ),
-        ImGuiCond_Always
-    );
-
-    ImGui::SetNextWindowSize(
-        ImVec2(
-            240.0f,
-            90.0f
-        ),
-        ImGuiCond_Always
-    );
-
-    ImGui::Begin(
-        "Coin Hunt HUD",
-        nullptr,
-        ImGuiWindowFlags_NoResize |
-        ImGuiWindowFlags_NoCollapse
-    );
-
-    ImGui::Text(
-        "Coins: %d / %d",
-        coinCollectedCount,
-        coinTotalCount
-    );
-
-    if (
-        coinTotalCount > 0 &&
-        coinCollectedCount >= coinTotalCount
-        )
-    {
-        ImGui::Text(
-            "All coins collected!"
-        );
-    }
-    else
-    {
-        ImGui::Text(
-            "Collect all coins."
-        );
-    }
 
     ImGui::End();
 }
@@ -9382,29 +9075,9 @@ int main()
            appMode == AppMode::Play
            )
        {
-           coinHuntWon =
-               false;
-
-           coinHuntLost =
-               false;
-
-           coinWinSoundPlayed =
-               false;
-
-           coinLoseSoundPlayed =
-               false;
-
-           coinHuntTimeRemaining =
-               coinHuntTimeLimit;
-
-           for (SceneObject* object : scene.objects)
-           {
-               if (IsCoinObject(object))
-               {
-                   object->visible =
-                       true;
-               }
-           }
+           coinRushGameMode.Reset(
+               scene
+           );
            ResetMonsterEventForPlay(
                scene
            );
@@ -9422,10 +9095,7 @@ int main()
 
            mainMenuMusicPlaying =
                false;
-           RecalculateCoinHuntState(
-               scene
-
-           );
+     
            if (useAnimatedPlayerVisual)
            {
                animatedRuntimeClip =
@@ -9742,8 +9412,8 @@ ImGuiIO& io = ImGui::GetIO();
             if (
                 !monsterPlayerCaught &&
                 !musicRescueWin &&
-                !coinHuntWon &&
-                !coinHuntLost
+                !coinRushGameMode.won &&
+                !coinRushGameMode.lost
                 )
             {
                 thirdPersonController.Update(
@@ -9759,9 +9429,10 @@ ImGuiIO& io = ImGui::GetIO();
                 !musicRescueWin
                 )
             {
-                UpdateCoinHunt(
+                coinRushGameMode.Update(
                     scene,
                     audioSystem,
+                    gameplayFeedbackFX,
                     deltaTime
                 );
             }
@@ -10117,10 +9788,12 @@ ImGuiIO& io = ImGui::GetIO();
             );
 
             ImGui::Separator();
-            if (coinHuntActive)
+            if (coinRushGameMode.active)
             {
                 int timeSeconds =
-                    (int)coinHuntTimeRemaining;
+                    static_cast<int>(
+                        coinRushGameMode.timeRemaining
+                        );
 
                 int minutes =
                     timeSeconds / 60;
@@ -10129,9 +9802,9 @@ ImGuiIO& io = ImGui::GetIO();
                     timeSeconds % 60;
 
                 ImGui::Text(
-                    "Coin Hunt: %d / %d",
-                    coinCollectedCount,
-                    coinTotalCount
+                    "Coin Rush: %d / %d",
+                    coinRushGameMode.collectedCount,
+                    coinRushGameMode.totalCount
                 );
 
                 ImGui::Text(
@@ -10140,13 +9813,13 @@ ImGuiIO& io = ImGui::GetIO();
                     seconds
                 );
 
-                if (coinHuntWon)
+                if (coinRushGameMode.won)
                 {
                     ImGui::Text(
                         "State: WIN - All coins collected!"
                     );
                 }
-                else if (coinHuntLost)
+                else if (coinRushGameMode.lost)
                 {
                     ImGui::Text(
                         "State: LOSE - Time is over!"
@@ -10164,7 +9837,7 @@ ImGuiIO& io = ImGui::GetIO();
             else
             {
                 ImGui::Text(
-                    "Coin Hunt: No coins placed."
+                    "Coin Rush: No coins placed."
                 );
 
                 ImGui::Separator();

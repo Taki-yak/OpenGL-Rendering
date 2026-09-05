@@ -150,6 +150,7 @@
     <ClCompile Include="AssetDatabase.cpp" />
     <ClCompile Include="AudioSystem.cpp" />
     <ClCompile Include="CinematicOverlay.cpp" />
+    <ClCompile Include="CoinRushGameMode.cpp" />
     <ClCompile Include="Cubemap.cpp" />
     <ClCompile Include="DayNightSystem.cpp" />
     <ClCompile Include="EditorUI.cpp" />
@@ -186,6 +187,7 @@
     <ClInclude Include="BoneInfo.h" />
     <ClInclude Include="Camera.h" />
     <ClInclude Include="CinematicOverlay.h" />
+    <ClInclude Include="CoinRushGameMode.h" />
     <ClInclude Include="Component.h" />
     <ClInclude Include="Cubemap.h" />
     <ClInclude Include="DayNightSystem.h" />

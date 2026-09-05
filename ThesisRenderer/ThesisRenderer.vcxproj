@@ -173,6 +173,7 @@
     <ClCompile Include="stb_image.cpp" />
     <ClCompile Include="Texture.cpp" />
     <ClCompile Include="ThirdParty\miniaudio\miniaudio.c" />
+    <ClCompile Include="WeatherSystem.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="AnimatedModel.h" />
@@ -212,6 +213,7 @@
     <ClInclude Include="ThirdParty\miniaudio\miniaudio.h" />
     <ClInclude Include="ThirdPersonController.h" />
     <ClInclude Include="Transform.h" />
+    <ClInclude Include="WeatherSystem.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

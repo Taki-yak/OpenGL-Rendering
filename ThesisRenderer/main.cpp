@@ -23,6 +23,7 @@
 #include "SceneSerializer.h"
 #include "GameplayFeedbackFX.h"
 #include "ObjectiveMarkerSystem.h"
+#include "WeatherSystem.h"
 #include "imgui.h"
 #include "imgui_impl_glfw.h"
 #include "imgui_impl_opengl3.h"
@@ -618,52 +619,9 @@ MiniMapRadar miniMapRadar;
 CinematicOverlay cinematicOverlay;
 GameplayFeedbackFX gameplayFeedbackFX;
 ObjectiveMarkerSystem objectiveMarkerSystem;
+WeatherSystem weatherSystem;
 float dayNightTimeOfDay =
 14.0f;
-bool enableWeatherSystem =
-true;
-
-bool showWeatherOverlay =
-true;
-
-int weatherPresetIndex =
-0;
-
-const char* weatherPresetNames[] =
-{
-    "Clear",
-    "Foggy Forest",
-    "Light Rain",
-    "Storm"
-};
-
-bool weatherUseFog =
-false;
-
-glm::vec3 weatherFogColor =
-glm::vec3(
-    0.55f,
-    0.62f,
-    0.68f
-);
-
-float weatherFogStart =
-60.0f;
-
-float weatherFogEnd =
-190.0f;
-
-float weatherFogStrength =
-0.0f;
-
-bool weatherRainOverlay =
-false;
-
-bool weatherStormOverlay =
-false;
-
-float weatherRainIntensity =
-0.0f;
 float dayNightCycleSpeed =
 0.25f;
 
@@ -707,317 +665,6 @@ float interactionResultTimer =
 
 bool ignoreNextMouseDelta =
 false;
-void ApplyWeatherAtmosphere()
-{
-    weatherUseFog =
-        false;
-
-    weatherRainOverlay =
-        false;
-
-    weatherStormOverlay =
-        false;
-
-    weatherRainIntensity =
-        0.0f;
-
-    weatherFogColor =
-        glm::vec3(
-            0.55f,
-            0.62f,
-            0.68f
-        );
-
-    weatherFogStart =
-        65.0f;
-
-    weatherFogEnd =
-        190.0f;
-
-    weatherFogStrength =
-        0.0f;
-
-    if (!enableWeatherSystem)
-        return;
-
-    // ================= CLEAR =================
-    if (weatherPresetIndex == 0)
-    {
-        return;
-    }
-
-    // ================= FOGGY FOREST =================
-    if (weatherPresetIndex == 1)
-    {
-        weatherUseFog =
-            true;
-
-        weatherFogColor =
-            glm::vec3(
-                0.48f,
-                0.55f,
-                0.52f
-            );
-
-        weatherFogStart =
-            28.0f;
-
-        weatherFogEnd =
-            145.0f;
-
-        weatherFogStrength =
-            0.95f;
-
-        dynamicSkyColor =
-            glm::mix(
-                dynamicSkyColor,
-                weatherFogColor,
-                0.42f
-            );
-
-        dynamicSunColor *=
-            0.72f;
-    }
-
-    // ================= LIGHT RAIN =================
-    else if (weatherPresetIndex == 2)
-    {
-        weatherUseFog =
-            true;
-
-        weatherRainOverlay =
-            true;
-
-        weatherRainIntensity =
-            0.45f;
-
-        weatherFogColor =
-            glm::vec3(
-                0.30f,
-                0.36f,
-                0.44f
-            );
-
-        weatherFogStart =
-            35.0f;
-
-        weatherFogEnd =
-            135.0f;
-
-        weatherFogStrength =
-            0.80f;
-
-        dynamicSkyColor =
-            glm::mix(
-                dynamicSkyColor,
-                glm::vec3(
-                    0.13f,
-                    0.16f,
-                    0.21f
-                ),
-                0.55f
-            );
-
-        dynamicSunColor *=
-            0.52f;
-    }
-
-    // ================= STORM =================
-    else if (weatherPresetIndex == 3)
-    {
-        weatherUseFog =
-            true;
-
-        weatherRainOverlay =
-            true;
-
-        weatherStormOverlay =
-            true;
-
-        weatherRainIntensity =
-            0.90f;
-
-        weatherFogColor =
-            glm::vec3(
-                0.14f,
-                0.16f,
-                0.20f
-            );
-
-        weatherFogStart =
-            22.0f;
-
-        weatherFogEnd =
-            115.0f;
-
-        weatherFogStrength =
-            1.15f;
-
-        dynamicSkyColor =
-            glm::mix(
-                dynamicSkyColor,
-                glm::vec3(
-                    0.055f,
-                    0.065f,
-                    0.085f
-                ),
-                0.78f
-            );
-
-        dynamicSunColor *=
-            0.32f;
-    }
-}
-
-void DrawWeatherOverlay(
-    int screenWidth,
-    int screenHeight
-)
-{
-    if (!enableWeatherSystem)
-        return;
-
-    if (!showWeatherOverlay)
-        return;
-
-    if (
-        !weatherRainOverlay &&
-        !weatherStormOverlay
-        )
-    {
-        return;
-    }
-
-    ImDrawList* drawList =
-        ImGui::GetForegroundDrawList();
-
-    float time =
-        static_cast<float>(
-            glfwGetTime()
-            );
-
-    if (weatherStormOverlay)
-    {
-        float stormPulse =
-            0.5f +
-            0.5f *
-            std::sin(
-                time *
-                2.2f
-            );
-
-        drawList->AddRectFilled(
-            ImVec2(
-                0.0f,
-                0.0f
-            ),
-            ImVec2(
-                static_cast<float>(screenWidth),
-                static_cast<float>(screenHeight)
-            ),
-            IM_COL32(
-                10,
-                15,
-                25,
-                static_cast<int>(
-                    35.0f +
-                    stormPulse *
-                    25.0f
-                    )
-            )
-        );
-    }
-
-    int rainLineCount =
-        static_cast<int>(
-            160.0f *
-            weatherRainIntensity
-            );
-
-    for (int i = 0; i < rainLineCount; i++)
-    {
-        float seed =
-            static_cast<float>(
-                i
-                );
-
-        float x =
-            std::fmod(
-                seed * 73.13f +
-                time * 420.0f,
-                static_cast<float>(screenWidth) + 160.0f
-            ) -
-            80.0f;
-
-        float y =
-            std::fmod(
-                seed * 151.71f +
-                time * 650.0f,
-                static_cast<float>(screenHeight) + 160.0f
-            ) -
-            80.0f;
-
-        float length =
-            22.0f +
-            weatherRainIntensity *
-            24.0f;
-
-        drawList->AddLine(
-            ImVec2(
-                x,
-                y
-            ),
-            ImVec2(
-                x - 16.0f,
-                y + length
-            ),
-            IM_COL32(
-                170,
-                190,
-                230,
-                static_cast<int>(
-                    85.0f +
-                    weatherRainIntensity *
-                    75.0f
-                    )
-            ),
-            1.2f
-        );
-    }
-
-    if (weatherStormOverlay)
-    {
-        float lightning =
-            std::sin(
-                time *
-                3.7f
-            ) *
-            std::sin(
-                time *
-                8.1f
-            );
-
-        if (lightning > 0.92f)
-        {
-            drawList->AddRectFilled(
-                ImVec2(
-                    0.0f,
-                    0.0f
-                ),
-                ImVec2(
-                    static_cast<float>(screenWidth),
-                    static_cast<float>(screenHeight)
-                ),
-                IM_COL32(
-                    220,
-                    235,
-                    255,
-                    38
-                )
-            );
-        }
-    }
-}
 bool IsEditorSavedObject(
     SceneObject* object
 )
@@ -10076,7 +9723,10 @@ int main()
             dynamicSunColor,
             dynamicSkyColor
         );
-        ApplyWeatherAtmosphere();
+        weatherSystem.ApplyToAtmosphere(
+            dynamicSkyColor,
+            dynamicSunColor
+        );
         if (!editorCameraStartFixed)
         {
             camera.Position =
@@ -11133,6 +10783,13 @@ ImGuiIO& io = ImGui::GetIO();
         );
         if (!showMainMenu)
         {
+            weatherSystem.DrawOverlay(
+                width,
+                height
+            );
+        }
+        if (!showMainMenu)
+        {
             objectiveMarkerSystem.Draw(
                 scene,
                 camera.Position,
@@ -11416,27 +11073,27 @@ ImGuiIO& io = ImGui::GetIO();
         );
         shader.setBool(
             "useAtmosphereFog",
-            weatherUseFog
+            weatherSystem.useFog
         );
 
         shader.setVec3(
             "atmosphereFogColor",
-            weatherFogColor
+            weatherSystem.fogColor
         );
 
         shader.setFloat(
             "atmosphereFogStart",
-            weatherFogStart
+            weatherSystem.fogStart
         );
 
         shader.setFloat(
             "atmosphereFogEnd",
-            weatherFogEnd
+            weatherSystem.fogEnd
         );
 
         shader.setFloat(
             "atmosphereFogStrength",
-            weatherFogStrength
+            weatherSystem.fogStrength
         );
         UpdateTorchFireFlicker(
             scene,
@@ -12639,31 +12296,29 @@ ImGuiIO& io = ImGui::GetIO();
 
                     ImGui::Checkbox(
                         "Enable Weather System",
-                        &enableWeatherSystem
+                        &weatherSystem.enabled
                     );
 
                     ImGui::Combo(
                         "Weather Preset",
-                        &weatherPresetIndex,
-                        weatherPresetNames,
-                        IM_ARRAYSIZE(
-                            weatherPresetNames
-                        )
+                        &weatherSystem.presetIndex,
+                        WeatherSystem::PresetNames,
+                        WeatherSystem::PresetCount
                     );
 
                     ImGui::Checkbox(
                         "Show Weather Overlay",
-                        &showWeatherOverlay
+                        &weatherSystem.showOverlay
                     );
 
                     ImGui::Text(
                         "Fog: %s",
-                        weatherUseFog ? "Enabled" : "Disabled"
+                        weatherSystem.useFog ? "Enabled" : "Disabled"
                     );
 
                     ImGui::Text(
                         "Rain: %s",
-                        weatherRainOverlay ? "Enabled" : "Disabled"
+                        weatherSystem.rainOverlay ? "Enabled" : "Disabled"
                     );
                     ImGui::Separator();
 

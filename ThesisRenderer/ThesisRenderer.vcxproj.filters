@@ -117,6 +117,9 @@
     <ClCompile Include="GameplayFeedbackFX.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="ObjectiveMarkerSystem.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Shader.h">
@@ -225,6 +228,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="GameplayFeedbackFX.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ObjectiveMarkerSystem.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

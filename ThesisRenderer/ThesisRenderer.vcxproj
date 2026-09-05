@@ -164,6 +164,7 @@
     <ClCompile Include="MiniMapRadar.cpp" />
     <ClCompile Include="Model.cpp" />
     <ClCompile Include="ModelLoaderTest.cpp" />
+    <ClCompile Include="MonsterEscapeGameMode.cpp" />
     <ClCompile Include="ObjectiveMarkerSystem.cpp" />
     <ClCompile Include="PrefabManager.cpp" />
     <ClCompile Include="Renderer.cpp" />
@@ -201,6 +202,7 @@
     <ClInclude Include="mesh.h" />
     <ClInclude Include="MiniMapRadar.h" />
     <ClInclude Include="Model.h" />
+    <ClInclude Include="MonsterEscapeGameMode.h" />
     <ClInclude Include="ObjectiveMarkerSystem.h" />
     <ClInclude Include="Oscillatorcomponent.h" />
     <ClInclude Include="PlayerController.h" />

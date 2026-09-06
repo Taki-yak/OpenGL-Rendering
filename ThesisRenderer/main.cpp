@@ -9515,99 +9515,317 @@ ImGuiIO& io = ImGui::GetIO();
         }
 
         // ================= GAMEPLAY HUD =================
+        // ================= BETTER PLAY MODE HUD =================
 
         if (appMode == AppMode::Play)
         {
             ImGui::SetNextWindowPos(
                 ImVec2(
                     20.0f,
-                    680.0f
+                    90.0f
                 ),
                 ImGuiCond_Always
             );
 
-            ImGui::SetNextWindowSize(
-                ImVec2(
-                    520.0f,
-                    240.0f
+            ImGui::Begin(
+                "ORION Runtime HUD",
+                nullptr,
+                ImGuiWindowFlags_NoResize |
+                ImGuiWindowFlags_NoCollapse |
+                ImGuiWindowFlags_AlwaysAutoResize
+            );
+
+            ImGui::TextColored(
+                ImVec4(
+                    0.35f,
+                    0.75f,
+                    1.0f,
+                    1.0f
                 ),
-                ImGuiCond_Always
+                "ORION RUNTIME"
             );
 
-            ImGui::Begin("Gameplay HUD");
+            ImGui::Separator();
 
-            ImGui::Text(
-                "Gameplay Interaction System"
-            );
             ImGui::Text(
                 "Mode: %s",
                 GetSelectedRuntimeGameModeName()
             );
-            ImGui::Separator();
-            if (coinRushGameMode.active)
+
+            ImGui::Spacing();
+
+            ImGui::TextColored(
+                ImVec4(
+                    1.0f,
+                    0.85f,
+                    0.25f,
+                    1.0f
+                ),
+                "Objective"
+            );
+
+            if (selectedRuntimeGameMode == RuntimeGameMode::FreeRoam)
             {
-                int timeSeconds =
-                    static_cast<int>(
-                        coinRushGameMode.timeRemaining
-                        );
+                ImGui::TextWrapped(
+                    "Explore the scene and test editor-created objects."
+                );
+            }
+            else if (selectedRuntimeGameMode == RuntimeGameMode::CoinRush)
+            {
+                ImGui::TextWrapped(
+                    "Collect all coins before the timer ends."
+                );
+            }
+            else if (selectedRuntimeGameMode == RuntimeGameMode::MonsterEscape)
+            {
+                ImGui::TextWrapped(
+                    "Enter the trigger zone and survive the monster chase."
+                );
+            }
+            else
+            {
+                ImGui::TextWrapped(
+                    "Full demo: collect coins, trigger the monster, and complete music rescue."
+                );
+            }
 
-                int minutes =
-                    timeSeconds / 60;
+            ImGui::Separator();
 
-                int seconds =
-                    timeSeconds % 60;
-
-                ImGui::Text(
-                    "Coin Rush: %d / %d",
-                    coinRushGameMode.collectedCount,
-                    coinRushGameMode.totalCount
+            if (IsCoinRushModeEnabled())
+            {
+                ImGui::TextColored(
+                    ImVec4(
+                        1.0f,
+                        0.82f,
+                        0.20f,
+                        1.0f
+                    ),
+                    "Coin Rush"
                 );
 
-                ImGui::Text(
-                    "Time: %02d:%02d",
-                    minutes,
-                    seconds
-                );
-
-                if (coinRushGameMode.won)
+                if (coinRushGameMode.active)
                 {
+                    int timeSeconds =
+                        static_cast<int>(
+                            coinRushGameMode.timeRemaining
+                            );
+
+                    int minutes =
+                        timeSeconds / 60;
+
+                    int seconds =
+                        timeSeconds % 60;
+
+                    float coinProgress =
+                        0.0f;
+
+                    if (coinRushGameMode.totalCount > 0)
+                    {
+                        coinProgress =
+                            static_cast<float>(
+                                coinRushGameMode.collectedCount
+                                ) /
+                            static_cast<float>(
+                                coinRushGameMode.totalCount
+                                );
+                    }
+
                     ImGui::Text(
-                        "State: WIN - All coins collected!"
+                        "Coins: %d / %d",
+                        coinRushGameMode.collectedCount,
+                        coinRushGameMode.totalCount
+                    );
+
+                    ImGui::ProgressBar(
+                        coinProgress,
+                        ImVec2(
+                            260.0f,
+                            12.0f
+                        )
+                    );
+
+                    ImGui::Text(
+                        "Time Left: %02d:%02d",
+                        minutes,
+                        seconds
+                    );
+
+                    if (coinRushGameMode.won)
+                    {
+                        ImGui::TextColored(
+                            ImVec4(
+                                0.2f,
+                                1.0f,
+                                0.2f,
+                                1.0f
+                            ),
+                            "State: WIN"
+                        );
+                    }
+                    else if (coinRushGameMode.lost)
+                    {
+                        ImGui::TextColored(
+                            ImVec4(
+                                1.0f,
+                                0.2f,
+                                0.2f,
+                                1.0f
+                            ),
+                            "State: LOSE"
+                        );
+                    }
+                    else
+                    {
+                        ImGui::TextColored(
+                            ImVec4(
+                                1.0f,
+                                0.85f,
+                                0.25f,
+                                1.0f
+                            ),
+                            "State: ACTIVE"
+                        );
+                    }
+                }
+                else
+                {
+                    ImGui::TextDisabled(
+                        "No coins placed in the scene."
                     );
                 }
-                else if (coinRushGameMode.lost)
+
+                ImGui::Separator();
+            }
+
+            if (IsMonsterEscapeModeEnabled())
+            {
+                ImGui::TextColored(
+                    ImVec4(
+                        1.0f,
+                        0.35f,
+                        0.25f,
+                        1.0f
+                    ),
+                    "Monster Escape"
+                );
+
+                ImGui::TextWrapped(
+                    "%s",
+                    monsterEscapeGameMode.eventText.c_str()
+                );
+
+                if (monsterEscapeGameMode.playerCaught)
                 {
-                    ImGui::Text(
-                        "State: LOSE - Time is over!"
+                    ImGui::TextColored(
+                        ImVec4(
+                            1.0f,
+                            0.15f,
+                            0.15f,
+                            1.0f
+                        ),
+                        "State: LOSE"
+                    );
+                }
+                else if (monsterEscapeGameMode.active)
+                {
+                    ImGui::TextColored(
+                        ImVec4(
+                            1.0f,
+                            0.65f,
+                            0.15f,
+                            1.0f
+                        ),
+                        "State: CHASING"
                     );
                 }
                 else
                 {
-                    ImGui::Text(
-                        "State: Collect all coins."
+                    ImGui::TextDisabled(
+                        "State: WAITING FOR TRIGGER"
                     );
                 }
 
                 ImGui::Separator();
             }
-            else
+
+            if (IsMusicRescueModeEnabled())
             {
-                ImGui::Text(
-                    "Coin Rush: No coins placed."
+                ImGui::TextColored(
+                    ImVec4(
+                        0.45f,
+                        0.85f,
+                        1.0f,
+                        1.0f
+                    ),
+                    "Music Rescue"
                 );
+
+                ImGui::TextWrapped(
+                    "%s",
+                    musicRescueText.c_str()
+                );
+
+                if (musicRescueWin)
+                {
+                    ImGui::TextColored(
+                        ImVec4(
+                            0.2f,
+                            1.0f,
+                            0.2f,
+                            1.0f
+                        ),
+                        "State: WIN"
+                    );
+                }
+                else if (musicNpcChasingMonster)
+                {
+                    ImGui::TextColored(
+                        ImVec4(
+                            0.45f,
+                            0.85f,
+                            1.0f,
+                            1.0f
+                        ),
+                        "State: NPC CHASING MONSTER"
+                    );
+                }
+                else if (musicRescueActive)
+                {
+                    ImGui::TextColored(
+                        ImVec4(
+                            1.0f,
+                            0.85f,
+                            0.25f,
+                            1.0f
+                        ),
+                        "State: ACTIVE"
+                    );
+                }
+                else
+                {
+                    ImGui::TextDisabled(
+                        "State: WAITING"
+                    );
+                }
 
                 ImGui::Separator();
             }
+
+            ImGui::TextColored(
+                ImVec4(
+                    0.7f,
+                    1.0f,
+                    0.7f,
+                    1.0f
+                ),
+                "Interaction"
+            );
+
             if (!interactionHintText.empty())
             {
-                ImGui::Text(
+                ImGui::TextWrapped(
                     "%s",
                     interactionHintText.c_str()
-                );
-
-                ImGui::Text(
-                    "Target: %s",
-                    nearbyInteractableObject->name.c_str()
                 );
 
                 ImGui::Text(
@@ -9615,95 +9833,36 @@ ImGuiIO& io = ImGui::GetIO();
                     nearbyInteractableDistance,
                     interactionRadius
                 );
-
-                ImGui::Text(
-                    "Nearest object is highlighted."
-                );
             }
             else
             {
-                ImGui::Text(
-                    "Walk near a house, camp object, rock, fence, wall, or platform."
-                );
-
-                ImGui::Text(
-                    "Interaction radius: %.2f",
-                    interactionRadius
+                ImGui::TextDisabled(
+                    "No interaction target nearby."
                 );
             }
 
             if (interactionResultTimer > 0.0f)
             {
-                ImGui::Separator();
-
-                ImGui::Text(
-                    "%s",
+                ImGui::TextWrapped(
+                    "Last Action: %s",
                     interactionResultText.c_str()
                 );
             }
-         
+
             ImGui::Text(
                 "Interactions: %d",
                 interactionCount
             );
-            ImGui::Text(
-                "%s",
-                monsterEscapeGameMode.eventText.c_str()
-            );
-
-            if (monsterEscapeGameMode.playerCaught)
-            {
-                ImGui::Text(
-                    "Monster State: LOSE"
-                );
-            }
-            else if (monsterEscapeGameMode.active)
-            {
-                ImGui::Text(
-                    "Monster State: CHASING"
-                );
-            }
-            else
-            {
-                ImGui::Text(
-                    "Monster State: WAITING"
-                );
-            }
 
             ImGui::Separator();
-            ImGui::Text(
-                "%s",
-                musicRescueText.c_str()
+
+            ImGui::TextDisabled(
+                "WASD Move | Shift Run | Space Jump | E Interact"
             );
 
-            if (musicRescueWin)
-            {
-                ImGui::Text(
-                    "Music Rescue State: WIN"
-                );
-            }
-            else if (musicNpcChasingMonster)
-            {
-                ImGui::Text(
-                    "Music Rescue State: NPC CHASING MONSTER"
-                );
-            }
-            else if (musicRescueActive)
-            {
-                ImGui::Text(
-                    "Music Rescue State: ACTIVE"
-                );
-            }
-            else
-            {
-                ImGui::Text(
-                    "Music Rescue State: WAITING"
-                );
-            }
-
-            ImGui::Separator();
             ImGui::End();
         }
+       
         if (appMode == AppMode::Play)
         {
             DrawRuntimeResultOverlay();

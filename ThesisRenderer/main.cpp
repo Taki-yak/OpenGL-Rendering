@@ -395,7 +395,8 @@ true;
 
 bool showAssetBrowserPanel =
 true;
-
+bool showPlayerToolsPanel =
+true;
 bool showStatisticsPanel =
 true;
 
@@ -11425,6 +11426,11 @@ ImGuiIO& io = ImGui::GetIO();
 
                     showSelectedObjectToolsPanel =
                         false;
+                    showPlayerToolsPanel =
+                        true;
+
+                    showVisualPolishPanel =
+                        true;
                 }
 
                 ImGui::SameLine();
@@ -11457,6 +11463,11 @@ ImGuiIO& io = ImGui::GetIO();
 
                     showSelectedObjectToolsPanel =
                         true;
+                    showPlayerToolsPanel =
+                        true;
+
+                    showVisualPolishPanel =
+                        true;
                 }
 
                 ImGui::Separator();
@@ -11485,7 +11496,15 @@ ImGuiIO& io = ImGui::GetIO();
                     "Light Inspector",
                     &showLightInspectorPanel
                 );
+                ImGui::Checkbox(
+                    "Player Tools",
+                    &showPlayerToolsPanel
+                );
 
+                ImGui::Checkbox(
+                    "Visual Polish",
+                    &showVisualPolishPanel
+                );
                 ImGui::Checkbox(
                     "Debug",
                     &showDebugPanel
@@ -11705,484 +11724,358 @@ ImGuiIO& io = ImGui::GetIO();
             );
             }
             // ================= PLAYER SPAWN TOOLS =================
-        
-
-            ImGui::SetNextWindowPos(
-                ImVec2(
-                    1240.0f,
-                    360.0f
-                ),
-                ImGuiCond_Once
-            );
-
-            ImGui::SetNextWindowSize(
-                ImVec2(
-                    390.0f,
-                    430.0f
-                ),
-                ImGuiCond_Once
-            );
-            ImGui::SetNextWindowPos(
-                ImVec2(rightX, topY + 420.0f),
-                ImGuiCond_Always
-            );
-
-            ImGui::SetNextWindowSize(
-                ImVec2(rightWidth, 280.0f),
-                ImGuiCond_Always
-            );
-            ImGui::Begin("Player Tools");
-            ImGui::Checkbox(
-                "Show Scene Health Validator",
-                &showSceneHealthValidator
-            );
-
-            ImGui::Separator();
-            if (playerObject != nullptr)
+            if (showPlayerToolsPanel)
             {
-                ImGui::Text(
-                    "Character Visual Mode"
+                ImGui::SetNextWindowPos(
+                    ImVec2(
+                        1240.0f,
+                        360.0f
+                    ),
+                    ImGuiCond_Once
                 );
 
-                bool previousAnimatedVisualState =
-                    useAnimatedPlayerVisual;
-
-                ImGui::Checkbox(
-                    "Use Animated Player",
-                    &useAnimatedPlayerVisual
+                ImGui::SetNextWindowSize(
+                    ImVec2(
+                        390.0f,
+                        430.0f
+                    ),
+                    ImGuiCond_Once
+                );
+                ImGui::SetNextWindowPos(
+                    ImVec2(rightX, topY + 420.0f),
+                    ImGuiCond_Always
                 );
 
-                if (previousAnimatedVisualState != useAnimatedPlayerVisual)
+                ImGui::SetNextWindowSize(
+                    ImVec2(rightWidth, 280.0f),
+                    ImGuiCond_Always
+                );
+                ImGui::Begin("Player Tools");
+
+
+
+                if (playerObject != nullptr)
                 {
-                    animatedPlayerSmoothInitialized =
-                        false;
-                }
-
-                ImGui::Checkbox(
-                    "Hide Classic Player Mesh",
-                    &hideClassicPlayerWhenAnimated
-                );
-
-                ImGui::DragFloat(
-                    "Animated Scale",
-                    &animatedPlayerScale,
-                    0.001f,
-                    0.001f,
-                    1.0f
-                );
-
-                ImGui::DragFloat(
-                    "Animated Rotation Offset Y",
-                    &animatedPlayerRotationOffsetY,
-                    1.0f,
-                    -360.0f,
-                    360.0f
-                );
-
-                ImGui::DragFloat(
-                    "Animated Y Offset",
-                    &animatedPlayerYOffset,
-                    0.01f,
-                    -5.0f,
-                    5.0f
-                );
-
-                ImGui::Text(
-                    "Runtime Animation: %s",
-                    animatedRuntimeClip.c_str()
-                );
-                ImGui::Separator();
-
-                ImGui::Text(
-                    "Animation Runtime Settings"
-                );
-
-                ImGui::Text(
-                    "Current Clip: %s",
-                    animatedRuntimeClip.c_str()
-                );
-
-                ImGui::DragFloat(
-                    "Jump Visual Duration",
-                    &animatedJumpVisualDuration,
-                    0.01f,
-                    0.30f,
-                    1.50f
-                );
-
-                ImGui::Checkbox(
-                    "Show Animation Debug",
-                    &showAnimatedRuntimeDebug
-                );
-
-                if (
-                    ImGui::Button(
-                        "Reset Animated Player Defaults"
-                    )
-                    )
-                {
-                    animatedPlayerScale =
-                        0.015f;
-
-                    animatedPlayerRotationOffsetY =
-                        0.0f;
-
-                    animatedPlayerYOffset =
-                        0.05f;
-
-                    animatedJumpVisualDuration =
-                        0.85f;
-
-                    animatedPlayerSmoothInitialized =
-                        false;
-
-                    animatedClipSwitchCooldown =
-                        0.0f;
-
-                    animatedJumpLockTimer =
-                        0.0f;
-                }
-             
-                ImGui::Separator();
-                if (
-                    appMode == AppMode::Editor &&
-                    showVisualPolishPanel &&
-                    !cinematicOverlay.enabled
-                    )
-                {
-                    ImGui::SetNextWindowPos(
-                        ImVec2(
-                            40.0f,
-                            560.0f
-                        ),
-                        ImGuiCond_Once
-                    );
-
-                    ImGui::SetNextWindowSize(
-                        ImVec2(
-                            360.0f,
-                            260.0f
-                        ),
-                        ImGuiCond_Once
-                    );
-
-                    ImGui::Begin(
-                        "Visual Polish"
-                    );
-
                     ImGui::Text(
-                        "Lighting and Presentation"
+                        "Character Visual Mode"
                     );
 
-                    ImGui::Separator();
-                    ImGui::Text(
-                        "Runtime Game Mode"
+                    bool previousAnimatedVisualState =
+                        useAnimatedPlayerVisual;
+
+                    ImGui::Checkbox(
+                        "Use Animated Player",
+                        &useAnimatedPlayerVisual
                     );
 
-                    int selectedMode =
-                        static_cast<int>(
-                            selectedRuntimeGameMode
-                            );
-
-                    if (
-                        ImGui::Combo(
-                            "Game Mode",
-                            &selectedMode,
-                            runtimeGameModeNames,
-                            4
-                        )
-                        )
+                    if (previousAnimatedVisualState != useAnimatedPlayerVisual)
                     {
-                        selectedRuntimeGameMode =
-                            static_cast<RuntimeGameMode>(
-                                selectedMode
-                                );
+                        animatedPlayerSmoothInitialized =
+                            false;
                     }
 
-                    ImGui::Text(
-                        "Selected: %s",
-                        GetSelectedRuntimeGameModeName()
-                    );
-
-                    ImGui::TextDisabled(
-                        "Choose mode here, then press Play."
-                    );
-
-                    ImGui::Separator();
                     ImGui::Checkbox(
-                        "Enable Day/Night Cycle",
-                        &dayNightSystem.enabled
-                    );
-
-                    ImGui::SliderFloat(
-                        "Time of Day",
-                        &dayNightSystem.timeOfDay,
-                        0.0f,
-                        24.0f
+                        "Hide Classic Player Mesh",
+                        &hideClassicPlayerWhenAnimated
                     );
 
                     ImGui::DragFloat(
-                        "Cycle Speed",
-                        &dayNightSystem.cycleSpeed,
+                        "Animated Scale",
+                        &animatedPlayerScale,
+                        0.001f,
+                        0.001f,
+                        1.0f
+                    );
+
+                    ImGui::DragFloat(
+                        "Animated Rotation Offset Y",
+                        &animatedPlayerRotationOffsetY,
+                        1.0f,
+                        -360.0f,
+                        360.0f
+                    );
+
+                    ImGui::DragFloat(
+                        "Animated Y Offset",
+                        &animatedPlayerYOffset,
                         0.01f,
-                        0.01f,
+                        -5.0f,
                         5.0f
                     );
+
+                    ImGui::Text(
+                        "Runtime Animation: %s",
+                        animatedRuntimeClip.c_str()
+                    );
                     ImGui::Separator();
 
                     ImGui::Text(
-                        "Weather / Atmosphere"
-                    );
-
-                    ImGui::Checkbox(
-                        "Enable Weather System",
-                        &weatherSystem.enabled
-                    );
-
-                    ImGui::Combo(
-                        "Weather Preset",
-                        &weatherSystem.presetIndex,
-                        WeatherSystem::PresetNames,
-                        WeatherSystem::PresetCount
-                    );
-
-                    ImGui::Checkbox(
-                        "Show Weather Overlay",
-                        &weatherSystem.showOverlay
+                        "Animation Runtime Settings"
                     );
 
                     ImGui::Text(
-                        "Fog: %s",
-                        weatherSystem.useFog ? "Enabled" : "Disabled"
+                        "Current Clip: %s",
+                        animatedRuntimeClip.c_str()
                     );
 
+                    ImGui::DragFloat(
+                        "Jump Visual Duration",
+                        &animatedJumpVisualDuration,
+                        0.01f,
+                        0.30f,
+                        1.50f
+                    );
+
+                    ImGui::Checkbox(
+                        "Show Animation Debug",
+                        &showAnimatedRuntimeDebug
+                    );
+
+                    if (
+                        ImGui::Button(
+                            "Reset Animated Player Defaults"
+                        )
+                        )
+                    {
+                        animatedPlayerScale =
+                            0.015f;
+
+                        animatedPlayerRotationOffsetY =
+                            0.0f;
+
+                        animatedPlayerYOffset =
+                            0.05f;
+
+                        animatedJumpVisualDuration =
+                            0.85f;
+
+                        animatedPlayerSmoothInitialized =
+                            false;
+
+                        animatedClipSwitchCooldown =
+                            0.0f;
+
+                        animatedJumpLockTimer =
+                            0.0f;
+                    }
+                    ImGui::Separator();
+                }
+                else
+                {
                     ImGui::Text(
-                        "Rain: %s",
-                        weatherSystem.rainOverlay ? "Enabled" : "Disabled"
+                        "Player not found."
                     );
-                    ImGui::Separator();
-
-                    ImGui::Checkbox(
-                        "Show Objective Markers",
-                        &objectiveMarkerSystem.enabled
-                    );
-                    ImGui::Checkbox(
-                        "Show Mini Map Radar",
-                        &miniMapRadar.enabled
-                    );
-
-                    ImGui::DragFloat(
-                        "Mini Map Range",
-                        &miniMapRadar.range,
-                        1.0f,
-                        25.0f,
-                        250.0f
-                    );
-
-                    ImGui::DragFloat(
-                        "Mini Map Size",
-                        &miniMapRadar.radius,
-                        1.0f,
-                        60.0f,
-                        150.0f
-                    );
-                    ImGui::Checkbox(
-                        "Show Gameplay Feedback FX",
-                        &gameplayFeedbackFX.enabled
-                    );
-                    ImGui::Checkbox(
-                        "Cinematic Mode",
-                        &cinematicOverlay.enabled
-                    );
-
-                    ImGui::TextDisabled(
-                        "Shortcut: F10"
-                    );
-                    ImGui::DragFloat(
-                        "Black Bar Height",
-                        &cinematicOverlay.blackBarHeight,
-                        1.0f,
-                        0.0f,
-                        180.0f
-                    );
-
-                    ImGui::Separator();
-
-                    if (
-                        ImGui::Button(
-                            "Golden Hour"
-                        )
-                        )
-                    {
-                        dayNightSystem.SetGoldenHour();
-                    }
-
-                    ImGui::SameLine();
-
-                    if (
-                        ImGui::Button(
-                            "Night"
-                        )
-                        )
-                    {
-                        dayNightSystem.SetNight();
-                    }
-
-                    ImGui::SameLine();
-
-                    if (
-                        ImGui::Button(
-                            "Day"
-                        )
-                        )
-                    {
-                        dayNightSystem.SetDay();
-                    }
-
-                    ImGui::End();
                 }
 
-                ImGui::Separator();
-                ImGui::Text("Player Position");
-                ImGui::Text(
-                    "X: %.2f  Y: %.2f  Z: %.2f",
-                    playerObject->transform.position.x,
-                    playerObject->transform.position.y,
-                    playerObject->transform.position.z
-                );
+                ImGui::End();
+            }
 
-                ImGui::Separator();
-
-                ImGui::Text("Saved Spawn Position");
-                ImGui::Text(
-                    "X: %.2f  Y: %.2f  Z: %.2f",
-                    playerSpawnPosition.x,
-                    playerSpawnPosition.y,
-                    playerSpawnPosition.z
-                );
-
-                ImGui::Separator();
-
-                if (ImGui::Button("Set Spawn Here"))
-                {
-                    playerSpawnPosition =
-                        playerObject->transform.position;
-
-                    playerSpawnPosition.y =
-                        GetPlayerTerrainY(
-                            playerSpawnPosition.x,
-                            playerSpawnPosition.z
-                        );
-                    playerObject->transform.position =
-                        playerSpawnPosition;
-
-                    std::cout
-                        << "Player spawn set on terrain: "
-                        << playerSpawnPosition.x << ", "
-                        << playerSpawnPosition.y << ", "
-                        << playerSpawnPosition.z
-                        << std::endl;
-                }
-
-                if (ImGui::Button("Respawn Player"))
-                {
-                    playerObject->transform.position =
-                        playerSpawnPosition;
-
-                    playerObject->transform.position.y =
-                        GetPlayerTerrainY(
-                            playerObject->transform.position.x,
-                            playerObject->transform.position.z
+            // ================= VISUAL POLISH PANEL =================
+                    if (
+                        appMode == AppMode::Editor &&
+                        showVisualPolishPanel &&
+                        !cinematicOverlay.enabled
+                        )
+                    {
+                        ImGui::SetNextWindowPos(
+                            ImVec2(
+                                centerX,
+                                topY + 360.0f
+                            ),
+                            ImGuiCond_Always
                         );
 
-                    playerObject->transform.rotation =
-                        glm::vec3(
-                            0.0f
+                        ImGui::SetNextWindowSize(
+                            ImVec2(
+                                370.0f,
+                                300.0f
+                            ),
+                            ImGuiCond_Always
                         );
 
-                    thirdPersonController.verticalVelocity =
-                        0.0f;
+                        ImGui::Begin(
+                            "Visual Polish"
+                        );
 
-                    thirdPersonController.isGrounded =
-                        true;
+                        ImGui::Text(
+                            "Lighting and Presentation"
+                        );
 
-                    std::cout
-                        << "Player respawned on terrain."
-                        << std::endl;
-                }
+                        ImGui::Separator();
 
-                if (ImGui::Button("Place Player In Front Of Camera"))
-                {
-                    glm::vec3 forward =
-                        glm::vec3(
-                            camera.Front.x,
+                        ImGui::Text(
+                            "Runtime Game Mode"
+                        );
+
+                        int selectedMode =
+                            static_cast<int>(
+                                selectedRuntimeGameMode
+                                );
+
+                        if (
+                            ImGui::Combo(
+                                "Game Mode",
+                                &selectedMode,
+                                runtimeGameModeNames,
+                                4
+                            )
+                            )
+                        {
+                            selectedRuntimeGameMode =
+                                static_cast<RuntimeGameMode>(
+                                    selectedMode
+                                    );
+                        }
+
+                        ImGui::Text(
+                            "Selected: %s",
+                            GetSelectedRuntimeGameModeName()
+                        );
+
+                        ImGui::TextDisabled(
+                            "Choose mode here, then press Play."
+                        );
+
+                        ImGui::Separator();
+
+                        ImGui::Checkbox(
+                            "Enable Day/Night Cycle",
+                            &dayNightSystem.enabled
+                        );
+
+                        ImGui::SliderFloat(
+                            "Time of Day",
+                            &dayNightSystem.timeOfDay,
                             0.0f,
-                            camera.Front.z
+                            24.0f
                         );
 
-                    if (glm::length(forward) < 0.001f)
-                    {
-                        forward =
-                            glm::vec3(
-                                0.0f,
-                                0.0f,
-                                -1.0f
-                            );
+                        ImGui::DragFloat(
+                            "Cycle Speed",
+                            &dayNightSystem.cycleSpeed,
+                            0.01f,
+                            0.01f,
+                            5.0f
+                        );
+
+                        ImGui::Separator();
+
+                        ImGui::Text(
+                            "Weather / Atmosphere"
+                        );
+
+                        ImGui::Checkbox(
+                            "Enable Weather System",
+                            &weatherSystem.enabled
+                        );
+
+                        ImGui::Combo(
+                            "Weather Preset",
+                            &weatherSystem.presetIndex,
+                            WeatherSystem::PresetNames,
+                            WeatherSystem::PresetCount
+                        );
+
+                        ImGui::Checkbox(
+                            "Show Weather Overlay",
+                            &weatherSystem.showOverlay
+                        );
+
+                        ImGui::Text(
+                            "Fog: %s",
+                            weatherSystem.useFog ? "Enabled" : "Disabled"
+                        );
+
+                        ImGui::Text(
+                            "Rain: %s",
+                            weatherSystem.rainOverlay ? "Enabled" : "Disabled"
+                        );
+
+                        ImGui::Separator();
+
+                        ImGui::Checkbox(
+                            "Show Objective Markers",
+                            &objectiveMarkerSystem.enabled
+                        );
+
+                        ImGui::Checkbox(
+                            "Show Mini Map Radar",
+                            &miniMapRadar.enabled
+                        );
+
+                        ImGui::DragFloat(
+                            "Mini Map Range",
+                            &miniMapRadar.range,
+                            1.0f,
+                            25.0f,
+                            250.0f
+                        );
+
+                        ImGui::DragFloat(
+                            "Mini Map Size",
+                            &miniMapRadar.radius,
+                            1.0f,
+                            60.0f,
+                            150.0f
+                        );
+
+                        ImGui::Checkbox(
+                            "Show Gameplay Feedback FX",
+                            &gameplayFeedbackFX.enabled
+                        );
+
+                        ImGui::Checkbox(
+                            "Cinematic Mode",
+                            &cinematicOverlay.enabled
+                        );
+
+                        ImGui::TextDisabled(
+                            "Shortcut: F10"
+                        );
+
+                        ImGui::DragFloat(
+                            "Black Bar Height",
+                            &cinematicOverlay.blackBarHeight,
+                            1.0f,
+                            0.0f,
+                            180.0f
+                        );
+
+                        ImGui::Separator();
+
+                        if (
+                            ImGui::Button(
+                                "Golden Hour"
+                            )
+                            )
+                        {
+                            dayNightSystem.SetGoldenHour();
+                        }
+
+                        ImGui::SameLine();
+
+                        if (
+                            ImGui::Button(
+                                "Night"
+                            )
+                            )
+                        {
+                            dayNightSystem.SetNight();
+                        }
+
+                        ImGui::SameLine();
+
+                        if (
+                            ImGui::Button(
+                                "Day"
+                            )
+                            )
+                        {
+                            dayNightSystem.SetDay();
+                        }
+
+                        ImGui::End();
                     }
-
-                    forward =
-                        glm::normalize(
-                            forward
-                        );
-
-                    glm::vec3 playerNewPosition =
-                        camera.Position +
-                        forward * 5.0f;
-
-                    playerNewPosition.y =
-                        GetPlayerTerrainY(
-                            playerNewPosition.x,
-                            playerNewPosition.z
-                        );
-
-                    playerObject->transform.position =
-                        playerNewPosition;
-
-                    thirdPersonController.verticalVelocity =
-                        0.0f;
-
-                    thirdPersonController.isGrounded =
-                        true;
-
-                    selectedObject =
-                        playerObject;
-
-                    std::cout
-                        << "Player placed on terrain in front of camera."
-                        << std::endl;
-                }
-
-                if (ImGui::Button("Select Player"))
-                {
-                    selectedObject =
-                        playerObject;
-
-                    selectedLight =
-                        nullptr;
-
-                    std::cout
-                        << "Player selected."
-                        << std::endl;
-                }
-            }
-            else
-            {
-                ImGui::Text("Player not found.");
-            }
-
-            ImGui::End();
-
-
             // ================= SELECTED OBJECT PLACEMENT TOOLS =================
             if (showSelectedObjectToolsPanel)
             {

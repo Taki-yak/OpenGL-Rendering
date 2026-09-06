@@ -6315,7 +6315,43 @@ int main()
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
-    GLFWwindow* window = glfwCreateWindow(1600, 900, "Orion", NULL, NULL);
+    // -screen>      GLFWwindow* window = glfwCreateWindow(1600, 900, "Orion", NULL, NULL);
+    GLFWmonitor* monitor =
+        glfwGetPrimaryMonitor();
+
+    const GLFWvidmode* videoMode =
+        glfwGetVideoMode(
+            monitor
+        );
+
+    glfwWindowHint(
+        GLFW_RED_BITS,
+        videoMode->redBits
+    );
+
+    glfwWindowHint(
+        GLFW_GREEN_BITS,
+        videoMode->greenBits
+    );
+
+    glfwWindowHint(
+        GLFW_BLUE_BITS,
+        videoMode->blueBits
+    );
+
+    glfwWindowHint(
+        GLFW_REFRESH_RATE,
+        videoMode->refreshRate
+    );
+
+    GLFWwindow* window =
+        glfwCreateWindow(
+            videoMode->width,
+            videoMode->height,
+            "Orion",
+            monitor,
+            NULL
+        );
     if (!window)
     {
         std::cout << "Failed to create window\n";

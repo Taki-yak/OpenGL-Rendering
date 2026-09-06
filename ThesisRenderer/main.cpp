@@ -373,6 +373,89 @@ WeatherSystem weatherSystem;
 DayNightSystem dayNightSystem;
 CoinRushGameMode coinRushGameMode;
 MonsterEscapeGameMode monsterEscapeGameMode;
+enum class RuntimeGameMode
+{
+    FreeRoam = 0,
+    CoinRush = 1,
+    MonsterEscape = 2,
+    FullDemo = 3
+};
+
+RuntimeGameMode selectedRuntimeGameMode =
+RuntimeGameMode::FullDemo;
+
+bool showGameModeSelectorWindow =
+true;
+
+const char* runtimeGameModeNames[] =
+{
+    "Free Roam",
+    "Coin Rush",
+    "Monster Escape",
+    "Full Demo"
+};
+
+bool IsCoinRushModeEnabled()
+{
+    return
+        selectedRuntimeGameMode == RuntimeGameMode::CoinRush ||
+        selectedRuntimeGameMode == RuntimeGameMode::FullDemo;
+}
+
+bool IsMonsterEscapeModeEnabled()
+{
+    return
+        selectedRuntimeGameMode == RuntimeGameMode::MonsterEscape ||
+        selectedRuntimeGameMode == RuntimeGameMode::FullDemo;
+}
+
+bool IsMusicRescueModeEnabled()
+{
+    return
+        selectedRuntimeGameMode == RuntimeGameMode::FullDemo;
+}
+
+const char* GetSelectedRuntimeGameModeName()
+{
+    return
+        runtimeGameModeNames[
+            static_cast<int>(
+                selectedRuntimeGameMode
+                )
+        ];
+}
+
+bool ShouldLockPlayerAfterRuntimeResult()
+{
+    if (
+        IsCoinRushModeEnabled() &&
+        (
+            coinRushGameMode.won ||
+            coinRushGameMode.lost
+            )
+        )
+    {
+        return true;
+    }
+
+    if (
+        IsMonsterEscapeModeEnabled() &&
+        monsterEscapeGameMode.playerCaught
+        )
+    {
+        return true;
+    }
+
+    if (
+        IsMusicRescueModeEnabled() &&
+        musicRescueWin
+        )
+    {
+        return true;
+    }
+
+    return false;
+}
 std::string musicRescueText =
     "Music Rescue: Waiting for gate.";
 float interactionRadius =4.0f;
@@ -4612,12 +4695,7 @@ void UpdateMusicRescueEvent(
 }
 void DrawRuntimeResultOverlay()
 {
-    if (
-        !monsterEscapeGameMode.playerCaught &&
-        !musicRescueWin &&
-      !coinRushGameMode.won &&
-!coinRushGameMode.lost
-        )
+    if (!ShouldLockPlayerAfterRuntimeResult())
     {
         return;
     }
@@ -9077,12 +9155,7 @@ ImGuiIO& io = ImGui::GetIO();
         }
         else
         {
-            if (
-                !monsterEscapeGameMode.playerCaught &&
-                !musicRescueWin &&
-                !coinRushGameMode.won &&
-                !coinRushGameMode.lost
-                )
+            if (!ShouldLockPlayerAfterRuntimeResult())
             {
                 thirdPersonController.Update(
                     window,
@@ -9093,6 +9166,7 @@ ImGuiIO& io = ImGui::GetIO();
                 );
             }
             if (
+                IsCoinRushModeEnabled() &&
                 !monsterEscapeGameMode.playerCaught &&
                 !musicRescueWin
                 )
@@ -9104,27 +9178,35 @@ ImGuiIO& io = ImGui::GetIO();
                     deltaTime
                 );
             }
-            monsterEscapeGameMode.UpdateTrigger(
-                scene,
-                audioSystem,
-                gameplayFeedbackFX
-            );
+            if (IsMonsterEscapeModeEnabled())
+            {
+                monsterEscapeGameMode.UpdateTrigger(
+                    scene,
+                    audioSystem,
+                    gameplayFeedbackFX
+                );
+            }
 
-            UpdateMusicRescueEvent(
-                scene,
-                audioSystem,
-                deltaTime
-            );
+            if (IsMusicRescueModeEnabled())
+            {
+                UpdateMusicRescueEvent(
+                    scene,
+                    audioSystem,
+                    deltaTime
+                );
+            }
 
-            monsterEscapeGameMode.UpdateChase(
-                scene,
-                audioSystem,
-                gameplayFeedbackFX,
-                deltaTime,
-                GetTerrainHeight
-            );
+            if (IsMonsterEscapeModeEnabled())
+            {
+                monsterEscapeGameMode.UpdateChase(
+                    scene,
+                    audioSystem,
+                    gameplayFeedbackFX,
+                    deltaTime,
+                    GetTerrainHeight
+                );
+            }
         }
-       
         // ================= TERRAIN PLAYER COLLISION =================
 
         if (appMode == AppMode::Play && playerObject != nullptr)
@@ -9457,7 +9539,10 @@ ImGuiIO& io = ImGui::GetIO();
             ImGui::Text(
                 "Gameplay Interaction System"
             );
-
+            ImGui::Text(
+                "Mode: %s",
+                GetSelectedRuntimeGameModeName()
+            );
             ImGui::Separator();
             if (coinRushGameMode.active)
             {

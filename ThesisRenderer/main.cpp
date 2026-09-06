@@ -410,6 +410,14 @@ false;
 
 bool showSelectedObjectToolsPanel =
 false;
+bool showCollisionDebug =
+false;
+
+float collisionDebugYOffset =
+0.08f;
+
+float collisionDebugLineWidth =
+2.0f;
 MiniMapRadar miniMapRadar;
 CinematicOverlay cinematicOverlay;
 GameplayFeedbackFX gameplayFeedbackFX;
@@ -2971,6 +2979,343 @@ void scroll_callback(GLFWwindow* window, double xoffset, double yoffset)
                 glm::vec3(0.1f)
             );
     }
+}
+// ================= COLLISION DEBUG VIEW =================
+
+static std::vector<float> CreateCollisionCircleVertices(
+    int segmentCount
+)
+{
+    std::vector<float> vertices;
+
+    const float pi =
+        3.14159265359f;
+
+    for (int i = 0; i < segmentCount; i++)
+    {
+        float angle =
+            ((float)i / (float)segmentCount) *
+            pi *
+            2.0f;
+
+        vertices.push_back(
+            std::cos(angle)
+        );
+
+        vertices.push_back(
+            0.0f
+        );
+
+        vertices.push_back(
+            std::sin(angle)
+        );
+    }
+
+    return vertices;
+}
+
+static bool CollisionDebugNameContains(
+    const std::string& name,
+    const std::string& token
+)
+{
+    return
+        name.find(token) != std::string::npos;
+}
+
+static bool ShouldDrawCollisionDebugForObject(
+    SceneObject* object,
+    SceneObject* playerObject
+)
+{
+    if (object == nullptr)
+        return false;
+
+    if (!object->visible)
+        return false;
+
+    if (object == playerObject)
+        return false;
+
+    if (object->isCollider)
+        return true;
+
+    const std::string& name =
+        object->name;
+
+    if (CollisionDebugNameContains(name, "Coin"))
+        return true;
+
+    if (CollisionDebugNameContains(name, "Trigger"))
+        return true;
+
+    if (CollisionDebugNameContains(name, "Zone"))
+        return true;
+
+    if (CollisionDebugNameContains(name, "Monster"))
+        return true;
+
+    if (CollisionDebugNameContains(name, "Music"))
+        return true;
+
+    if (CollisionDebugNameContains(name, "Gate"))
+        return true;
+
+    if (CollisionDebugNameContains(name, "NPC"))
+        return true;
+
+    return false;
+}
+
+static float GetCollisionDebugRadius(
+    SceneObject* object
+)
+{
+    if (object == nullptr)
+        return 0.0f;
+
+    const std::string& name =
+        object->name;
+
+    if (object->isCollider)
+    {
+        return glm::max(
+            object->colliderRadius,
+            0.35f
+        );
+    }
+
+    if (CollisionDebugNameContains(name, "Coin"))
+        return 1.25f;
+
+    if (
+        CollisionDebugNameContains(name, "Trigger") ||
+        CollisionDebugNameContains(name, "Zone")
+        )
+    {
+        return 4.5f;
+    }
+
+    if (CollisionDebugNameContains(name, "Gate"))
+        return 4.5f;
+
+    if (CollisionDebugNameContains(name, "Monster"))
+        return 2.4f;
+
+    if (CollisionDebugNameContains(name, "NPC"))
+        return 2.0f;
+
+    if (CollisionDebugNameContains(name, "Music"))
+        return 2.0f;
+
+    return 0.0f;
+}
+
+static glm::vec3 GetCollisionDebugColor(
+    SceneObject* object,
+    SceneObject* selectedObject
+)
+{
+    if (object == nullptr)
+        return glm::vec3(1.0f);
+
+    if (object == selectedObject)
+        return glm::vec3(1.0f, 1.0f, 1.0f);
+
+    const std::string& name =
+        object->name;
+
+    if (CollisionDebugNameContains(name, "Coin"))
+        return glm::vec3(1.0f, 0.85f, 0.1f);
+
+    if (
+        CollisionDebugNameContains(name, "Trigger") ||
+        CollisionDebugNameContains(name, "Zone")
+        )
+    {
+        return glm::vec3(1.0f, 0.35f, 0.1f);
+    }
+
+    if (CollisionDebugNameContains(name, "Monster"))
+        return glm::vec3(1.0f, 0.1f, 0.1f);
+
+    if (
+        CollisionDebugNameContains(name, "Music") ||
+        CollisionDebugNameContains(name, "Gate") ||
+        CollisionDebugNameContains(name, "NPC")
+        )
+    {
+        return glm::vec3(0.3f, 0.6f, 1.0f);
+    }
+
+    return glm::vec3(0.1f, 1.0f, 0.25f);
+}
+
+static void DrawCollisionDebugRing(
+    Shader& debugShader,
+    unsigned int circleVAO,
+    int circleVertexCount,
+    const glm::vec3& position,
+    float radius,
+    const glm::vec3& color,
+    const glm::mat4& view,
+    const glm::mat4& projection,
+    float yOffset
+)
+{
+    if (circleVAO == 0)
+        return;
+
+    if (circleVertexCount <= 0)
+        return;
+
+    if (radius <= 0.0f)
+        return;
+
+    glm::mat4 ringModel =
+        glm::translate(
+            glm::mat4(1.0f),
+            glm::vec3(
+                position.x,
+                position.y + yOffset,
+                position.z
+            )
+        );
+
+    ringModel =
+        glm::scale(
+            ringModel,
+            glm::vec3(
+                radius,
+                1.0f,
+                radius
+            )
+        );
+
+    debugShader.setMat4(
+        "model",
+        glm::value_ptr(ringModel)
+    );
+
+    debugShader.setVec3(
+        "axisColor",
+        color
+    );
+
+    glDrawArrays(
+        GL_LINE_LOOP,
+        0,
+        circleVertexCount
+    );
+}
+
+static void DrawCollisionDebugView(
+    Scene& scene,
+    SceneObject* selectedObject,
+    SceneObject* playerObject,
+    Shader& debugShader,
+    unsigned int circleVAO,
+    int circleVertexCount,
+    const glm::mat4& view,
+    const glm::mat4& projection,
+    float yOffset,
+    float lineWidth
+)
+{
+    glLineWidth(
+        lineWidth
+    );
+
+    GLboolean depthTestEnabled =
+        glIsEnabled(
+            GL_DEPTH_TEST
+        );
+
+    glDisable(
+        GL_DEPTH_TEST
+    );
+
+    debugShader.use();
+
+    debugShader.setMat4(
+        "view",
+        glm::value_ptr(view)
+    );
+
+    debugShader.setMat4(
+        "projection",
+        glm::value_ptr(projection)
+    );
+
+    glBindVertexArray(
+        circleVAO
+    );
+
+    if (playerObject != nullptr)
+    {
+        DrawCollisionDebugRing(
+            debugShader,
+            circleVAO,
+            circleVertexCount,
+            playerObject->transform.position,
+            1.2f,
+            glm::vec3(0.1f, 0.9f, 1.0f),
+            view,
+            projection,
+            yOffset
+        );
+    }
+
+    for (SceneObject* object : scene.objects)
+    {
+        if (
+            !ShouldDrawCollisionDebugForObject(
+                object,
+                playerObject
+            )
+            )
+        {
+            continue;
+        }
+
+        float radius =
+            GetCollisionDebugRadius(
+                object
+            );
+
+        glm::vec3 color =
+            GetCollisionDebugColor(
+                object,
+                selectedObject
+            );
+
+        DrawCollisionDebugRing(
+            debugShader,
+            circleVAO,
+            circleVertexCount,
+            object->transform.position,
+            radius,
+            color,
+            view,
+            projection,
+            yOffset
+        );
+    }
+
+    glBindVertexArray(
+        0
+    );
+
+    if (depthTestEnabled)
+    {
+        glEnable(
+            GL_DEPTH_TEST
+        );
+    }
+
+    glLineWidth(
+        1.0f
+    );
 }
 float gizmoVertices[] =
 {
@@ -6046,6 +6391,64 @@ int main()
     unsigned int gizmoVAO, gizmoVBO;
 
     glGenVertexArrays(1, &gizmoVAO);
+    // ================= COLLISION DEBUG CIRCLE BUFFER =================
+
+    const int collisionCircleVertexCount =
+        96;
+
+    std::vector<float> collisionCircleVertices =
+        CreateCollisionCircleVertices(
+            collisionCircleVertexCount
+        );
+
+    unsigned int collisionCircleVAO =
+        0;
+
+    unsigned int collisionCircleVBO =
+        0;
+
+    glGenVertexArrays(
+        1,
+        &collisionCircleVAO
+    );
+
+    glGenBuffers(
+        1,
+        &collisionCircleVBO
+    );
+
+    glBindVertexArray(
+        collisionCircleVAO
+    );
+
+    glBindBuffer(
+        GL_ARRAY_BUFFER,
+        collisionCircleVBO
+    );
+
+    glBufferData(
+        GL_ARRAY_BUFFER,
+        collisionCircleVertices.size() * sizeof(float),
+        collisionCircleVertices.data(),
+        GL_STATIC_DRAW
+    );
+
+    glVertexAttribPointer(
+        0,
+        3,
+        GL_FLOAT,
+        GL_FALSE,
+        3 * sizeof(float),
+        (void*)0
+    );
+
+    glEnableVertexAttribArray(
+        0
+    );
+
+    glBindVertexArray(
+        0
+    );
     glGenBuffers(1, &gizmoVBO);
 
     glBindVertexArray(gizmoVAO);
@@ -11470,7 +11873,7 @@ ImGuiIO& io = ImGui::GetIO();
                 ImGui::SetNextWindowSize(
                     ImVec2(
                         260.0f,
-                        215.0f
+                        245.0f
                     ),
                     ImGuiCond_FirstUseEver
                 );
@@ -11521,6 +11924,8 @@ ImGuiIO& io = ImGui::GetIO();
 
                     showVisualPolishPanel =
                         true;
+                    showCollisionDebug =
+                        false;
                 }
 
                 ImGui::SameLine();
@@ -11557,6 +11962,8 @@ ImGuiIO& io = ImGui::GetIO();
                         true;
 
                     showVisualPolishPanel =
+                        true;
+                    showCollisionDebug =
                         true;
                 }
 
@@ -11614,7 +12021,10 @@ ImGuiIO& io = ImGui::GetIO();
                     "Selected Tools",
                     &showSelectedObjectToolsPanel
                 );
-
+                ImGui::Checkbox(
+                    "Collision Debug",
+                    &showCollisionDebug
+                );
                 ImGui::End();
             }
             if (showHierarchyPanel)
@@ -12387,6 +12797,23 @@ ImGuiIO& io = ImGui::GetIO();
             }
 
             ImGui::End();
+          }
+          // ================= COLLISION DEBUG DRAW =================
+
+          if (showCollisionDebug)
+          {
+              DrawCollisionDebugView(
+                  scene,
+                  selectedObject,
+                  playerObject,
+                  gizmoShader,
+                  collisionCircleVAO,
+                  collisionCircleVertexCount,
+                  view,
+                  projection,
+                  collisionDebugYOffset,
+                  collisionDebugLineWidth
+              );
           }
             if (selectedObject != nullptr)
             {

@@ -57,6 +57,26 @@
 #ifdef min
 #undef min
 #endif
+static const float leftX =
+10.0f;
+
+static const float topY =
+70.0f;
+
+static const float leftWidth =
+260.0f;
+
+static const float rightX =
+1240.0f;
+
+static const float rightWidth =
+340.0f;
+
+static const float centerX =
+280.0f;
+
+static const float centerWidth =
+940.0f;
 // ================= CAMERA VARIABLES =================
 //glm::vec3 cameraPos = glm::vec3(0.0f, 0.0f, 3.0f);
 //glm::vec3 cameraFront = glm::vec3(0.0f, 0.0f, -1.0f);
@@ -5376,7 +5396,15 @@ void DrawSceneHealthValidator(
         ),
         ImGuiCond_Once
     );
+    ImGui::SetNextWindowPos(
+        ImVec2(centerX + 620.0f, topY),
+        ImGuiCond_Always
+    );
 
+    ImGui::SetNextWindowSize(
+        ImVec2(380.0f, 270.0f),
+        ImGuiCond_Always
+    );
     ImGui::Begin(
         "Scene Health Validator"
     );
@@ -8611,7 +8639,15 @@ int main()
                ),
                ImGuiCond_Once
            );
+           ImGui::SetNextWindowPos(
+               ImVec2(centerX + 270.0f, topY),
+               ImGuiCond_Always
+           );
 
+           ImGui::SetNextWindowSize(
+               ImVec2(340.0f, 350.0f),
+               ImGuiCond_Always
+           );
            ImGui::Begin(
                "Animation Preview"
            );
@@ -11483,7 +11519,15 @@ ImGuiIO& io = ImGui::GetIO();
                 ),
                 ImGuiCond_Once
             );
+            ImGui::SetNextWindowPos(
+                ImVec2(rightX, topY + 420.0f),
+                ImGuiCond_Always
+            );
 
+            ImGui::SetNextWindowSize(
+                ImVec2(rightWidth, 280.0f),
+                ImGuiCond_Always
+            );
             ImGui::Begin("Player Tools");
             ImGui::Checkbox(
                 "Show Scene Health Validator",
@@ -11595,7 +11639,7 @@ ImGuiIO& io = ImGui::GetIO();
                     animatedJumpLockTimer =
                         0.0f;
                 }
-
+             
                 ImGui::Separator();
                 if (
                     appMode == AppMode::Editor &&
@@ -11951,6 +11995,15 @@ ImGuiIO& io = ImGui::GetIO();
                     280.0f
                 ),
                 ImGuiCond_Once
+            );
+            ImGui::SetNextWindowPos(
+                ImVec2(rightX, topY + 710.0f),
+                ImGuiCond_Always
+            );
+
+            ImGui::SetNextWindowSize(
+                ImVec2(rightWidth, 170.0f),
+                ImGuiCond_Always
             );
             ImGui::Begin("Selected Object Tools");
 

@@ -24,7 +24,26 @@ extern float GetTerrainHeight(
     float x,
     float z
 );
+static const float leftX =
+10.0f;
 
+static const float topY =
+70.0f;
+
+static const float leftWidth =
+260.0f;
+
+static const float rightX =
+1240.0f;
+
+static const float rightWidth =
+340.0f;
+
+static const float centerX =
+280.0f;
+
+static const float centerWidth =
+940.0f;
 static glm::vec3 SnapEditorPositionToTerrain(
     glm::vec3 position,
     float offset = 0.05f
@@ -1106,7 +1125,15 @@ void EditorUI::DrawHierarchy(
         ),
         ImGuiCond_Once
     );
+    ImGui::SetNextWindowPos(
+        ImVec2(leftX, topY),
+        ImGuiCond_Always
+    );
 
+    ImGui::SetNextWindowSize(
+        ImVec2(leftWidth, 380.0f),
+        ImGuiCond_Always
+    );
     ImGui::Begin("Hierarchy");
     int visibleHierarchyCount =
         0;
@@ -2215,6 +2242,15 @@ void EditorUI::DrawInspector(
         ),
         ImGuiCond_Once
     );
+    ImGui::SetNextWindowPos(
+        ImVec2(rightX, topY),
+        ImGuiCond_Always
+    );
+
+    ImGui::SetNextWindowSize(
+        ImVec2(rightWidth, 220.0f),
+        ImGuiCond_Always
+    );
     ImGui::Begin("Inspector");
 
     if (selectedObject != nullptr)
@@ -2718,6 +2754,15 @@ void EditorUI::DrawLightInspector(
         ),
         ImGuiCond_Once
     );
+    ImGui::SetNextWindowPos(
+        ImVec2(rightX, topY + 230.0f),
+        ImGuiCond_Always
+    );
+
+    ImGui::SetNextWindowSize(
+        ImVec2(rightWidth, 180.0f),
+        ImGuiCond_Always
+    );
     ImGui::Begin("Light Inspector");
 
     if (selectedLight)
@@ -2792,6 +2837,15 @@ void EditorUI::DrawDebug(
             190.0f
         ),
         ImGuiCond_Once
+    );
+    ImGui::SetNextWindowPos(
+        ImVec2(leftX, topY + 390.0f),
+        ImGuiCond_Always
+    );
+
+    ImGui::SetNextWindowSize(
+        ImVec2(leftWidth, 150.0f),
+        ImGuiCond_Always
     );
     ImGui::Begin("Debug");
 
@@ -7591,7 +7645,15 @@ void EditorUI::DrawAssetBrowser(
         ),
         ImGuiCond_Once
     );
+    ImGui::SetNextWindowPos(
+        ImVec2(leftX, topY + 550.0f),
+        ImGuiCond_Always
+    );
 
+    ImGui::SetNextWindowSize(
+        ImVec2(leftWidth + 650.0f, 220.0f),
+        ImGuiCond_Always
+    );
     ImGui::Begin("Asset Browser");
 
     auto GetSpawnPosition =
@@ -9484,6 +9546,15 @@ void EditorUI::DrawStatistics(
             160.0f
         ),
         ImGuiCond_Once
+    );
+    ImGui::SetNextWindowPos(
+        ImVec2(centerX, topY),
+        ImGuiCond_Always
+    );
+
+    ImGui::SetNextWindowSize(
+        ImVec2(260.0f, 170.0f),
+        ImGuiCond_Always
     );
     ImGui::Begin("Statistics");
 

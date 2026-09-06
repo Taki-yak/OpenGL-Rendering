@@ -384,7 +384,29 @@ float musicNpcTerrainOffset =
     0.15f;
 bool showVisualPolishPanel =
 true;
+bool showUIPanelsWindow =
+true;
 
+bool showHierarchyPanel =
+true;
+
+bool showInspectorPanel =
+true;
+
+bool showAssetBrowserPanel =
+true;
+
+bool showStatisticsPanel =
+true;
+
+bool showLightInspectorPanel =
+false;
+
+bool showDebugPanel =
+false;
+
+bool showSelectedObjectToolsPanel =
+false;
 MiniMapRadar miniMapRadar;
 CinematicOverlay cinematicOverlay;
 GameplayFeedbackFX gameplayFeedbackFX;
@@ -8357,10 +8379,10 @@ int main()
         180.0f;
 
     bool showAnimationPreviewWindow =
-        true;
-    bool showSceneHealthValidator =
-        true;
+        false;
 
+    bool showSceneHealthValidator =
+        false;
     bool useAnimatedPlayerVisual =
         false;
 
@@ -11342,14 +11364,193 @@ ImGuiIO& io = ImGui::GetIO();
                 );
             }
         );
-
         if (appMode == AppMode::Editor)
         {
-            EditorUI::DrawHierarchy(scene, selectedObject, selectedLight);
-            EditorUI::DrawLightInspector(selectedLight);
-            EditorUI::DrawInspector(selectedObject);
-            EditorUI::DrawDebug(deltaTime, totalObjects, visibleObjects, culledObjects, selectedObject);
-            EditorUI::DrawStatistics(scene, camera, selectedObject, deltaTime);
+            if (showUIPanelsWindow)
+            {
+                ImGui::SetNextWindowPos(
+                    ImVec2(
+                        10.0f,
+                        455.0f
+                    ),
+                    ImGuiCond_Always
+                );
+
+                ImGui::SetNextWindowSize(
+                    ImVec2(
+                        260.0f,
+                        215.0f
+                    ),
+                    ImGuiCond_Always
+                );
+
+                ImGui::Begin(
+                    "UI Panels",
+                    nullptr,
+                    ImGuiWindowFlags_NoCollapse |
+                    ImGuiWindowFlags_NoResize
+                );
+
+                ImGui::Text(
+                    "Editor Window Visibility"
+                );
+
+                ImGui::Separator();
+
+                if (ImGui::Button("Clean Layout"))
+                {
+                    showHierarchyPanel =
+                        true;
+
+                    showInspectorPanel =
+                        true;
+
+                    showAssetBrowserPanel =
+                        true;
+
+                    showStatisticsPanel =
+                        true;
+
+                    showLightInspectorPanel =
+                        false;
+
+                    showDebugPanel =
+                        false;
+
+                    showAnimationPreviewWindow =
+                        false;
+
+                    showSceneHealthValidator =
+                        false;
+
+                    showSelectedObjectToolsPanel =
+                        false;
+                }
+
+                ImGui::SameLine();
+
+                if (ImGui::Button("Show All"))
+                {
+                    showHierarchyPanel =
+                        true;
+
+                    showInspectorPanel =
+                        true;
+
+                    showAssetBrowserPanel =
+                        true;
+
+                    showStatisticsPanel =
+                        true;
+
+                    showLightInspectorPanel =
+                        true;
+
+                    showDebugPanel =
+                        true;
+
+                    showAnimationPreviewWindow =
+                        true;
+
+                    showSceneHealthValidator =
+                        true;
+
+                    showSelectedObjectToolsPanel =
+                        true;
+                }
+
+                ImGui::Separator();
+
+                ImGui::Checkbox(
+                    "Hierarchy",
+                    &showHierarchyPanel
+                );
+
+                ImGui::Checkbox(
+                    "Inspector",
+                    &showInspectorPanel
+                );
+
+                ImGui::Checkbox(
+                    "Asset Browser",
+                    &showAssetBrowserPanel
+                );
+
+                ImGui::Checkbox(
+                    "Statistics",
+                    &showStatisticsPanel
+                );
+
+                ImGui::Checkbox(
+                    "Light Inspector",
+                    &showLightInspectorPanel
+                );
+
+                ImGui::Checkbox(
+                    "Debug",
+                    &showDebugPanel
+                );
+
+                ImGui::Checkbox(
+                    "Animation Preview",
+                    &showAnimationPreviewWindow
+                );
+
+                ImGui::Checkbox(
+                    "Scene Health",
+                    &showSceneHealthValidator
+                );
+
+                ImGui::Checkbox(
+                    "Selected Tools",
+                    &showSelectedObjectToolsPanel
+                );
+
+                ImGui::End();
+            }
+            if (showHierarchyPanel)
+            {
+                EditorUI::DrawHierarchy(
+                    scene,
+                    selectedObject,
+                    selectedLight
+                );
+            }
+
+            if (showLightInspectorPanel)
+            {
+                EditorUI::DrawLightInspector(
+                    selectedLight
+                );
+            }
+
+            if (showInspectorPanel)
+            {
+                EditorUI::DrawInspector(
+                    selectedObject
+                );
+            }
+
+            if (showDebugPanel)
+            {
+                EditorUI::DrawDebug(
+                    deltaTime,
+                    totalObjects,
+                    visibleObjects,
+                    culledObjects,
+                    selectedObject
+                );
+            }
+
+            if (showStatisticsPanel)
+            {
+                EditorUI::DrawStatistics(
+                    scene,
+                    camera,
+                    selectedObject,
+                    deltaTime
+                );
+            }
             auto GetEditorForwardXZ =
                 [&]()
                 {
@@ -11477,6 +11678,8 @@ ImGuiIO& io = ImGui::GetIO();
                         28
                     );
                 };
+            if (showAssetBrowserPanel)
+            {
             EditorUI::DrawAssetBrowser(
                 scene,
                 selectedObject,
@@ -11500,7 +11703,7 @@ ImGuiIO& io = ImGui::GetIO();
                 BuildCampFromAssetBrowser,
                 BuildForestFromAssetBrowser
             );
-          
+            }
             // ================= PLAYER SPAWN TOOLS =================
         
 
@@ -11981,6 +12184,8 @@ ImGuiIO& io = ImGui::GetIO();
 
 
             // ================= SELECTED OBJECT PLACEMENT TOOLS =================
+            if (showSelectedObjectToolsPanel)
+            {
             ImGui::SetNextWindowPos(
                 ImVec2(
                     1240.0f,
@@ -12199,7 +12404,7 @@ ImGuiIO& io = ImGui::GetIO();
             }
 
             ImGui::End();
-          
+          }
             if (selectedObject != nullptr)
             {
                 glLineWidth(4.0f);

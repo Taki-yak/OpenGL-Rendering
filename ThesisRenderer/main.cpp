@@ -11469,7 +11469,40 @@ ImGuiIO& io = ImGui::GetIO();
                     );
 
                     ImGui::Separator();
+                    ImGui::Text(
+                        "Runtime Game Mode"
+                    );
 
+                    int selectedMode =
+                        static_cast<int>(
+                            selectedRuntimeGameMode
+                            );
+
+                    if (
+                        ImGui::Combo(
+                            "Game Mode",
+                            &selectedMode,
+                            runtimeGameModeNames,
+                            4
+                        )
+                        )
+                    {
+                        selectedRuntimeGameMode =
+                            static_cast<RuntimeGameMode>(
+                                selectedMode
+                                );
+                    }
+
+                    ImGui::Text(
+                        "Selected: %s",
+                        GetSelectedRuntimeGameModeName()
+                    );
+
+                    ImGui::TextDisabled(
+                        "Choose mode here, then press Play."
+                    );
+
+                    ImGui::Separator();
                     ImGui::Checkbox(
                         "Enable Day/Night Cycle",
                         &dayNightSystem.enabled

@@ -333,6 +333,8 @@ bool mouseClicked = false;
 bool pPressed = false;
 bool lPressed = false;
 bool bPressed = false;
+bool tabModeSwitchPressed =
+false;
 bool isDragging = false;
 bool snapEnabled = false;
 bool gPressed = false;
@@ -8638,7 +8640,95 @@ int main()
 
             continue;
         }
+        // ================= LIVE EDIT-TEST WORKFLOW =================
 
+        bool tabModeSwitchDown =
+            glfwGetKey(
+                window,
+                GLFW_KEY_TAB
+            ) == GLFW_PRESS;
+
+        if (
+            !showMainMenu &&
+            tabModeSwitchDown &&
+            !tabModeSwitchPressed &&
+            !ImGui::GetIO().WantTextInput
+            )
+        {
+            if (appMode == AppMode::Play)
+            {
+                appMode =
+                    AppMode::Editor;
+
+                audioSystem.Stop(
+                    "walk_grass"
+                );
+
+                audioSystem.Stop(
+                    "run_grass"
+                );
+
+                audioSystem.Stop(
+                    "monster_chase"
+                );
+
+                audioSystem.Stop(
+                    "music_rescue"
+                );
+
+                glfwSetInputMode(
+                    window,
+                    GLFW_CURSOR,
+                    GLFW_CURSOR_NORMAL
+                );
+
+                rightMouseCameraActive =
+                    false;
+
+                firstMouse =
+                    true;
+
+                ignoreNextMouseDelta =
+                    true;
+
+                std::cout
+                    << "TAB: Switched from Play Mode to Editor Mode."
+                    << std::endl;
+            }
+            else
+            {
+                appMode =
+                    AppMode::Play;
+
+                glfwSetInputMode(
+                    window,
+                    GLFW_CURSOR,
+                    GLFW_CURSOR_NORMAL
+                );
+
+                rightMouseCameraActive =
+                    false;
+
+                firstMouse =
+                    true;
+
+                ignoreNextMouseDelta =
+                    true;
+
+                std::cout
+                    << "TAB: Switched from Editor Mode to Play Mode."
+                    << std::endl;
+            }
+
+            tabModeSwitchPressed =
+                true;
+        }
+
+        if (!tabModeSwitchDown)
+        {
+            tabModeSwitchPressed =
+                false;
+        }
        ImGuiIO& debugIO = ImGui::GetIO();
        // ================= ANIMATION PREVIEW CONTROLS V1C =================
        if (
@@ -9916,7 +10006,7 @@ ImGuiIO& io = ImGui::GetIO();
             ImGui::Separator();
 
             ImGui::TextDisabled(
-                "WASD Move | Shift Run | Space Jump | E Interact"
+                "WASD Move | Shift Run | Space Jump | E Interact | TAB Editor/Play"
             );
 
             ImGui::End();
@@ -12341,7 +12431,7 @@ ImGuiIO& io = ImGui::GetIO();
             ImGui::Text("SHIFT - Run");
             ImGui::Text("SPACE - Jump");
             ImGui::Text("Right Mouse - Look Around");
-
+            ImGui::Text("TAB - Switch Editor / Play");
             ImGui::Separator();
 
             ImGui::Text(

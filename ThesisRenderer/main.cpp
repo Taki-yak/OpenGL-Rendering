@@ -2593,12 +2593,12 @@ MainMenuAction DrawMainMenuScreen(
             0.0f,
             0.0f
         ),
-        ImGuiCond_Always
+        ImGuiCond_FirstUseEver
     );
 
     ImGui::SetNextWindowSize(
         io.DisplaySize,
-        ImGuiCond_Always
+        ImGuiCond_FirstUseEver
     );
 
     ImGuiWindowFlags flags =
@@ -4751,7 +4751,7 @@ void DrawRuntimeResultOverlay()
             io.DisplaySize.x * 0.5f - 260.0f,
             io.DisplaySize.y * 0.5f - 95.0f
         ),
-        ImGuiCond_Always
+        ImGuiCond_FirstUseEver
     );
 
     ImGui::SetNextWindowSize(
@@ -4759,7 +4759,7 @@ void DrawRuntimeResultOverlay()
             520.0f,
             190.0f
         ),
-        ImGuiCond_Always
+        ImGuiCond_FirstUseEver
     );
 
     ImGuiWindowFlags flags =
@@ -5421,12 +5421,12 @@ void DrawSceneHealthValidator(
     );
     ImGui::SetNextWindowPos(
         ImVec2(centerX + 620.0f, topY),
-        ImGuiCond_Always
+        ImGuiCond_FirstUseEver
     );
 
     ImGui::SetNextWindowSize(
         ImVec2(380.0f, 270.0f),
-        ImGuiCond_Always
+        ImGuiCond_FirstUseEver
     );
     ImGui::Begin(
         "Scene Health Validator"
@@ -8664,12 +8664,12 @@ int main()
            );
            ImGui::SetNextWindowPos(
                ImVec2(centerX + 270.0f, topY),
-               ImGuiCond_Always
+               ImGuiCond_FirstUseEver
            );
 
            ImGui::SetNextWindowSize(
                ImVec2(340.0f, 350.0f),
-               ImGuiCond_Always
+               ImGuiCond_FirstUseEver
            );
            ImGui::Begin(
                "Animation Preview"
@@ -9583,7 +9583,7 @@ ImGuiIO& io = ImGui::GetIO();
                     20.0f,
                     90.0f
                 ),
-                ImGuiCond_Always
+                ImGuiCond_FirstUseEver
             );
 
             ImGui::Begin(
@@ -11374,7 +11374,7 @@ ImGuiIO& io = ImGui::GetIO();
                         10.0f,
                         455.0f
                     ),
-                    ImGuiCond_Always
+                    ImGuiCond_FirstUseEver
                 );
 
                 ImGui::SetNextWindowSize(
@@ -11382,7 +11382,7 @@ ImGuiIO& io = ImGui::GetIO();
                         260.0f,
                         215.0f
                     ),
-                    ImGuiCond_Always
+                    ImGuiCond_FirstUseEver
                 );
 
                 ImGui::Begin(
@@ -11743,12 +11743,12 @@ ImGuiIO& io = ImGui::GetIO();
                 );
                 ImGui::SetNextWindowPos(
                     ImVec2(rightX, topY + 420.0f),
-                    ImGuiCond_Always
+                    ImGuiCond_FirstUseEver
                 );
 
                 ImGui::SetNextWindowSize(
                     ImVec2(rightWidth, 280.0f),
-                    ImGuiCond_Always
+                    ImGuiCond_FirstUseEver
                 );
                 ImGui::Begin("Player Tools");
 
@@ -11882,7 +11882,7 @@ ImGuiIO& io = ImGui::GetIO();
                                 centerX,
                                 topY + 360.0f
                             ),
-                            ImGuiCond_Always
+                            ImGuiCond_FirstUseEver
                         );
 
                         ImGui::SetNextWindowSize(
@@ -11890,7 +11890,7 @@ ImGuiIO& io = ImGui::GetIO();
                                 370.0f,
                                 300.0f
                             ),
-                            ImGuiCond_Always
+                            ImGuiCond_FirstUseEver
                         );
 
                         ImGui::Begin(
@@ -12096,12 +12096,12 @@ ImGuiIO& io = ImGui::GetIO();
             );
             ImGui::SetNextWindowPos(
                 ImVec2(rightX, topY + 710.0f),
-                ImGuiCond_Always
+                ImGuiCond_FirstUseEver
             );
 
             ImGui::SetNextWindowSize(
                 ImVec2(rightWidth, 170.0f),
-                ImGuiCond_Always
+                ImGuiCond_FirstUseEver
             );
             ImGui::Begin("Selected Object Tools");
 

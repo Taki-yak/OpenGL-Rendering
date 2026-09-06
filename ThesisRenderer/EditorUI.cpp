@@ -1127,12 +1127,12 @@ void EditorUI::DrawHierarchy(
     );
     ImGui::SetNextWindowPos(
         ImVec2(leftX, topY),
-        ImGuiCond_Always
+        ImGuiCond_FirstUseEver
     );
 
     ImGui::SetNextWindowSize(
         ImVec2(leftWidth, 380.0f),
-        ImGuiCond_Always
+        ImGuiCond_FirstUseEver
     );
     ImGui::Begin("Hierarchy");
     int visibleHierarchyCount =
@@ -2244,12 +2244,12 @@ void EditorUI::DrawInspector(
     );
     ImGui::SetNextWindowPos(
         ImVec2(rightX, topY),
-        ImGuiCond_Always
+        ImGuiCond_FirstUseEver
     );
 
     ImGui::SetNextWindowSize(
         ImVec2(rightWidth, 220.0f),
-        ImGuiCond_Always
+        ImGuiCond_FirstUseEver
     );
     ImGui::Begin("Inspector");
 
@@ -2756,12 +2756,12 @@ void EditorUI::DrawLightInspector(
     );
     ImGui::SetNextWindowPos(
         ImVec2(rightX, topY + 230.0f),
-        ImGuiCond_Always
+        ImGuiCond_FirstUseEver
     );
 
     ImGui::SetNextWindowSize(
         ImVec2(rightWidth, 180.0f),
-        ImGuiCond_Always
+        ImGuiCond_FirstUseEver
     );
     ImGui::Begin("Light Inspector");
 
@@ -2840,12 +2840,12 @@ void EditorUI::DrawDebug(
     );
     ImGui::SetNextWindowPos(
         ImVec2(leftX, topY + 390.0f),
-        ImGuiCond_Always
+        ImGuiCond_FirstUseEver
     );
 
     ImGui::SetNextWindowSize(
         ImVec2(leftWidth, 150.0f),
-        ImGuiCond_Always
+        ImGuiCond_FirstUseEver
     );
     ImGui::Begin("Debug");
 
@@ -7647,12 +7647,12 @@ void EditorUI::DrawAssetBrowser(
     );
     ImGui::SetNextWindowPos(
         ImVec2(leftX, topY + 550.0f),
-        ImGuiCond_Always
+        ImGuiCond_FirstUseEver
     );
 
     ImGui::SetNextWindowSize(
         ImVec2(leftWidth + 650.0f, 220.0f),
-        ImGuiCond_Always
+        ImGuiCond_FirstUseEver
     );
     ImGui::Begin("Asset Browser");
 
@@ -9225,8 +9225,8 @@ void EditorUI::DrawToolbar(
     std::function<void()> loadEditorCallback
 )
 {
-    ImGui::SetNextWindowPos(ImVec2(0, 0), ImGuiCond_Always);
-    ImGui::SetNextWindowSize(ImVec2(1600, 45), ImGuiCond_Always);
+    ImGui::SetNextWindowPos(ImVec2(0, 0), ImGuiCond_FirstUseEver);
+    ImGui::SetNextWindowSize(ImVec2(1600, 45), ImGuiCond_FirstUseEver);
     ImGui::Begin("Toolbar");
     if (appMode == AppMode::Editor)
     {
@@ -9549,12 +9549,12 @@ void EditorUI::DrawStatistics(
     );
     ImGui::SetNextWindowPos(
         ImVec2(centerX, topY),
-        ImGuiCond_Always
+        ImGuiCond_FirstUseEver
     );
 
     ImGui::SetNextWindowSize(
         ImVec2(260.0f, 170.0f),
-        ImGuiCond_Always
+        ImGuiCond_FirstUseEver
     );
     ImGui::Begin("Statistics");
 
